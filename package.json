@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
+    "vercel-build": "node -e \"process.exit(process.env.VERCEL_ENV==='production'?0:1)\" && prisma migrate deploy; prisma generate && next build",
     "start": "next start",
     "lint": "eslint"
   },
