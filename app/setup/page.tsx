@@ -22,7 +22,7 @@ async function setupWorkspace(_prevState: SetupState, formData: FormData): Promi
   const expectedSecret = process.env.SETUP_SECRET;
 
   if (!expectedSecret) {
-    throw new Error("SETUP_SECRET is not configured.");
+    notFound();
   }
 
   if (formData.get("secret") !== expectedSecret) {
@@ -57,7 +57,7 @@ export default async function SetupPage({
   const expectedSecret = process.env.SETUP_SECRET;
 
   if (!expectedSecret) {
-    throw new Error("SETUP_SECRET is not configured.");
+    notFound();
   }
 
   const providedSecret = Array.isArray(searchParams.secret)
