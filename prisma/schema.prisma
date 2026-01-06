@@ -7,8 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
 model Workspace {
   id           String   @id @default(cuid())
   slug         String   @unique
@@ -16,4 +14,80 @@ model Workspace {
   passcodeHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  recipes Recipe[]
+  tags     Tag[]
+}
+
+model Recipe {
+  id          String   @id @default(cuid())
+  workspaceId String
+  title       String
+  sourceName  String?
+  sourceUrl   String?
+  description String? @db.Text
+  photoUrl    String?
+
+  prepTimeMinutes  Int?
+  cookTimeMinutes  Int?
+  totalTimeMinutes Int?
+
+  servings          Decimal?
+  yields            String?
+  rating            Int?
+  isPrivate         Boolean  @default(false)
+  directions        String?  @db.Text
+  directionsStepCount Int? // for future step-by-step UX
+
+  calories     Int?
+  proteinGrams Decimal?
+  costEstimate String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspace       Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  ingredientLines IngredientLine[]
+  recipeTags      RecipeTag[]
+
+  @@index([workspaceId])
+}
+
+model IngredientLine {
+  id         String  @id @default(cuid())
+  recipeId   String
+  position   Int
+  amount     String?
+  unit       String?
+  ingredient String
+  notes      String?
+  isHeading  Boolean @default(false)
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  recipeTags RecipeTag[]
+
+  @@unique([workspaceId, name])
+}
+
+model RecipeTag {
+  id       String @id @default(cuid())
+  recipeId String
+  tagId    String
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([recipeId, tagId])
+  @@index([recipeId])
+  @@index([tagId])
 }
