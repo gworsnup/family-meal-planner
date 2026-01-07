@@ -74,8 +74,8 @@ async function assertSafeUrl(url: string) {
   }
 }
 
-function getBaseUrl() {
-  const headersList = headers();
+async function getBaseUrl() {
+  const headersList = await headers();
   const host =
     headersList.get("x-forwarded-host") ?? headersList.get("host") ?? "localhost:3000";
   const protocol = headersList.get("x-forwarded-proto") ?? "http";
@@ -122,7 +122,7 @@ export async function startRecipeImport(slug: string, url: string) {
     select: { id: true },
   });
 
-  const origin = getBaseUrl();
+  const origin = await getBaseUrl();
   void fetch(`${origin}/api/import/run`, {
     method: "POST",
     headers: { "content-type": "application/json" },
