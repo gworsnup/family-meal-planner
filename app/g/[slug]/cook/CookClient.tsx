@@ -181,7 +181,9 @@ export default function CookClient({
     if (!importStatus || importStatus === "queued" || importStatus === "running") {
       const interval = setInterval(async () => {
         try {
-          const response = await fetch(`/api/import/status?importId=${importId}`);
+          const response = await fetch(`/api/import/status?importId=${importId}`, {
+            cache: "no-store",
+          });
           if (!response.ok) return;
           const data = (await response.json()) as {
             status: "queued" | "running" | "success" | "partial" | "failed";
