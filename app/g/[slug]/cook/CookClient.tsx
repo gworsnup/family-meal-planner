@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import type { FormEvent } from "react";
 import RatingStars from "./RatingStars";
 import RecipeOverlay from "./RecipeOverlay";
 import { setRecipeRating } from "./actions";
+import { startRecipeImport } from "./importActions";
 import type { RecipeDetail } from "./types";
 
 type RecipeItem = {
@@ -110,6 +112,7 @@ export default function CookClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const [isImportPending, startImportTransition] = useTransition();
 
   const currentParams = useMemo(
     () => new URLSearchParams(searchParams.toString()),
@@ -130,13 +133,24 @@ export default function CookClient({
   const currentPrivateOnly = currentParams.get("private")
     ? currentParams.get("private") === "1"
     : privateOnly;
-  const currentRecipeId = currentParams.get("recipeId") ?? selectedRecipe?.id ?? null;
+  const currentRecipeId =
+    currentParams.get("recipeId") ?? selectedRecipe?.id ?? null;
+  const showImportForm = currentParams.get("import") === "1";
 
   const [searchText, setSearchText] = useState(currentParams.get("q") ?? q);
+  const [importUrl, setImportUrl] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
 
   useEffect(() => {
     setSearchText(currentParams.get("q") ?? q);
   }, [currentParams, q]);
+
+  useEffect(() => {
+    if (!showImportForm) {
+      setImportUrl("");
+      setImportError(null);
+    }
+  }, [showImportForm]);
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -175,6 +189,31 @@ export default function CookClient({
 
   const openRecipe = (recipeId: string) => {
     updateParams({ recipeId });
+  };
+
+  const closeImport = () => {
+    updateParams({ import: null });
+  };
+
+  const handleImport = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!importUrl.trim()) {
+      setImportError("Please enter a URL.");
+      return;
+    }
+
+    setImportError(null);
+    startImportTransition(async () => {
+      try {
+        const result = await startRecipeImport(slug, importUrl.trim());
+        updateParams({ import: null, recipeId: result.recipeId });
+        router.refresh();
+      } catch (error) {
+        setImportError(
+          error instanceof Error ? error.message : "Failed to start import.",
+        );
+      }
+    });
   };
 
   const renderThumbnail = (recipe: RecipeItem) => {
@@ -239,7 +278,93 @@ export default function CookClient({
   };
 
   return (
-    <div>
+    <>
+      {showImportForm && (
+        <div
+          onClick={closeImport}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 40,
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              background: "white",
+              borderRadius: 10,
+              padding: 20,
+              width: "min(520px, 92vw)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+            }}
+          >
+            <h2 style={{ marginTop: 0 }}>Import from URL</h2>
+            <p style={{ marginTop: 4, color: "#555" }}>
+              Paste a recipe, TikTok, or Instagram URL to start importing.
+            </p>
+            <form onSubmit={handleImport}>
+              <input
+                type="url"
+                value={importUrl}
+                onChange={(event) => setImportUrl(event.target.value)}
+                placeholder="https://example.com/recipe"
+                required
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #ccc",
+                  marginTop: 8,
+                }}
+              />
+              {importError && (
+                <div style={{ color: "#b91c1c", marginTop: 8 }}>
+                  {importError}
+                </div>
+              )}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  justifyContent: "flex-end",
+                  marginTop: 16,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={closeImport}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: 6,
+                    border: "1px solid #ccc",
+                    background: "white",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isImportPending}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: 6,
+                    border: "1px solid #0f766e",
+                    background: "#0f766e",
+                    color: "white",
+                  }}
+                >
+                  {isImportPending ? "Starting…" : "Start import"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      <div>
       <div
         style={{
           display: "flex",
@@ -599,6 +724,7 @@ export default function CookClient({
           }}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }
