@@ -17,6 +17,15 @@ function parseOptionalString(value: FormDataEntryValue | null) {
   return trimmed ? trimmed : null;
 }
 
+function deriveSourceName(sourceUrl: string) {
+  try {
+    const url = new URL(sourceUrl);
+    return url.hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
 export default async function NewRecipePage({
   params,
 }: {
@@ -75,14 +84,28 @@ export default async function NewRecipePage({
 
     const prepTimeMinutes = parseOptionalInt(formData.get("prepTimeMinutes"));
     const cookTimeMinutes = parseOptionalInt(formData.get("cookTimeMinutes"));
-    const totalTimeMinutes = parseOptionalInt(formData.get("totalTimeMinutes"));
-    const rating = parseOptionalInt(formData.get("rating"));
+    const totalTimeMinutesInput = parseOptionalInt(formData.get("totalTimeMinutes"));
+    const ratingInput = parseOptionalInt(formData.get("rating"));
+    const rating =
+      ratingInput !== null && (ratingInput < 0 || ratingInput > 5)
+        ? null
+        : ratingInput;
+    const totalTimeMinutes =
+      totalTimeMinutesInput ??
+      (prepTimeMinutes !== null && cookTimeMinutes !== null
+        ? prepTimeMinutes + cookTimeMinutes
+        : null);
+    const sourceUrl = parseOptionalString(formData.get("sourceUrl"));
+    const sourceName =
+      parseOptionalString(formData.get("sourceName")) ??
+      (sourceUrl ? deriveSourceName(sourceUrl) : null);
 
     await prisma.recipe.create({
       data: {
         workspaceId: workspaceForAction.id,
         title,
-        sourceUrl: parseOptionalString(formData.get("sourceUrl")),
+        sourceName,
+        sourceUrl,
         photoUrl: parseOptionalString(formData.get("photoUrl")),
         prepTimeMinutes,
         cookTimeMinutes,
