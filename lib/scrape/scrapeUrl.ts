@@ -94,7 +94,7 @@ export async function safeFetchHtml(url: string): Promise<HtmlResult> {
     }
 
     if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
+      throw new Error(`HTTP ${response.status}`);
     }
 
     const html = await readResponseBody(response, MAX_RESPONSE_BYTES);

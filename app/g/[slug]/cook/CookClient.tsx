@@ -326,6 +326,26 @@ export default function CookClient({
                   {importError}
                 </div>
               )}
+              {isImportPending && (
+                <div
+                  style={{
+                    marginTop: 12,
+                    height: 6,
+                    borderRadius: 999,
+                    background: "#e2e8f0",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "100%",
+                      width: "50%",
+                      background: "#0f766e",
+                      animation: "import-progress 1.2s ease-in-out infinite",
+                    }}
+                  />
+                </div>
+              )}
               <div
                 style={{
                   display: "flex",
@@ -724,6 +744,19 @@ export default function CookClient({
           }}
         />
       )}
+      <style jsx>{`
+        @keyframes import-progress {
+          0% {
+            transform: translateX(-60%);
+          }
+          50% {
+            transform: translateX(60%);
+          }
+          100% {
+            transform: translateX(-60%);
+          }
+        }
+      `}</style>
       </div>
     </>
   );

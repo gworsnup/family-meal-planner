@@ -100,6 +100,16 @@ export default function RecipeOverlay({
   }, [initialForm]);
 
   useEffect(() => {
+    if (
+      recipe.importStatus &&
+      recipe.importStatus !== "queued" &&
+      recipe.importStatus !== "running"
+    ) {
+      setIsEditing(true);
+    }
+  }, [recipe.importStatus]);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();

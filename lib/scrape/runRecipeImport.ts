@@ -77,8 +77,13 @@ export async function runRecipeImport(importId: string) {
       });
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Import failed unexpectedly";
+    const rawMessage = error instanceof Error ? error.message : "";
+    const statusMatch = rawMessage.match(/HTTP\s(\d{3})/i);
+    const message = statusMatch
+      ? `I was not able to import this URL (HTTP status ${statusMatch[1]}). Please try another URL.`
+      : error instanceof Error
+        ? error.message
+        : "Import failed unexpectedly";
     await prisma.recipeImport.update({
       where: { id: importId },
       data: {
