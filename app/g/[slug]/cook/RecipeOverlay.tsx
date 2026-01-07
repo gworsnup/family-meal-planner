@@ -61,14 +61,10 @@ export default function RecipeOverlay({
         return "Importing…";
       case "partial":
         return "Imported partially — please review.";
-      case "failed":
-        return recipe.importError
-          ? `Import failed: ${recipe.importError}`
-          : "Import failed — please review.";
       default:
         return null;
     }
-  }, [recipe.importError, recipe.importStatus]);
+  }, [recipe.importStatus]);
 
   const initialForm = useMemo<UpdateRecipeInput>(
     () => ({

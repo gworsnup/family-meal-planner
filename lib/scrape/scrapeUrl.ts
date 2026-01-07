@@ -160,6 +160,23 @@ function isRecipeType(value: any) {
   return String(value).toLowerCase() === "recipe";
 }
 
+function normalizeImageUrl(image: any): string | undefined {
+  if (!image) return undefined;
+  if (typeof image === "string") return image;
+  if (Array.isArray(image)) {
+    for (const entry of image) {
+      const normalized = normalizeImageUrl(entry);
+      if (normalized) return normalized;
+    }
+    return undefined;
+  }
+  if (typeof image === "object") {
+    if (typeof image.url === "string") return image.url;
+    if (typeof image["@id"] === "string") return image["@id"];
+  }
+  return undefined;
+}
+
 function parseDurationToMinutes(value?: string | null) {
   if (!value) return null;
   const match = value.match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
@@ -342,9 +359,7 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
       title: recipeNode.name,
       sourceUrl: resolvedUrl,
       sourceName: meta.ogSiteName ?? hostname,
-      photoUrl: Array.isArray(recipeNode.image)
-        ? recipeNode.image[0]
-        : recipeNode.image,
+      photoUrl: normalizeImageUrl(recipeNode.image),
       description: recipeNode.description ?? meta.ogDescription,
       prepTimeMinutes: parseDurationToMinutes(recipeNode.prepTime),
       cookTimeMinutes: parseDurationToMinutes(recipeNode.cookTime),

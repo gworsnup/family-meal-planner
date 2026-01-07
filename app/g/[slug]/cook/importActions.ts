@@ -129,5 +129,5 @@ export async function startRecipeImport(slug: string, url: string) {
     body: JSON.stringify({ importId: recipeImport.id }),
   }).catch(() => null);
 
-  return { recipeId: recipe.id };
+  return { recipeId: recipe.id, importId: recipeImport.id };
 }

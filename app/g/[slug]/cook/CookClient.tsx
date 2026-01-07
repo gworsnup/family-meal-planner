@@ -140,6 +140,10 @@ export default function CookClient({
   const [searchText, setSearchText] = useState(currentParams.get("q") ?? q);
   const [importUrl, setImportUrl] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
+  const [importStatus, setImportStatus] = useState<
+    "queued" | "running" | "success" | "partial" | "failed" | null
+  >(null);
+  const [importId, setImportId] = useState<string | null>(null);
 
   useEffect(() => {
     setSearchText(currentParams.get("q") ?? q);
@@ -149,6 +153,8 @@ export default function CookClient({
     if (!showImportForm) {
       setImportUrl("");
       setImportError(null);
+      setImportStatus(null);
+      setImportId(null);
     }
   }, [showImportForm]);
 
@@ -169,6 +175,35 @@ export default function CookClient({
     },
     [router, searchParams],
   );
+
+  useEffect(() => {
+    if (!importId) return;
+    if (!importStatus || importStatus === "queued" || importStatus === "running") {
+      const interval = setInterval(async () => {
+        try {
+          const response = await fetch(`/api/import/status?importId=${importId}`);
+          if (!response.ok) return;
+          const data = (await response.json()) as {
+            status: "queued" | "running" | "success" | "partial" | "failed";
+            error: string | null;
+            recipeId: string;
+          };
+          setImportStatus(data.status);
+          if (data.status === "failed") {
+            setImportError(data.error ?? "Import failed. Please try another URL.");
+          }
+          if (data.status === "success" || data.status === "partial") {
+            updateParams({ import: null, recipeId: data.recipeId });
+            router.refresh();
+          }
+        } catch {
+          // Ignore polling errors.
+        }
+      }, 1500);
+      return () => clearInterval(interval);
+    }
+    return undefined;
+  }, [importId, importStatus, router, updateParams]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -203,11 +238,13 @@ export default function CookClient({
     }
 
     setImportError(null);
+    setImportStatus(null);
+    setImportId(null);
     startImportTransition(async () => {
       try {
         const result = await startRecipeImport(slug, importUrl.trim());
-        updateParams({ import: null, recipeId: result.recipeId });
-        router.refresh();
+        setImportId(result.importId);
+        setImportStatus("queued");
       } catch (error) {
         setImportError(
           error instanceof Error ? error.message : "Failed to start import.",
@@ -313,6 +350,7 @@ export default function CookClient({
                 onChange={(event) => setImportUrl(event.target.value)}
                 placeholder="https://example.com/recipe"
                 required
+                disabled={Boolean(importStatus && importStatus !== "failed")}
                 style={{
                   width: "100%",
                   padding: "10px 12px",
@@ -326,7 +364,7 @@ export default function CookClient({
                   {importError}
                 </div>
               )}
-              {isImportPending && (
+              {importStatus && importStatus !== "failed" && (
                 <div
                   style={{
                     marginTop: 12,
@@ -344,6 +382,17 @@ export default function CookClient({
                       animation: "import-progress 1.2s ease-in-out infinite",
                     }}
                   />
+                </div>
+              )}
+              {importStatus && (
+                <div style={{ marginTop: 8, color: "#555", fontSize: 13 }}>
+                  {importStatus === "queued" || importStatus === "running"
+                    ? "Scraping in progress…"
+                    : importStatus === "partial"
+                      ? "Import complete — opening recipe…"
+                      : importStatus === "success"
+                        ? "Import complete — opening recipe…"
+                        : null}
                 </div>
               )}
               <div
@@ -368,7 +417,10 @@ export default function CookClient({
                 </button>
                 <button
                   type="submit"
-                  disabled={isImportPending}
+                  disabled={
+                    isImportPending ||
+                    (importStatus !== null && importStatus !== "failed")
+                  }
                   style={{
                     padding: "8px 12px",
                     borderRadius: 6,
@@ -377,7 +429,11 @@ export default function CookClient({
                     color: "white",
                   }}
                 >
-                  {isImportPending ? "Starting…" : "Start import"}
+                  {isImportPending
+                    ? "Starting…"
+                    : importStatus
+                      ? "Restart import"
+                      : "Start import"}
                 </button>
               </div>
             </form>
