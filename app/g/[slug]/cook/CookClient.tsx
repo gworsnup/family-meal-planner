@@ -166,7 +166,7 @@ export default function CookClient({
           const response = await fetch(`/api/import/status?importId=${importId}`);
           if (!response.ok) return;
           const data = (await response.json()) as {
-            status: string;
+            status: "queued" | "running" | "success" | "partial" | "failed";
             error: string | null;
             recipeId: string;
           };
