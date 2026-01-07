@@ -105,7 +105,9 @@ export async function updateRecipe(
     throw new Error("Invalid rating");
   }
 
-  const numericFields: Array<keyof UpdateRecipeInput> = [
+  const numericFields: Array<
+    keyof Pick<UpdateRecipeInput, "prepTimeMinutes" | "cookTimeMinutes" | "totalTimeMinutes">
+  > = [
     "prepTimeMinutes",
     "cookTimeMinutes",
     "totalTimeMinutes",
