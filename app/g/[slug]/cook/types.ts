@@ -22,6 +22,9 @@ export type RecipeDetail = {
   sourceName: string | null;
   sourceUrl: string | null;
   photoUrl: string | null;
+  isDraft: boolean;
+  importStatus: string | null;
+  importError: string | null;
   prepTimeMinutes: number | null;
   cookTimeMinutes: number | null;
   totalTimeMinutes: number | null;
