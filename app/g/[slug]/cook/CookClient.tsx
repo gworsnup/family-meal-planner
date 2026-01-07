@@ -158,6 +158,24 @@ export default function CookClient({
     }
   }, [showImportForm]);
 
+  const updateParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "") {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
+      const next = params.toString();
+      const current = searchParams.toString();
+      if (next === current) return;
+      router.push(next ? `?${next}` : "?");
+    },
+    [router, searchParams],
+  );
+
   useEffect(() => {
     if (!importId) return;
     if (!importStatus || importStatus === "queued" || importStatus === "running") {
@@ -186,24 +204,6 @@ export default function CookClient({
     }
     return undefined;
   }, [importId, importStatus, router, updateParams]);
-
-  const updateParams = useCallback(
-    (updates: Record<string, string | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value === null || value === "") {
-          params.delete(key);
-        } else {
-          params.set(key, value);
-        }
-      });
-      const next = params.toString();
-      const current = searchParams.toString();
-      if (next === current) return;
-      router.push(next ? `?${next}` : "?");
-    },
-    [router, searchParams],
-  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
