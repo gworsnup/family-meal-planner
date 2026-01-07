@@ -114,9 +114,10 @@ export async function updateRecipe(
   numericFields.forEach((field) => {
     const value = data[field];
     if (value === null || value === undefined) return;
-    if (!Number.isInteger(value) || value < 0) {
-      throw new Error("Invalid time value");
-    }
+    if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+  throw new Error("Invalid time value");
+}
+
   });
 
   const ingredientLines = data.ingredientsText
