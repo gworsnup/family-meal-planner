@@ -143,6 +143,7 @@ export async function updateRecipe(
         yields: data.yields?.trim() || null,
         rating: data.rating,
         isPrivate: data.isPrivate,
+        isDraft: false,
       },
     });
 
