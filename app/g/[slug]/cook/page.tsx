@@ -146,6 +146,11 @@ export default async function CookPage({
     },
   });
 
+  const listRecipes = recipes.map((recipe) => ({
+    ...recipe,
+    updatedAt: recipe.updatedAt.toISOString(),
+  }));
+
   let selectedRecipe: RecipeDetail | null = null;
   if (recipeId) {
     const recipe = await prisma.recipe.findFirst({
@@ -219,7 +224,7 @@ export default async function CookPage({
 
       <CookClient
         slug={slug}
-        recipes={recipes}
+        recipes={listRecipes}
         view={view}
         q={q}
         minRating={minRating}

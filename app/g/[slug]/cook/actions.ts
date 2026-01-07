@@ -105,7 +105,9 @@ export async function updateRecipe(
     throw new Error("Invalid rating");
   }
 
-  const numericFields: Array<keyof UpdateRecipeInput> = [
+  const numericFields: Array<
+    keyof Pick<UpdateRecipeInput, "prepTimeMinutes" | "cookTimeMinutes" | "totalTimeMinutes">
+  > = [
     "prepTimeMinutes",
     "cookTimeMinutes",
     "totalTimeMinutes",
@@ -114,10 +116,9 @@ export async function updateRecipe(
   numericFields.forEach((field) => {
     const value = data[field];
     if (value === null || value === undefined) return;
-    if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
-  throw new Error("Invalid time value");
-}
-
+    if (!Number.isInteger(value) || value < 0) {
+      throw new Error("Invalid time value");
+    }
   });
 
   const ingredientLines = data.ingredientsText
