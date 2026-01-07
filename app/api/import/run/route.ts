@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runRecipeImport } from "@/lib/scrape/runRecipeImport";
+import { prisma } from "@/lib/db";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -7,6 +8,19 @@ export async function POST(request: Request) {
 
   if (!importId) {
     return NextResponse.json({ error: "Missing importId" }, { status: 400 });
+  }
+
+  const record = await prisma.recipeImport.findUnique({
+    where: { id: importId },
+    select: { status: true },
+  });
+
+  if (!record) {
+    return NextResponse.json({ error: "Import not found" }, { status: 404 });
+  }
+
+  if (record.status !== "queued") {
+    return NextResponse.json({ ok: true });
   }
 
   try {

@@ -247,6 +247,13 @@ export default function CookClient({
         const result = await startRecipeImport(slug, importUrl.trim());
         setImportId(result.importId);
         setImportStatus("queued");
+        void fetch("/api/import/run", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ importId: result.importId }),
+        })
+          .then(() => setImportStatus("running"))
+          .catch(() => null);
       } catch (error) {
         setImportError(
           error instanceof Error ? error.message : "Failed to start import.",
