@@ -32,7 +32,7 @@ model Recipe {
   cookTimeMinutes  Int?
   totalTimeMinutes Int?
 
-  servings          Decimal?
+  servings          String?
   yields            String?
   rating            Int?
   isPrivate         Boolean  @default(false)
