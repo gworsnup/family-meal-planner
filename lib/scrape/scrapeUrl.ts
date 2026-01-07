@@ -104,6 +104,16 @@ export async function safeFetchHtml(url: string): Promise<HtmlResult> {
   throw new Error("Too many redirects");
 }
 
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ");
+}
+
 function getMetaContent(html: string, key: string) {
   const regex = new RegExp(
     `<meta[^>]+(?:property|name)=["']${key}["'][^>]*>`,
@@ -113,7 +123,7 @@ function getMetaContent(html: string, key: string) {
   for (const match of matches) {
     const contentMatch = match.match(/content=["']([^"']*)["']/i);
     if (contentMatch?.[1]) {
-      return contentMatch[1].trim();
+      return decodeHtmlEntities(contentMatch[1].trim());
     }
   }
   return undefined;
@@ -295,6 +305,37 @@ function findCaptionInObject(obj: any): string | null {
   return best;
 }
 
+function findImageInObject(obj: any): string | null {
+  let result: string | null = null;
+  const visit = (value: any) => {
+    if (!value || result) return;
+    if (typeof value === "string") return;
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    if (typeof value === "object") {
+      Object.entries(value).forEach(([key, val]) => {
+        const lowered = key.toLowerCase();
+        if (
+          lowered.includes("display_url") ||
+          lowered.includes("thumbnail_url") ||
+          lowered.includes("image_url")
+        ) {
+          if (typeof val === "string") {
+            result = val;
+            return;
+          }
+        }
+        visit(val);
+      });
+    }
+  };
+
+  visit(obj);
+  return result;
+}
+
 function extractCaptionFromHtml(html: string, hostname: string) {
   const ogDescription = getMetaContent(html, "og:description");
   const metaDescription = getMetaContent(html, "description");
@@ -311,7 +352,7 @@ function extractCaptionFromHtml(html: string, hostname: string) {
       try {
         const parsed = JSON.parse(sigiState);
         const caption = findCaptionInObject(parsed);
-        if (caption) return caption;
+        if (caption) return decodeHtmlEntities(caption);
       } catch {
         return null;
       }
@@ -322,11 +363,18 @@ function extractCaptionFromHtml(html: string, hostname: string) {
     const sharedData = extractInlineScriptObject(html, "window\\._sharedData");
     if (sharedData) {
       const caption = findCaptionInObject(sharedData);
-      if (caption) return caption;
+      if (caption) return decodeHtmlEntities(caption);
     }
   }
 
   return null;
+}
+
+function extractInstagramImage(html: string) {
+  const sharedData = extractInlineScriptObject(html, "window\\._sharedData");
+  if (!sharedData) return null;
+  const image = findImageInObject(sharedData);
+  return image ? decodeHtmlEntities(image) : null;
 }
 
 export async function scrapeUrl(url: string): Promise<ScrapeResult> {
@@ -390,6 +438,8 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
 
   if (hostname && (hostname.includes("tiktok.com") || hostname.includes("instagram.com"))) {
     const caption = extractCaptionFromHtml(html, hostname);
+    const instagramImage =
+      hostname.includes("instagram.com") ? extractInstagramImage(html) : null;
     if (caption) {
       const parsed = parseRecipeFromCaption(caption);
       return {
@@ -397,11 +447,23 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
         description: caption,
         ingredients: parsed.ingredients.length > 0 ? parsed.ingredients : undefined,
         directions: parsed.directions ?? undefined,
+        photoUrl: baseResult.photoUrl ?? instagramImage ?? undefined,
         confidence: parsed.confidence === "low" ? "low" : "medium",
         raw: {
           ...baseResult.raw,
           caption,
           parsed,
+        },
+      };
+    }
+    if (instagramImage && !baseResult.photoUrl) {
+      return {
+        ...baseResult,
+        photoUrl: instagramImage,
+        confidence: "medium",
+        raw: {
+          ...baseResult.raw,
+          instagramImage,
         },
       };
     }

@@ -28,6 +28,8 @@ function normalizeCaption(caption: string) {
   return caption
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
+    .replace(/-\s*(?=\d|½|¼|¾|⅓|⅔|⅛|⅜|⅝|⅞)/g, "\n- ")
+    .replace(/(\s)(\d+\.)\s+/g, "\n$2 ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
