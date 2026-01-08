@@ -433,11 +433,22 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
     const instagramImage =
       hostname.includes("instagram.com") ? extractInstagramImage(html) : null;
     if (caption && hostname.includes("instagram.com")) {
-      const parsed = parseInstagramCaptionToRecipe(caption);
+      const parsed = parseInstagramCaptionToRecipe(caption, baseResult.title);
+      const shouldLogParser =
+        process.env.SCRAPER_DEBUG === "1" || process.env.NODE_ENV !== "production";
+      if (shouldLogParser) {
+        console.log("Instagram caption parse", {
+          extractedTitle: parsed.title,
+          descriptionLength: parsed.description?.length ?? 0,
+          ingredientCount: parsed.ingredientLines?.length ?? 0,
+          directionsLength: parsed.directionsText?.length ?? 0,
+          titleHeuristic: parsed.titleHeuristic,
+        });
+      }
       return {
         ...baseResult,
         title: parsed.title ?? baseResult.title,
-        description: parsed.description ?? baseResult.description ?? caption,
+        description: parsed.description ?? baseResult.description,
         ingredients:
           parsed.ingredientLines && parsed.ingredientLines.length > 0
             ? parsed.ingredientLines.map((line) => line.ingredient)
