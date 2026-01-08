@@ -554,7 +554,8 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
     if (caption) {
       const parsed = parseTikTokCaptionToRecipe(caption);
       const fallbackDescription =
-        parsed.description ?? caption.slice(0, 240).trim() || baseResult.description;
+        parsed.description ??
+        (caption.slice(0, 240).trim() || baseResult.description);
       const title =
         parsed.title ??
         baseResult.title ??
