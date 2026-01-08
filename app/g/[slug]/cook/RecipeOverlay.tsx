@@ -54,18 +54,6 @@ export default function RecipeOverlay({
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const importMessage = useMemo(() => {
-    switch (recipe.importStatus) {
-      case "queued":
-      case "running":
-        return "Importing…";
-      case "partial":
-        return "Imported partially — please review.";
-      default:
-        return null;
-    }
-  }, [recipe.importStatus]);
-
   const initialForm = useMemo<UpdateRecipeInput>(
     () => ({
       title: recipe.title,
@@ -94,16 +82,6 @@ export default function RecipeOverlay({
     setIsEditing(false);
     setShowPhotoInput(false);
   }, [initialForm]);
-
-  useEffect(() => {
-    if (
-      recipe.importStatus &&
-      recipe.importStatus !== "queued" &&
-      recipe.importStatus !== "running"
-    ) {
-      setIsEditing(true);
-    }
-  }, [recipe.importStatus]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -240,20 +218,6 @@ export default function RecipeOverlay({
             </button>
           </div>
         </div>
-
-        {importMessage && (
-          <div
-            style={{
-              padding: "10px 20px",
-              background: recipe.importStatus === "failed" ? "#fef2f2" : "#f0fdfa",
-              color: recipe.importStatus === "failed" ? "#b91c1c" : "#0f766e",
-              borderBottom: "1px solid #eee",
-              fontSize: 14,
-            }}
-          >
-            {importMessage}
-          </div>
-        )}
 
         <div
           style={{
