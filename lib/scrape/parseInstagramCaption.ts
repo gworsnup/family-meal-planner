@@ -34,7 +34,7 @@ function splitIngredientLines(text: string | null) {
   if (!text) return [];
   const hyphenCount = (text.match(/\s-\s/g) ?? []).length;
   const normalized =
-    hyphenCount >= 2 ? text.replace(/\s*-\s+/g, "\n") : text;
+    hyphenCount >= 5 ? text.replace(/\s*-\s+/g, "\n") : text;
   return normalized
     .split("\n")
     .map((line) => line.trim())
@@ -73,20 +73,37 @@ export function parseInstagramCaptionToRecipe(
 
   const ingredientIndex = lines.findIndex((line) => INGREDIENT_MARKER.test(line));
   const directionIndex = lines.findIndex((line) => DIRECTION_MARKER.test(line));
+  const stepLineIndex = lines.findIndex((line) => STEP_MARKER.test(line));
+  const ingredientLineRemainder =
+    ingredientIndex !== -1
+      ? lines[ingredientIndex].replace(INGREDIENT_MARKER, "").trim()
+      : "";
+  const directionLineRemainder =
+    directionIndex !== -1
+      ? lines[directionIndex].replace(DIRECTION_MARKER, "").trim()
+      : "";
 
   let ingredientsText: string | null = null;
   let directionsText: string | null = null;
   let description: string | null = null;
 
   if (ingredientIndex !== -1 && directionIndex !== -1 && ingredientIndex < directionIndex) {
-    ingredientsText = lines
-      .slice(ingredientIndex + 1, directionIndex)
-      .join("\n")
-      .trim() || null;
-    directionsText = lines.slice(directionIndex + 1).join("\n").trim() || null;
+    const ingredientLines = [
+      ingredientLineRemainder,
+      ...lines.slice(ingredientIndex + 1, directionIndex),
+    ].filter(Boolean);
+    ingredientsText = ingredientLines.join("\n").trim() || null;
+    const directionLines = [
+      directionLineRemainder,
+      ...lines.slice(directionIndex + 1),
+    ].filter(Boolean);
+    directionsText = directionLines.join("\n").trim() || null;
     description = normalized.split(lines[ingredientIndex])[0]?.trim() || null;
   } else if (ingredientIndex !== -1) {
-    const afterIngredients = lines.slice(ingredientIndex + 1);
+    const afterIngredients = [
+      ingredientLineRemainder,
+      ...lines.slice(ingredientIndex + 1),
+    ].filter(Boolean);
     const stepIndex = afterIngredients.findIndex((line) => STEP_MARKER.test(line));
     if (stepIndex !== -1) {
       ingredientsText = afterIngredients.slice(0, stepIndex).join("\n").trim() || null;
@@ -96,7 +113,6 @@ export function parseInstagramCaptionToRecipe(
     }
     description = normalized.split(lines[ingredientIndex])[0]?.trim() || null;
   } else {
-    const stepLineIndex = lines.findIndex((line) => STEP_MARKER.test(line));
     if (stepLineIndex !== -1) {
       const beforeSteps = lines.slice(0, stepLineIndex).join("\n").trim();
       description = beforeSteps || null;

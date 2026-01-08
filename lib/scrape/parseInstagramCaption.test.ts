@@ -31,6 +31,21 @@ function runTests() {
     (parsedHyphen.ingredientLines?.length ?? 0) >= 3,
     "Expected hyphen-separated ingredients to split into lines.",
   );
+
+  const captionFixture = `The #1 Recipe of 2025: Caramelized Onion and Garlic Spaghetti\nFor all of you asking - the full recipe is here!\nIngredients: -1 large onion, thinly sliced -4 garlic cloves, minced -2 tbsp chili crisp -1 cup cream -1 tbsp soy sauce -8 oz pasta -Seasonings (1 tsp each): paprika, garlic powder, salt, pepper\n1. Slice your onion thinly.\n2. Heat butter and olive oil in a skillet.\n3. Add onions and cook until golden.\n4. Add garlic, seasonings, and chili crisp.\n5. Toss pasta with sauce and serve.`;
+  const parsedFixture = parseInstagramCaptionToRecipe(captionFixture);
+  assert(
+    (parsedFixture.title?.length ?? 0) <= 80 || parsedFixture.title === null,
+    "Expected short title or null.",
+  );
+  assert(
+    (parsedFixture.ingredientLines?.length ?? 0) > 5,
+    "Expected ingredient lines to parse from fixture.",
+  );
+  assert(
+    parsedFixture.directionsText?.startsWith("1.") ?? false,
+    "Expected directions to start with numbered steps.",
+  );
 }
 
 if (process.env.RUN_INSTAGRAM_PARSER_TESTS) {

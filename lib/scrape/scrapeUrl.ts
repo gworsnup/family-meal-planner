@@ -179,6 +179,16 @@ function normalizeImageUrl(image: any): string | undefined {
   return undefined;
 }
 
+function sanitizeTitle(value?: string | null) {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > 120) return null;
+  if (trimmed.includes("\n")) return null;
+  if (/ingredients|instructions|directions/i.test(trimmed)) return null;
+  return trimmed;
+}
+
 function parseDurationToMinutes(value?: string | null) {
   if (!value) return null;
   const match = value.match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
@@ -434,10 +444,20 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
       hostname.includes("instagram.com") ? extractInstagramImage(html) : null;
     if (caption && hostname.includes("instagram.com")) {
       const parsed = parseInstagramCaptionToRecipe(caption);
+      const parsedTitle = sanitizeTitle(parsed.title ?? null);
+      const metaTitle = sanitizeTitle(baseResult.title ?? null);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[instagram-import]", {
+          title: parsedTitle ?? metaTitle ?? null,
+          description: parsed.description ?? null,
+          directions: parsed.directionsText ?? null,
+          ingredientsCount: parsed.ingredientLines?.length ?? 0,
+        });
+      }
       return {
         ...baseResult,
-        title: parsed.title ?? baseResult.title,
-        description: parsed.description ?? baseResult.description ?? caption,
+        title: parsedTitle ?? metaTitle ?? undefined,
+        description: parsed.description ?? null,
         ingredients:
           parsed.ingredientLines && parsed.ingredientLines.length > 0
             ? parsed.ingredientLines.map((line) => line.ingredient)
