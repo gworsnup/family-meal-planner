@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import RatingStars from "./RatingStars";
 import RecipeOverlay from "./RecipeOverlay";
 import { setRecipeRating } from "./actions";
+import { startRecipeImport } from "./importActions";
 import type { RecipeDetail } from "./types";
 
 type RecipeItem = {
@@ -109,7 +110,15 @@ export default function CookClient({
 }: CookClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const [isRatingPending, startRatingTransition] = useTransition();
+  const [isImportPending, startImportTransition] = useTransition();
+  const [importUrl, setImportUrl] = useState("");
+  const [importStatus, setImportStatus] = useState<
+    "idle" | "queued" | "running" | "success" | "partial" | "failed"
+  >("idle");
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [importId, setImportId] = useState<string | null>(null);
+  const [importRecipeId, setImportRecipeId] = useState<string | null>(null);
 
   const currentParams = useMemo(
     () => new URLSearchParams(searchParams.toString()),
@@ -165,12 +174,12 @@ export default function CookClient({
 
   const handleRating = useCallback(
     (recipeId: string, ratingValue: number) => {
-      startTransition(async () => {
+      startRatingTransition(async () => {
         await setRecipeRating(slug, recipeId, ratingValue);
         router.refresh();
       });
     },
-    [router, slug, startTransition],
+    [router, slug, startRatingTransition],
   );
 
   const openRecipe = (recipeId: string) => {
@@ -238,8 +247,150 @@ export default function CookClient({
     updateParams({ sort: nextSort, dir: nextDir });
   };
 
+  const handleImport = () => {
+    const trimmed = importUrl.trim();
+    if (!trimmed) {
+      setImportMessage("Enter a recipe URL to import.");
+      setImportStatus("failed");
+      return;
+    }
+
+    setImportMessage(null);
+    startImportTransition(async () => {
+      try {
+        const { importId: nextImportId, recipeId } = await startRecipeImport(
+          slug,
+          trimmed,
+        );
+        setImportId(nextImportId);
+        setImportRecipeId(recipeId);
+        setImportStatus("queued");
+        updateParams({ recipeId });
+        router.refresh();
+      } catch (error) {
+        setImportStatus("failed");
+        setImportMessage(
+          error instanceof Error ? error.message : "Unable to import URL.",
+        );
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (!importId) return;
+    let isActive = true;
+
+    const pollStatus = async () => {
+      try {
+        const response = await fetch(`/api/import/status?importId=${importId}`, {
+          cache: "no-store",
+        });
+        if (!response.ok) return;
+        const data = (await response.json()) as {
+          status?: "queued" | "running" | "success" | "partial" | "failed";
+          error?: string | null;
+        };
+        if (!isActive || !data.status) return;
+        setImportStatus(data.status);
+        setImportMessage(data.error ?? null);
+        if (data.status === "success" || data.status === "partial") {
+          if (importRecipeId) {
+            updateParams({ recipeId: importRecipeId });
+          }
+          router.refresh();
+        }
+        if (data.status === "failed" || data.status === "success" || data.status === "partial") {
+          setImportId(null);
+        }
+      } catch {
+        // ignore polling errors
+      }
+    };
+
+    void pollStatus();
+    const interval = setInterval(pollStatus, 2000);
+    return () => {
+      isActive = false;
+      clearInterval(interval);
+    };
+  }, [importId, importRecipeId, router, updateParams]);
+
+  const importStatusLabel = (() => {
+    switch (importStatus) {
+      case "queued":
+        return "Queued for import…";
+      case "running":
+        return "Importing…";
+      case "success":
+        return "Import complete.";
+      case "partial":
+        return "Imported with partial data.";
+      case "failed":
+        return importMessage ?? "Import failed.";
+      default:
+        return importMessage;
+    }
+  })();
+
   return (
     <div>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 12,
+          alignItems: "flex-end",
+          marginBottom: 16,
+          background: "#fff",
+          border: "1px solid #eee",
+          borderRadius: 8,
+          padding: 12,
+        }}
+      >
+        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 12, color: "#555" }}>Recipe URL</span>
+          <input
+            type="url"
+            value={importUrl}
+            onChange={(event) => {
+              setImportUrl(event.target.value);
+              if (importStatus === "failed") {
+                setImportStatus("idle");
+                setImportMessage(null);
+              }
+            }}
+            placeholder="https://example.com/recipe"
+            style={{
+              padding: "8px 10px",
+              borderRadius: 6,
+              border: "1px solid #ccc",
+              minWidth: 260,
+            }}
+          />
+        </label>
+        <button
+          type="button"
+          onClick={handleImport}
+          disabled={isImportPending || importStatus === "queued" || importStatus === "running"}
+          style={{
+            padding: "9px 14px",
+            borderRadius: 6,
+            border: "1px solid #0f766e",
+            background: "#0f766e",
+            color: "white",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          {isImportPending ? "Starting…" : "Add from URL"}
+        </button>
+        {importStatusLabel && (
+          <span style={{ fontSize: 13, color: importStatus === "failed" ? "#b91c1c" : "#555" }}>
+            {importStatusLabel}
+          </span>
+        )}
+      </div>
+
       <div
         style={{
           display: "flex",
@@ -512,7 +663,7 @@ export default function CookClient({
                     <RatingStars
                       value={recipe.rating ?? 0}
                       onSet={(value) => handleRating(recipe.id, value)}
-                      disabled={isPending}
+                      disabled={isRatingPending}
                       stopPropagation
                     />
                   </td>
@@ -579,7 +730,7 @@ export default function CookClient({
               <RatingStars
                 value={recipe.rating ?? 0}
                 onSet={(value) => handleRating(recipe.id, value)}
-                disabled={isPending}
+                disabled={isRatingPending}
                 stopPropagation
               />
             </div>
