@@ -15,8 +15,9 @@ model Workspace {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  recipes Recipe[]
-  tags     Tag[]
+  recipes       Recipe[]
+  recipeImports RecipeImport[]
+  tags          Tag[]
 }
 
 model Recipe {
@@ -36,6 +37,7 @@ model Recipe {
   yields            String?
   rating            Int?
   isPrivate         Boolean  @default(false)
+  isDraft           Boolean  @default(true)
   directions        String?  @db.Text
   directionsStepCount Int? // for future step-by-step UX
 
@@ -49,8 +51,27 @@ model Recipe {
   workspace       Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   ingredientLines IngredientLine[]
   recipeTags      RecipeTag[]
+  import          RecipeImport?
 
   @@index([workspaceId])
+}
+
+model RecipeImport {
+  id          String   @id @default(cuid())
+  workspaceId String
+  recipeId    String   @unique
+  sourceUrl   String
+  status      String
+  error       String?  @db.Text
+  raw         Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  recipe    Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([status])
 }
 
 model IngredientLine {

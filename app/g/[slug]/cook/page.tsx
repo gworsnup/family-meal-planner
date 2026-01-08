@@ -162,6 +162,7 @@ export default async function CookPage({
         sourceName: true,
         sourceUrl: true,
         photoUrl: true,
+        isDraft: true,
         prepTimeMinutes: true,
         cookTimeMinutes: true,
         totalTimeMinutes: true,
@@ -170,6 +171,12 @@ export default async function CookPage({
         rating: true,
         directions: true,
         isPrivate: true,
+        import: {
+          select: {
+            status: true,
+            error: true,
+          },
+        },
         createdAt: true,
         updatedAt: true,
         ingredientLines: {
@@ -184,8 +191,11 @@ export default async function CookPage({
     });
 
     if (recipe) {
+      const { import: recipeImport, ...rest } = recipe;
       selectedRecipe = {
-        ...recipe,
+        ...rest,
+        importStatus: recipeImport?.status ?? null,
+        importError: recipeImport?.error ?? null,
         createdAt: recipe.createdAt.toISOString(),
         updatedAt: recipe.updatedAt.toISOString(),
       };
@@ -208,18 +218,33 @@ export default async function CookPage({
             Recipes in this workspace.
           </p>
         </div>
-        <Link
-          href={`/g/${slug}/cook/new`}
-          style={{
-            padding: "10px 14px",
-            background: "#0f766e",
-            color: "white",
-            borderRadius: 6,
-            textDecoration: "none",
-          }}
-        >
-          Add recipe
-        </Link>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <Link
+            href={`/g/${slug}/cook?import=1`}
+            style={{
+              padding: "10px 14px",
+              background: "white",
+              color: "#0f766e",
+              borderRadius: 6,
+              border: "1px solid #0f766e",
+              textDecoration: "none",
+            }}
+          >
+            Import from URL
+          </Link>
+          <Link
+            href={`/g/${slug}/cook/new`}
+            style={{
+              padding: "10px 14px",
+              background: "#0f766e",
+              color: "white",
+              borderRadius: 6,
+              textDecoration: "none",
+            }}
+          >
+            Add recipe
+          </Link>
+        </div>
       </div>
 
       <CookClient
