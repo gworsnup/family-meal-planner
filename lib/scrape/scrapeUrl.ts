@@ -1,6 +1,8 @@
 import "server-only";
 
 import { parseRecipeFromCaption } from "./parseCaption";
+import { parseInstagramCaptionToRecipe } from "./parseInstagramCaption";
+import { decodeHtmlEntities } from "./html";
 
 export type ScrapeResult = {
   title?: string;
@@ -102,16 +104,6 @@ export async function safeFetchHtml(url: string): Promise<HtmlResult> {
   }
 
   throw new Error("Too many redirects");
-}
-
-function decodeHtmlEntities(value: string) {
-  return value
-    .replace(/&quot;/g, "\"")
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&nbsp;/g, " ");
 }
 
 function getMetaContent(html: string, key: string) {
@@ -440,6 +432,28 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
     const caption = extractCaptionFromHtml(html, hostname);
     const instagramImage =
       hostname.includes("instagram.com") ? extractInstagramImage(html) : null;
+    if (caption && hostname.includes("instagram.com")) {
+      const parsed = parseInstagramCaptionToRecipe(caption);
+      return {
+        ...baseResult,
+        title: parsed.title ?? baseResult.title,
+        description: parsed.description ?? baseResult.description ?? caption,
+        ingredients:
+          parsed.ingredientLines && parsed.ingredientLines.length > 0
+            ? parsed.ingredientLines.map((line) => line.ingredient)
+            : undefined,
+        directions: parsed.directionsText ?? undefined,
+        sourceName: hostname,
+        sourceUrl: url,
+        photoUrl: baseResult.photoUrl ?? instagramImage ?? undefined,
+        confidence: parsed.ingredientLines?.length ? "medium" : "low",
+        raw: {
+          ...baseResult.raw,
+          caption,
+          parsed,
+        },
+      };
+    }
     if (caption) {
       const parsed = parseRecipeFromCaption(caption);
       return {

@@ -22,6 +22,17 @@ export async function runRecipeImport(importId: string) {
   });
 
   try {
+    if (!record.recipe.isDraft) {
+      await prisma.recipeImport.update({
+        where: { id: importId },
+        data: {
+          status: "failed",
+          error: "Import skipped because the recipe was already edited.",
+        },
+      });
+      return;
+    }
+
     const scraped = await scrapeUrl(record.sourceUrl);
     const cleanedIngredients = (scraped.ingredients ?? [])
       .filter((line) => typeof line === "string")
