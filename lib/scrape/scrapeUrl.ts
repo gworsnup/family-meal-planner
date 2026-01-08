@@ -2,6 +2,7 @@ import "server-only";
 
 import { parseRecipeFromCaption } from "./parseCaption";
 import { parseInstagramCaptionToRecipe } from "./parseInstagramCaption";
+import { normalizeTikTokCaption, parseTikTokCaptionToRecipe } from "./parseTikTokCaption";
 import { decodeHtmlEntities } from "./html";
 
 export type ScrapeResult = {
@@ -328,6 +329,138 @@ function findImageInObject(obj: any): string | null {
   return result;
 }
 
+function extractTikTokVideoId(url: string) {
+  const match = url.match(/\/video\/(\d+)/);
+  return match?.[1] ?? null;
+}
+
+function decodeJsonString(value: string) {
+  try {
+    return JSON.parse(`"${value.replace(/"/g, '\\"')}"`);
+  } catch {
+    return value;
+  }
+}
+
+function extractTikTokCaptionFromHtml(html: string, url: string) {
+  const ogDescription = getMetaContent(html, "og:description");
+  const metaDescription = getMetaContent(html, "description");
+  const ogImage = getMetaContent(html, "og:image");
+
+  const extractItemCaption = (item: any) => {
+    if (!item) return null;
+    if (typeof item.desc === "string" && item.desc.trim()) return item.desc;
+    if (typeof item.text === "string" && item.text.trim()) return item.text;
+    if (typeof item.shareInfo?.desc === "string" && item.shareInfo.desc.trim()) {
+      return item.shareInfo.desc;
+    }
+    return null;
+  };
+
+  const extractItemImage = (item: any) => {
+    if (!item) return null;
+    if (typeof item.video?.cover === "string") return item.video.cover;
+    if (typeof item.video?.originCover === "string") return item.video.originCover;
+    if (typeof item.video?.dynamicCover === "string") return item.video.dynamicCover;
+    return null;
+  };
+
+  const sigiState = extractScriptById(html, "SIGI_STATE");
+  if (sigiState) {
+    try {
+      const parsed = JSON.parse(sigiState);
+      const itemModule = parsed?.ItemModule;
+      const videoId = extractTikTokVideoId(url);
+      if (videoId && itemModule?.[videoId]) {
+        const item = itemModule[videoId];
+        const caption = extractItemCaption(item);
+        if (caption) {
+          return {
+            caption: normalizeTikTokCaption(caption),
+            source: "SIGI_STATE",
+            imageUrl: extractItemImage(item) ?? ogImage,
+          };
+        }
+      }
+      if (itemModule && typeof itemModule === "object") {
+        for (const item of Object.values(itemModule)) {
+          const caption = extractItemCaption(item);
+          if (caption) {
+            return {
+              caption: normalizeTikTokCaption(caption),
+              source: "SIGI_STATE",
+              imageUrl: extractItemImage(item) ?? ogImage,
+            };
+          }
+        }
+      }
+    } catch {
+      // ignore JSON errors
+    }
+  }
+
+  const universalData = extractScriptById(html, "__UNIVERSAL_DATA_FOR_REHYDRATION__");
+  if (universalData) {
+    try {
+      const parsed = JSON.parse(universalData);
+      const matches: string[] = [];
+      const visit = (value: any, key?: string) => {
+        if (!value) return;
+        if (typeof value === "string") {
+          if (key && /(desc|caption|text)/i.test(key) && value.trim()) {
+            matches.push(value);
+          }
+          return;
+        }
+        if (Array.isArray(value)) {
+          value.forEach((item) => visit(item, key));
+          return;
+        }
+        if (typeof value === "object") {
+          Object.entries(value).forEach(([nextKey, nextValue]) => {
+            visit(nextValue, nextKey);
+          });
+        }
+      };
+      visit(parsed?.__DEFAULT_SCOPE__ ?? parsed);
+      const best = matches.sort((a, b) => b.length - a.length)[0];
+      if (best) {
+        return {
+          caption: normalizeTikTokCaption(best),
+          source: "__UNIVERSAL_DATA_FOR_REHYDRATION__",
+          imageUrl: ogImage,
+        };
+      }
+    } catch {
+      // ignore JSON errors
+    }
+  }
+
+  if (ogDescription || metaDescription) {
+    return {
+      caption: normalizeTikTokCaption(ogDescription ?? metaDescription ?? ""),
+      source: "meta",
+      imageUrl: ogImage,
+    };
+  }
+
+  const regexMatches = [...html.matchAll(/\"desc\":\"(.*?)\"/g)];
+  if (regexMatches.length > 0) {
+    const decoded = regexMatches
+      .map((match) => decodeJsonString(match[1]))
+      .sort((a, b) => b.length - a.length)[0];
+    if (decoded) {
+      return {
+        caption: normalizeTikTokCaption(decoded),
+        source: "regex",
+        imageUrl: ogImage,
+      };
+    }
+  }
+
+  return { caption: null, source: null, imageUrl: ogImage };
+}
+
 function extractCaptionFromHtml(html: string, hostname: string) {
   const ogDescription = getMetaContent(html, "og:description");
   const metaDescription = getMetaContent(html, "description");
@@ -336,19 +469,6 @@ function extractCaptionFromHtml(html: string, hostname: string) {
   }
   if (metaDescription && metaDescription.length > 0) {
     return metaDescription;
-  }
-
-  if (hostname.includes("tiktok.com")) {
-    const sigiState = extractScriptById(html, "SIGI_STATE");
-    if (sigiState) {
-      try {
-        const parsed = JSON.parse(sigiState);
-        const caption = findCaptionInObject(parsed);
-        if (caption) return decodeHtmlEntities(caption);
-      } catch {
-        return null;
-      }
-    }
   }
 
   if (hostname.includes("instagram.com")) {
@@ -428,11 +548,52 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
     },
   };
 
-  if (hostname && (hostname.includes("tiktok.com") || hostname.includes("instagram.com"))) {
+  if (hostname && hostname.includes("tiktok.com")) {
+    const tiktokResult = extractTikTokCaptionFromHtml(html, resolvedUrl);
+    const caption = tiktokResult.caption;
+    if (caption) {
+      const parsed = parseTikTokCaptionToRecipe(caption);
+      const fallbackDescription =
+        parsed.description ?? caption.slice(0, 240).trim() || baseResult.description;
+      const title =
+        parsed.title ??
+        baseResult.title ??
+        caption.split("\n").find(Boolean)?.slice(0, 80).trim();
+      const shouldLogParser =
+        process.env.SCRAPER_DEBUG === "1" || process.env.NODE_ENV !== "production";
+      if (shouldLogParser) {
+        console.log("TikTok caption parse", {
+          extractionSource: tiktokResult.source,
+          captionLength: caption.length,
+          ingredientCount: parsed.ingredients?.length ?? 0,
+          directionsLength: parsed.directions?.length ?? 0,
+        });
+      }
+      return {
+        ...baseResult,
+        title,
+        description: fallbackDescription,
+        ingredients: parsed.ingredients ?? undefined,
+        directions: parsed.directions ?? undefined,
+        sourceName: "tiktok.com",
+        sourceUrl: url,
+        photoUrl: baseResult.photoUrl ?? tiktokResult.imageUrl ?? undefined,
+        confidence:
+          (parsed.ingredients?.length ?? 0) > 0 || parsed.directions ? "medium" : "low",
+        raw: {
+          ...baseResult.raw,
+          caption,
+          captionSource: tiktokResult.source,
+          parsed,
+        },
+      };
+    }
+  }
+
+  if (hostname && hostname.includes("instagram.com")) {
     const caption = extractCaptionFromHtml(html, hostname);
-    const instagramImage =
-      hostname.includes("instagram.com") ? extractInstagramImage(html) : null;
-    if (caption && hostname.includes("instagram.com")) {
+    const instagramImage = extractInstagramImage(html);
+    if (caption) {
       const parsed = parseInstagramCaptionToRecipe(caption, baseResult.title);
       const shouldLogParser =
         process.env.SCRAPER_DEBUG === "1" || process.env.NODE_ENV !== "production";
@@ -458,22 +619,6 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
         sourceUrl: url,
         photoUrl: baseResult.photoUrl ?? instagramImage ?? undefined,
         confidence: parsed.ingredientLines?.length ? "medium" : "low",
-        raw: {
-          ...baseResult.raw,
-          caption,
-          parsed,
-        },
-      };
-    }
-    if (caption) {
-      const parsed = parseRecipeFromCaption(caption);
-      return {
-        ...baseResult,
-        description: caption,
-        ingredients: parsed.ingredients.length > 0 ? parsed.ingredients : undefined,
-        directions: parsed.directions ?? undefined,
-        photoUrl: baseResult.photoUrl ?? instagramImage ?? undefined,
-        confidence: parsed.confidence === "low" ? "low" : "medium",
         raw: {
           ...baseResult.raw,
           caption,
