@@ -18,6 +18,7 @@ model Workspace {
   recipes       Recipe[]
   recipeImports RecipeImport[]
   tags          Tag[]
+  mealPlanItems MealPlanItem[]
 }
 
 model Recipe {
@@ -52,8 +53,25 @@ model Recipe {
   ingredientLines IngredientLine[]
   recipeTags      RecipeTag[]
   import          RecipeImport?
+  mealPlanItems   MealPlanItem[]
 
   @@index([workspaceId])
+}
+
+model MealPlanItem {
+  id          String   @id @default(cuid())
+  workspaceId String
+  recipeId    String
+  date        DateTime
+  note        String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  recipe    Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, date])
+  @@unique([workspaceId, date, recipeId])
 }
 
 model RecipeImport {
