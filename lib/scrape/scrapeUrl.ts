@@ -342,10 +342,117 @@ function decodeJsonString(value: string) {
   }
 }
 
+function normalizeUrl(value: string | null | undefined) {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("//")) {
+    return `https:${trimmed}`;
+  }
+  if (!trimmed.startsWith("https://")) return null;
+  if (trimmed.startsWith("data:") || trimmed.startsWith("blob:")) return null;
+  return trimmed;
+}
+
+function findValueByKey(obj: any, key: string): string | null {
+  if (!obj) return null;
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      const found = findValueByKey(item, key);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (typeof obj === "object") {
+    if (typeof obj[key] === "string") {
+      return obj[key];
+    }
+    for (const value of Object.values(obj)) {
+      const found = findValueByKey(value, key);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function extractTikTokImageUrl(html: string, url: string) {
+  const preferredKeys = [
+    "cover",
+    "originCover",
+    "dynamicCover",
+    "shareCover",
+    "thumbnail",
+  ];
+  const ogImage = getMetaContent(html, "og:image");
+  const twitterImage = getMetaContent(html, "twitter:image");
+
+  const sigiState = extractScriptById(html, "SIGI_STATE");
+  if (sigiState) {
+    try {
+      const parsed = JSON.parse(sigiState);
+      const itemModule = parsed?.ItemModule;
+      const videoId = extractTikTokVideoId(url);
+      const items = [
+        videoId && itemModule?.[videoId] ? itemModule[videoId] : null,
+        ...(itemModule ? Object.values(itemModule) : []),
+      ].filter(Boolean);
+
+      for (const item of items) {
+        for (const key of preferredKeys) {
+          const candidate = normalizeUrl(item?.video?.[key]);
+          if (candidate) {
+            return { url: candidate, source: `SIGI_STATE.${key}` };
+          }
+        }
+      }
+    } catch {
+      // ignore JSON errors
+    }
+  }
+
+  const universalData = extractScriptById(html, "__UNIVERSAL_DATA_FOR_REHYDRATION__");
+  if (universalData) {
+    try {
+      const parsed = JSON.parse(universalData);
+      const root = parsed?.__DEFAULT_SCOPE__ ?? parsed;
+      for (const key of preferredKeys) {
+        const candidate = findValueByKey(root, key);
+        const normalized = normalizeUrl(candidate ?? undefined);
+        if (normalized) {
+          return { url: normalized, source: `rehydration.${key}` };
+        }
+      }
+    } catch {
+      // ignore JSON errors
+    }
+  }
+
+  const normalizedOg = normalizeUrl(ogImage);
+  if (normalizedOg) {
+    return { url: normalizedOg, source: "meta.og:image" };
+  }
+  const normalizedTwitter = normalizeUrl(twitterImage);
+  if (normalizedTwitter) {
+    return { url: normalizedTwitter, source: "meta.twitter:image" };
+  }
+
+  const regex = /"(cover|originCover|dynamicCover|shareCover|thumbnail)":"(https?:\\\\\/\\\\\/[^"]+)"/g;
+  const matches = [...html.matchAll(regex)];
+  for (const match of matches) {
+    const key = match[1];
+    const decoded = decodeJsonString(match[2]);
+    const normalized = normalizeUrl(decoded);
+    if (normalized) {
+      return { url: normalized, source: `regex.${key}` };
+    }
+  }
+
+  return { url: null, source: null };
+}
+
 function extractTikTokCaptionFromHtml(html: string, url: string) {
   const ogDescription = getMetaContent(html, "og:description");
   const metaDescription = getMetaContent(html, "description");
-  const ogImage = getMetaContent(html, "og:image");
 
   const extractItemCaption = (item: any) => {
     if (!item) return null;
@@ -354,14 +461,6 @@ function extractTikTokCaptionFromHtml(html: string, url: string) {
     if (typeof item.shareInfo?.desc === "string" && item.shareInfo.desc.trim()) {
       return item.shareInfo.desc;
     }
-    return null;
-  };
-
-  const extractItemImage = (item: any) => {
-    if (!item) return null;
-    if (typeof item.video?.cover === "string") return item.video.cover;
-    if (typeof item.video?.originCover === "string") return item.video.originCover;
-    if (typeof item.video?.dynamicCover === "string") return item.video.dynamicCover;
     return null;
   };
 
@@ -378,7 +477,6 @@ function extractTikTokCaptionFromHtml(html: string, url: string) {
           return {
             caption: normalizeTikTokCaption(caption),
             source: "SIGI_STATE",
-            imageUrl: extractItemImage(item) ?? ogImage,
           };
         }
       }
@@ -389,7 +487,6 @@ function extractTikTokCaptionFromHtml(html: string, url: string) {
             return {
               caption: normalizeTikTokCaption(caption),
               source: "SIGI_STATE",
-              imageUrl: extractItemImage(item) ?? ogImage,
             };
           }
         }
@@ -428,7 +525,6 @@ function extractTikTokCaptionFromHtml(html: string, url: string) {
         return {
           caption: normalizeTikTokCaption(best),
           source: "__UNIVERSAL_DATA_FOR_REHYDRATION__",
-          imageUrl: ogImage,
         };
       }
     } catch {
@@ -440,7 +536,6 @@ function extractTikTokCaptionFromHtml(html: string, url: string) {
     return {
       caption: normalizeTikTokCaption(ogDescription ?? metaDescription ?? ""),
       source: "meta",
-      imageUrl: ogImage,
     };
   }
 
@@ -453,12 +548,11 @@ function extractTikTokCaptionFromHtml(html: string, url: string) {
       return {
         caption: normalizeTikTokCaption(decoded),
         source: "regex",
-        imageUrl: ogImage,
       };
     }
   }
 
-  return { caption: null, source: null, imageUrl: ogImage };
+  return { caption: null, source: null };
 }
 
 function extractCaptionFromHtml(html: string, hostname: string) {
@@ -551,6 +645,7 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
   if (hostname && hostname.includes("tiktok.com")) {
     const tiktokResult = extractTikTokCaptionFromHtml(html, resolvedUrl);
     const caption = tiktokResult.caption;
+    const tiktokImage = extractTikTokImageUrl(html, resolvedUrl);
     if (caption) {
       const parsed = parseTikTokCaptionToRecipe(caption);
       const fallbackDescription =
@@ -565,6 +660,8 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
       if (shouldLogParser) {
         console.log("TikTok caption parse", {
           extractionSource: tiktokResult.source,
+          imageSource: tiktokImage.source,
+          imageUrl: tiktokImage.url,
           captionLength: caption.length,
           ingredientCount: parsed.ingredients?.length ?? 0,
           directionsLength: parsed.directions?.length ?? 0,
@@ -578,14 +675,29 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
         directions: parsed.directions ?? undefined,
         sourceName: "tiktok.com",
         sourceUrl: url,
-        photoUrl: baseResult.photoUrl ?? tiktokResult.imageUrl ?? undefined,
+        photoUrl: tiktokImage.url ?? baseResult.photoUrl ?? undefined,
         confidence:
           (parsed.ingredients?.length ?? 0) > 0 || parsed.directions ? "medium" : "low",
         raw: {
           ...baseResult.raw,
           caption,
+          captionLength: caption.length,
           captionSource: tiktokResult.source,
+          imageUrl: tiktokImage.url,
+          imageSource: tiktokImage.source,
           parsed,
+        },
+      };
+    }
+    if (tiktokImage.url && !baseResult.photoUrl) {
+      return {
+        ...baseResult,
+        photoUrl: tiktokImage.url,
+        confidence: "low",
+        raw: {
+          ...baseResult.raw,
+          imageUrl: tiktokImage.url,
+          imageSource: tiktokImage.source,
         },
       };
     }

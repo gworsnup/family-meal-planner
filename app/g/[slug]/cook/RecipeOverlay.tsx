@@ -36,6 +36,15 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function isTikTokUrl(value?: string | null) {
+  if (!value) return false;
+  try {
+    return new URL(value).hostname.replace(/^www\./, "").includes("tiktok.com");
+  } catch {
+    return false;
+  }
+}
+
 function getIngredientsText(recipe: RecipeDetail) {
   return recipe.ingredientLines
     .slice()
@@ -251,12 +260,28 @@ export default function RecipeOverlay({
                     borderRadius: 10,
                     background: "#f3f3f3",
                     display: "flex",
+                    flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "center",
                     color: "#777",
+                    gap: 8,
                   }}
                 >
-                  No photo
+                  <span>No photo</span>
+                  {isTikTokUrl(recipe.sourceUrl) && recipe.sourceUrl && (
+                    <a
+                      href={recipe.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        fontSize: 12,
+                        color: "#2563eb",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      Open TikTok
+                    </a>
+                  )}
                 </div>
               )}
               {isEditing && (
