@@ -49,6 +49,46 @@ function parseBooleanFlag(value?: string) {
   return value === "1";
 }
 
+async function fetchRecipeDetail(recipeId: string, workspaceId: string) {
+  const recipe = await prisma.recipe.findFirst({
+    where: { id: recipeId, workspaceId },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      sourceName: true,
+      sourceUrl: true,
+      photoUrl: true,
+      prepTimeMinutes: true,
+      cookTimeMinutes: true,
+      totalTimeMinutes: true,
+      servings: true,
+      yields: true,
+      rating: true,
+      directions: true,
+      isPrivate: true,
+      createdAt: true,
+      updatedAt: true,
+      ingredientLines: {
+        orderBy: { position: "asc" },
+        select: {
+          id: true,
+          ingredient: true,
+          position: true,
+        },
+      },
+    },
+  });
+
+  if (!recipe) return null;
+
+  return {
+    ...recipe,
+    createdAt: recipe.createdAt.toISOString(),
+    updatedAt: recipe.updatedAt.toISOString(),
+  };
+}
+
 export default async function CookPage({
   params,
   searchParams,
@@ -123,6 +163,8 @@ export default async function CookPage({
   const minRating = parseMinRating(getParam(resolvedSearchParams.minRating));
   const manualOnly = parseBooleanFlag(getParam(resolvedSearchParams.manual));
   const recipeId = getParam(resolvedSearchParams.recipeId);
+  const cookRecipeId = getParam(resolvedSearchParams.cookRecipeId);
+  const cookView = parseBooleanFlag(getParam(resolvedSearchParams.cookView));
   const sort = parseSort(getParam(resolvedSearchParams.sort));
   const dir = parseDir(getParam(resolvedSearchParams.dir), sort);
 
@@ -181,43 +223,12 @@ export default async function CookPage({
 
   let selectedRecipe: RecipeDetail | null = null;
   if (recipeId) {
-    const recipe = await prisma.recipe.findFirst({
-      where: { id: recipeId, workspaceId: workspace.id },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        sourceName: true,
-        sourceUrl: true,
-        photoUrl: true,
-        prepTimeMinutes: true,
-        cookTimeMinutes: true,
-        totalTimeMinutes: true,
-        servings: true,
-        yields: true,
-        rating: true,
-        directions: true,
-        isPrivate: true,
-        createdAt: true,
-        updatedAt: true,
-        ingredientLines: {
-          orderBy: { position: "asc" },
-          select: {
-            id: true,
-            ingredient: true,
-            position: true,
-          },
-        },
-      },
-    });
+    selectedRecipe = await fetchRecipeDetail(recipeId, workspace.id);
+  }
 
-    if (recipe) {
-      selectedRecipe = {
-        ...recipe,
-        createdAt: recipe.createdAt.toISOString(),
-        updatedAt: recipe.updatedAt.toISOString(),
-      };
-    }
+  let selectedCookingRecipe: RecipeDetail | null = null;
+  if (cookView && cookRecipeId) {
+    selectedCookingRecipe = await fetchRecipeDetail(cookRecipeId, workspace.id);
   }
 
   return (
@@ -240,6 +251,7 @@ export default async function CookPage({
           sort={sort}
           dir={dir}
           selectedRecipe={selectedRecipe}
+          selectedCookingRecipe={selectedCookingRecipe}
         />
       </main>
     </div>

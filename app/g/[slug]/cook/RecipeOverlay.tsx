@@ -11,6 +11,7 @@ type RecipeOverlayProps = {
   onClose: () => void;
   onDeleted: () => void;
   onSaved: () => void;
+  onOpenCookingView: () => void;
 };
 
 function formatMinutes(minutes?: number | null) {
@@ -49,6 +50,7 @@ export default function RecipeOverlay({
   onClose,
   onDeleted,
   onSaved,
+  onOpenCookingView,
 }: RecipeOverlayProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -137,6 +139,13 @@ export default function RecipeOverlay({
                   className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
                 >
                   Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenCookingView}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                >
+                  Cooking view
                 </button>
                 <button
                   type="button"
