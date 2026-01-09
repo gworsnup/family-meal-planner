@@ -151,6 +151,14 @@ export async function parseCaptionWithOpenAI(
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        if (shouldLogDebug()) {
+          console.log("OpenAI caption parse HTTP error", {
+            sourceDomain: request.sourceDomain,
+            status: response.status,
+            body: errorText.slice(0, 500),
+          });
+        }
         throw new Error(`OpenAI error ${response.status}`);
       }
 
@@ -175,10 +183,11 @@ export async function parseCaptionWithOpenAI(
         });
       }
       return coerced;
-    } catch {
+    } catch (error) {
       if (shouldLogDebug()) {
         console.log("OpenAI caption parse failed", {
           sourceDomain: request.sourceDomain,
+          message: error instanceof Error ? error.message : String(error),
         });
       }
       return null;
