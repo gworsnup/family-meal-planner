@@ -28,6 +28,9 @@ import {
   type PlanView,
 } from "@/lib/planDates";
 import { addMealPlanItem, moveMealPlanItem, removeMealPlanItem } from "./actions";
+import CookingViewOverlay from "../cook/CookingViewOverlay";
+import RecipeOverlay from "../cook/RecipeOverlay";
+import type { RecipeDetail } from "../cook/types";
 
 type RecipeItem = {
   id: string;
@@ -55,6 +58,8 @@ type PlanClientProps = {
   planItems: PlanItem[];
   view: PlanView;
   focusedDateISO: string;
+  selectedRecipe: RecipeDetail | null;
+  selectedCookingRecipe: RecipeDetail | null;
 };
 
 const sourceOptions = [
@@ -148,13 +153,14 @@ function RecipeRow({ recipe }: { recipe: RecipeItem }) {
 function MonthEventChip({
   item,
   onRemove,
-  slug,
+  onViewRecipe,
+  onCookingView,
 }: {
   item: PlanItem;
   onRemove: (itemId: string) => void;
-  slug: string;
+  onViewRecipe: (recipeId: string) => void;
+  onCookingView: (recipeId: string) => void;
 }) {
-  const router = useRouter();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `plan-${item.id}`,
     data: { type: "planItem", itemId: item.id, dateISO: item.dateISO, recipeId: item.recipeId },
@@ -162,12 +168,12 @@ function MonthEventChip({
 
   const handleViewRecipe = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    router.push(`/g/${slug}/cook?recipeId=${item.recipeId}`);
+    onViewRecipe(item.recipeId);
   };
 
   const handleCookingView = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    router.push(`/g/${slug}/cook?cookRecipeId=${item.recipeId}&cookView=1`);
+    onCookingView(item.recipeId);
   };
 
   return (
@@ -229,7 +235,7 @@ function MonthEventChip({
       <span className="min-w-0 whitespace-normal break-words font-medium text-slate-800">
         {item.title}
       </span>
-      <div className="flex flex-wrap gap-1.5 opacity-0 transition group-hover:opacity-100">
+      <div className="hidden flex-wrap gap-1.5 group-hover:flex">
         <button
           type="button"
           onClick={handleViewRecipe}
@@ -263,13 +269,14 @@ function MonthEventChip({
 function WeekEventCard({
   item,
   onRemove,
-  slug,
+  onViewRecipe,
+  onCookingView,
 }: {
   item: PlanItem;
   onRemove: (itemId: string) => void;
-  slug: string;
+  onViewRecipe: (recipeId: string) => void;
+  onCookingView: (recipeId: string) => void;
 }) {
-  const router = useRouter();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `plan-${item.id}`,
     data: { type: "planItem", itemId: item.id, dateISO: item.dateISO, recipeId: item.recipeId },
@@ -277,12 +284,12 @@ function WeekEventCard({
 
   const handleViewRecipe = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    router.push(`/g/${slug}/cook?recipeId=${item.recipeId}`);
+    onViewRecipe(item.recipeId);
   };
 
   const handleCookingView = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    router.push(`/g/${slug}/cook?cookRecipeId=${item.recipeId}&cookView=1`);
+    onCookingView(item.recipeId);
   };
 
   return (
@@ -344,7 +351,7 @@ function WeekEventCard({
       <span className="min-w-0 whitespace-normal break-words text-sm font-medium text-slate-800">
         {item.title}
       </span>
-      <div className="flex flex-wrap gap-2 opacity-0 transition group-hover:opacity-100">
+      <div className="hidden flex-wrap gap-2 group-hover:flex">
         <button
           type="button"
           onClick={handleViewRecipe}
@@ -383,7 +390,8 @@ function DayCell({
   view,
   items,
   onRemove,
-  slug,
+  onViewRecipe,
+  onCookingView,
 }: {
   dateISO: string;
   dayNumber: number;
@@ -392,7 +400,8 @@ function DayCell({
   view: PlanView;
   items: PlanItem[];
   onRemove: (itemId: string) => void;
-  slug: string;
+  onViewRecipe: (recipeId: string) => void;
+  onCookingView: (recipeId: string) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({
     id: dateISO,
@@ -418,9 +427,21 @@ function DayCell({
       <div className="flex flex-col gap-2">
         {items.map((item) => (
           view === "week" ? (
-            <WeekEventCard key={item.id} item={item} onRemove={onRemove} slug={slug} />
+            <WeekEventCard
+              key={item.id}
+              item={item}
+              onRemove={onRemove}
+              onViewRecipe={onViewRecipe}
+              onCookingView={onCookingView}
+            />
           ) : (
-            <MonthEventChip key={item.id} item={item} onRemove={onRemove} slug={slug} />
+            <MonthEventChip
+              key={item.id}
+              item={item}
+              onRemove={onRemove}
+              onViewRecipe={onViewRecipe}
+              onCookingView={onCookingView}
+            />
           )
         ))}
         {items.length === 0 ? (
@@ -438,6 +459,8 @@ export default function PlanClient({
   planItems,
   view,
   focusedDateISO,
+  selectedRecipe,
+  selectedCookingRecipe,
 }: PlanClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -617,6 +640,10 @@ export default function PlanClient({
   const activePlanItem = activePlanItemId
     ? items.find((item) => item.id === activePlanItemId) ?? null
     : null;
+  const currentRecipeId = searchParams.get("recipeId") ?? selectedRecipe?.id ?? null;
+  const currentCookRecipeId =
+    searchParams.get("cookRecipeId") ?? selectedCookingRecipe?.id ?? null;
+  const isCookingView = searchParams.get("cookView") === "1";
 
   return (
     <DndContext
@@ -816,13 +843,47 @@ export default function PlanClient({
                   view={view}
                   items={dayItems}
                   onRemove={handleRemoveItem}
-                  slug={slug}
+                  onViewRecipe={(recipeId) =>
+                    updateParams({ recipeId, cookRecipeId: null, cookView: null })
+                  }
+                  onCookingView={(recipeId) =>
+                    updateParams({ cookRecipeId: recipeId, cookView: "1", recipeId: null })
+                  }
                 />
               );
             })}
           </div>
         </section>
       </main>
+
+      {selectedRecipe && currentRecipeId === selectedRecipe.id && !isCookingView && (
+        <RecipeOverlay
+          slug={slug}
+          recipe={selectedRecipe}
+          onClose={() => updateParams({ recipeId: null })}
+          onOpenCookingView={() =>
+            updateParams({
+              cookRecipeId: selectedRecipe.id,
+              cookView: "1",
+              recipeId: null,
+            })
+          }
+          onSaved={() => router.refresh()}
+          onDeleted={() => {
+            updateParams({ recipeId: null });
+            router.refresh();
+          }}
+        />
+      )}
+
+      {selectedCookingRecipe &&
+        currentCookRecipeId === selectedCookingRecipe.id &&
+        isCookingView && (
+          <CookingViewOverlay
+            recipe={selectedCookingRecipe}
+            onClose={() => updateParams({ cookRecipeId: null, cookView: null })}
+          />
+        )}
 
       <DragOverlay>
         {activeRecipe || activePlanItem ? (
