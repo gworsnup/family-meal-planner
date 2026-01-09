@@ -229,6 +229,24 @@ function MonthEventChip({
       <span className="min-w-0 whitespace-normal break-words font-medium text-slate-800">
         {item.title}
       </span>
+      <div className="flex flex-wrap gap-1.5 opacity-0 transition group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={handleViewRecipe}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="rounded-full bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white hover:bg-slate-800"
+        >
+          View recipe
+        </button>
+        <button
+          type="button"
+          onClick={handleCookingView}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="rounded-full bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white hover:bg-slate-800"
+        >
+          Cooking view
+        </button>
+      </div>
       <button
         type="button"
         onClick={() => onRemove(item.id)}
@@ -326,6 +344,24 @@ function WeekEventCard({
       <span className="min-w-0 whitespace-normal break-words text-sm font-medium text-slate-800">
         {item.title}
       </span>
+      <div className="flex flex-wrap gap-2 opacity-0 transition group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={handleViewRecipe}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white hover:bg-slate-800"
+        >
+          View recipe
+        </button>
+        <button
+          type="button"
+          onClick={handleCookingView}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white hover:bg-slate-800"
+        >
+          Cooking view
+        </button>
+      </div>
       <button
         type="button"
         onClick={() => onRemove(item.id)}
