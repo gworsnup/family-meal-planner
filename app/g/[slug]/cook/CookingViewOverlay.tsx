@@ -65,7 +65,7 @@ export default function CookingViewOverlay({
                 <h3 className="text-lg font-semibold text-slate-900">
                   Directions
                 </h3>
-                <div className="mt-3 whitespace-pre-line text-base leading-relaxed text-slate-700">
+                <div className="mt-3 whitespace-pre-line text-lg leading-relaxed text-slate-700">
                   {recipe.directions?.trim()
                     ? recipe.directions
                     : "No directions added yet."}

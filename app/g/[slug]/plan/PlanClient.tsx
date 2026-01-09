@@ -27,7 +27,7 @@ import {
   parseDateISO,
   type PlanView,
 } from "@/lib/planDates";
-import { addMealPlanItem, removeMealPlanItem } from "./actions";
+import { addMealPlanItem, moveMealPlanItem, removeMealPlanItem } from "./actions";
 
 type RecipeItem = {
   id: string;
@@ -155,6 +155,10 @@ function MonthEventChip({
   slug: string;
 }) {
   const router = useRouter();
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `plan-${item.id}`,
+    data: { type: "planItem", itemId: item.id, dateISO: item.dateISO, recipeId: item.recipeId },
+  });
 
   const handleViewRecipe = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -168,8 +172,11 @@ function MonthEventChip({
 
   return (
     <div
-      className={`group relative flex w-full flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs text-slate-700 shadow-sm ${
-        item.isPending ? "opacity-60" : ""
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={`group flex w-full flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs text-slate-700 shadow-sm ${
+        item.isPending || isDragging ? "opacity-60" : ""
       }`}
     >
       <div className="pointer-events-none absolute right-2 top-2 flex flex-col gap-1 opacity-0 transition group-hover:opacity-100">
@@ -201,12 +208,31 @@ function MonthEventChip({
           No photo
         </div>
       )}
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          onClick={handleViewRecipe}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="rounded-full bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white hover:bg-slate-800"
+        >
+          View recipe
+        </button>
+        <button
+          type="button"
+          onClick={handleCookingView}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="rounded-full bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white hover:bg-slate-800"
+        >
+          Cooking view
+        </button>
+      </div>
       <span className="min-w-0 whitespace-normal break-words font-medium text-slate-800">
         {item.title}
       </span>
       <button
         type="button"
         onClick={() => onRemove(item.id)}
+        onPointerDown={(event) => event.stopPropagation()}
         className="ml-auto hidden text-[10px] font-semibold text-slate-400 hover:text-slate-900 group-hover:block"
         aria-label="Remove from day"
       >
@@ -226,6 +252,10 @@ function WeekEventCard({
   slug: string;
 }) {
   const router = useRouter();
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `plan-${item.id}`,
+    data: { type: "planItem", itemId: item.id, dateISO: item.dateISO, recipeId: item.recipeId },
+  });
 
   const handleViewRecipe = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -239,8 +269,11 @@ function WeekEventCard({
 
   return (
     <div
-      className={`group relative flex w-full flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-700 shadow-sm ${
-        item.isPending ? "opacity-60" : ""
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={`group flex w-full flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-700 shadow-sm ${
+        item.isPending || isDragging ? "opacity-60" : ""
       }`}
     >
       <div className="pointer-events-none absolute right-3 top-3 flex flex-col gap-1 opacity-0 transition group-hover:opacity-100">
@@ -272,12 +305,31 @@ function WeekEventCard({
           No photo
         </div>
       )}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={handleViewRecipe}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white hover:bg-slate-800"
+        >
+          View recipe
+        </button>
+        <button
+          type="button"
+          onClick={handleCookingView}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white hover:bg-slate-800"
+        >
+          Cooking view
+        </button>
+      </div>
       <span className="min-w-0 whitespace-normal break-words text-sm font-medium text-slate-800">
         {item.title}
       </span>
       <button
         type="button"
         onClick={() => onRemove(item.id)}
+        onPointerDown={(event) => event.stopPropagation()}
         className="ml-auto hidden text-[10px] font-semibold text-slate-400 hover:text-slate-900 group-hover:block"
         aria-label="Remove from day"
       >
@@ -356,6 +408,7 @@ export default function PlanClient({
   const [isPending, startTransition] = useTransition();
   const [items, setItems] = useState<PlanItem[]>(planItems);
   const [activeRecipeId, setActiveRecipeId] = useState<string | null>(null);
+  const [activePlanItemId, setActivePlanItemId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
   const [sourceFilter, setSourceFilter] = useState<(typeof sourceOptions)[number]["value"]>(
     "all",
@@ -525,6 +578,9 @@ export default function PlanClient({
   };
 
   const activeRecipe = activeRecipeId ? recipeMap.get(activeRecipeId) ?? null : null;
+  const activePlanItem = activePlanItemId
+    ? items.find((item) => item.id === activePlanItemId) ?? null
+    : null;
 
   return (
     <DndContext
@@ -533,17 +589,48 @@ export default function PlanClient({
         const data = event.active.data.current;
         if (data?.type === "recipe") {
           setActiveRecipeId(data.recipeId);
+          setActivePlanItemId(null);
+        }
+        if (data?.type === "planItem") {
+          setActivePlanItemId(data.itemId);
+          setActiveRecipeId(null);
         }
       }}
       onDragEnd={(event) => {
         const data = event.active.data.current;
         const dropTarget = event.over?.id;
         setActiveRecipeId(null);
+        setActivePlanItemId(null);
         if (data?.type === "recipe" && typeof dropTarget === "string") {
           void handleAddItem(dropTarget, data.recipeId as string);
         }
+        if (data?.type === "planItem" && typeof dropTarget === "string") {
+          const nextDateISO = dropTarget;
+          const itemId = data.itemId as string;
+          const prevDateISO = data.dateISO as string;
+          if (nextDateISO === prevDateISO) return;
+          setItems((prev) =>
+            prev.map((item) =>
+              item.id === itemId ? { ...item, dateISO: nextDateISO } : item,
+            ),
+          );
+          startTransition(async () => {
+            try {
+              await moveMealPlanItem({ slug, itemId, dateISO: nextDateISO });
+            } catch {
+              setItems((prev) =>
+                prev.map((item) =>
+                  item.id === itemId ? { ...item, dateISO: prevDateISO } : item,
+                ),
+              );
+            }
+          });
+        }
       }}
-      onDragCancel={() => setActiveRecipeId(null)}
+      onDragCancel={() => {
+        setActiveRecipeId(null);
+        setActivePlanItemId(null);
+      }}
     >
       <main className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-6 py-6 lg:flex-row">
         <section className="flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:h-[calc(100vh-200px)] lg:min-w-[260px] lg:max-w-[320px] lg:flex-[0_0_20%]">
@@ -702,11 +789,11 @@ export default function PlanClient({
       </main>
 
       <DragOverlay>
-        {activeRecipe ? (
+        {activeRecipe || activePlanItem ? (
           <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-lg">
-            {activeRecipe.photoUrl ? (
+            {(activeRecipe?.photoUrl ?? activePlanItem?.photoUrl) ? (
               <img
-                src={activeRecipe.photoUrl}
+                src={activeRecipe?.photoUrl ?? activePlanItem?.photoUrl ?? ""}
                 alt=""
                 referrerPolicy="no-referrer"
                 className="h-10 w-10 rounded-lg object-cover"
@@ -718,11 +805,13 @@ export default function PlanClient({
             )}
             <div className="min-w-0">
               <p className="whitespace-normal break-words text-sm font-medium text-slate-900">
-                {activeRecipe.title}
+                {activeRecipe?.title ?? activePlanItem?.title}
               </p>
-              <p className="text-xs text-slate-500">
-                {formatSource(activeRecipe.sourceName, activeRecipe.sourceUrl)}
-              </p>
+              {activeRecipe ? (
+                <p className="text-xs text-slate-500">
+                  {formatSource(activeRecipe.sourceName, activeRecipe.sourceUrl)}
+                </p>
+              ) : null}
             </div>
           </div>
         ) : null}

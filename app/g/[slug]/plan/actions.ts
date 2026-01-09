@@ -16,6 +16,12 @@ type RemoveMealPlanInput = {
   itemId: string;
 };
 
+type MoveMealPlanInput = {
+  slug: string;
+  itemId: string;
+  dateISO: string;
+};
+
 function normalizeDate(dateISO: string) {
   const date = parseDateISO(dateISO);
   if (!date) {
@@ -113,4 +119,39 @@ export async function removeMealPlanItem({
   if (deleted.count === 0) {
     throw new Error("Meal plan item not found");
   }
+}
+
+export async function moveMealPlanItem({
+  slug,
+  itemId,
+  dateISO,
+}: MoveMealPlanInput) {
+  const cookieStore = await cookies();
+  const authed = cookieStore.get(`wsp_${slug}`)?.value === "1";
+
+  if (!authed) {
+    throw new Error("Unauthorized");
+  }
+
+  const workspace = await prisma.workspace.findUnique({
+    where: { slug },
+    select: { id: true },
+  });
+
+  if (!workspace) {
+    throw new Error("Workspace not found");
+  }
+
+  const date = normalizeDate(dateISO);
+
+  const updated = await prisma.mealPlanItem.updateMany({
+    where: { id: itemId, workspaceId: workspace.id },
+    data: { date },
+  });
+
+  if (updated.count === 0) {
+    throw new Error("Meal plan item not found");
+  }
+
+  return { itemId, dateISO };
 }
