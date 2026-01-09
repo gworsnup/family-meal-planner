@@ -235,7 +235,7 @@ function MonthEventChip({
       <span className="min-w-0 whitespace-normal break-words font-medium text-slate-800">
         {item.title}
       </span>
-      <div className="hidden flex-wrap gap-1.5 group-hover:flex">
+      <div className="hidden flex-wrap gap-1.5 group-hover:flex group-focus-within:flex">
         <button
           type="button"
           onClick={handleViewRecipe}
@@ -351,7 +351,7 @@ function WeekEventCard({
       <span className="min-w-0 whitespace-normal break-words text-sm font-medium text-slate-800">
         {item.title}
       </span>
-      <div className="hidden flex-wrap gap-2 group-hover:flex">
+      <div className="hidden flex-wrap gap-2 group-hover:flex group-focus-within:flex">
         <button
           type="button"
           onClick={handleViewRecipe}
