@@ -147,22 +147,6 @@ export default function CookClient({
 
   const [searchText, setSearchText] = useState(currentParams.get("q") ?? q);
 
-  useEffect(() => {
-    setSearchText(currentParams.get("q") ?? q);
-  }, [currentParams, q]);
-
-  useEffect(() => {
-    const paramView = currentParams.get("view");
-    if (paramView === "table" || paramView === "grid") {
-      window.localStorage.setItem(storageKey, paramView);
-      return;
-    }
-    const stored = window.localStorage.getItem(storageKey);
-    if ((stored === "table" || stored === "grid") && stored !== currentView) {
-      updateParams({ view: stored });
-    }
-  }, [currentParams, currentView, storageKey, updateParams]);
-
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -180,6 +164,22 @@ export default function CookClient({
     },
     [router, searchParams],
   );
+
+  useEffect(() => {
+    setSearchText(currentParams.get("q") ?? q);
+  }, [currentParams, q]);
+
+  useEffect(() => {
+    const paramView = currentParams.get("view");
+    if (paramView === "table" || paramView === "grid") {
+      window.localStorage.setItem(storageKey, paramView);
+      return;
+    }
+    const stored = window.localStorage.getItem(storageKey);
+    if ((stored === "table" || stored === "grid") && stored !== currentView) {
+      updateParams({ view: stored });
+    }
+  }, [currentParams, currentView, storageKey, updateParams]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
