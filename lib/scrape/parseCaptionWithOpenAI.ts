@@ -146,7 +146,7 @@ export async function parseCaptionWithOpenAI(
               content: [{ type: "input_text", text: request.captionText }],
             },
           ],
-          response_format: { type: "json_object" },
+          text: { format: { type: "json_object" } },
         }),
       });
 
