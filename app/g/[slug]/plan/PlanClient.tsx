@@ -263,11 +263,6 @@ export default function PlanClient({
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const currentParams = useMemo(
-    () => new URLSearchParams(searchParams.toString()),
-    [searchParams],
-  );
-
   const focusedDate = useMemo(() => {
     return parseDateISO(focusedDateISO) ?? getTodayUTC();
   }, [focusedDateISO]);
