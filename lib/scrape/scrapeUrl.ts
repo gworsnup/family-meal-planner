@@ -653,6 +653,11 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
     const caption = tiktokResult.caption;
     const tiktokImage = extractTikTokImageUrl(html, resolvedUrl);
     if (caption) {
+      if (shouldLogParser) {
+        console.log("TikTok LLM caption parse check", {
+          hasApiKey: Boolean(process.env.OPENAI_API_KEY),
+        });
+      }
       const llmParsed = await parseCaptionWithOpenAI({
         captionText: caption,
         sourceDomain: "tiktok",
@@ -681,6 +686,7 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
             llmParsed?.ingredients.length ?? parsed.ingredients?.length ?? 0,
           directionsLength:
             llmDirections?.length ?? parsed.directions?.length ?? 0,
+          llmUsed: Boolean(llmParsed),
         });
       }
       return {
@@ -736,6 +742,11 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
     const caption = extractCaptionFromHtml(html, hostname);
     const instagramImage = extractInstagramImage(html);
     if (caption) {
+      if (shouldLogParser) {
+        console.log("Instagram LLM caption parse check", {
+          hasApiKey: Boolean(process.env.OPENAI_API_KEY),
+        });
+      }
       const llmParsed = await parseCaptionWithOpenAI({
         captionText: caption,
         sourceDomain: "instagram",
@@ -753,6 +764,7 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
             parsed.directionsText?.length ??
             0,
           titleHeuristic: parsed.titleHeuristic,
+          llmUsed: Boolean(llmParsed),
         });
       }
       return {
