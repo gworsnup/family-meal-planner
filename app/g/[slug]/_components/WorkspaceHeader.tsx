@@ -41,12 +41,6 @@ export default function WorkspaceHeader({
             priority
             className="h-10 w-auto"
           />
-          <div className="leading-tight">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Workspace
-            </p>
-            <p className="text-sm font-medium text-slate-700">{workspaceName}</p>
-          </div>
         </div>
 
         <nav className="hidden items-center gap-2 text-sm font-medium text-slate-600 md:flex">
