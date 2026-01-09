@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import RatingStars from "./RatingStars";
+import CookingViewOverlay from "./CookingViewOverlay";
 import RecipeOverlay from "./RecipeOverlay";
 import { setRecipeRating } from "./actions";
 import { startRecipeImport } from "./importActions";
@@ -45,6 +46,7 @@ type CookClientProps = {
   sort: SortField;
   dir: SortDirection;
   selectedRecipe: RecipeDetail | null;
+  selectedCookingRecipe: RecipeDetail | null;
 };
 
 const sortOptions: Array<{ label: string; value: `${SortField}:${SortDirection}` }> = [
@@ -107,6 +109,7 @@ export default function CookClient({
   sort,
   dir,
   selectedRecipe,
+  selectedCookingRecipe,
 }: CookClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -128,6 +131,7 @@ export default function CookClient({
   const currentView = (currentParams.get("view") as ViewMode | null) ?? view;
   const currentSort = (currentParams.get("sort") as SortField | null) ?? sort;
   const currentDir = (currentParams.get("dir") as SortDirection | null) ?? dir;
+  const storageKey = useMemo(() => `ft_recipes_view_${slug}`, [slug]);
   const currentMinRating = (() => {
     const raw = currentParams.get("minRating");
     const parsed = Number(raw ?? minRating);
@@ -137,12 +141,11 @@ export default function CookClient({
     ? currentParams.get("manual") === "1"
     : manualOnly;
   const currentRecipeId = currentParams.get("recipeId") ?? selectedRecipe?.id ?? null;
+  const currentCookRecipeId =
+    currentParams.get("cookRecipeId") ?? selectedCookingRecipe?.id ?? null;
+  const isCookingView = currentParams.get("cookView") === "1";
 
   const [searchText, setSearchText] = useState(currentParams.get("q") ?? q);
-
-  useEffect(() => {
-    setSearchText(currentParams.get("q") ?? q);
-  }, [currentParams, q]);
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -163,6 +166,22 @@ export default function CookClient({
   );
 
   useEffect(() => {
+    setSearchText(currentParams.get("q") ?? q);
+  }, [currentParams, q]);
+
+  useEffect(() => {
+    const paramView = currentParams.get("view");
+    if (paramView === "table" || paramView === "grid") {
+      window.localStorage.setItem(storageKey, paramView);
+      return;
+    }
+    const stored = window.localStorage.getItem(storageKey);
+    if ((stored === "table" || stored === "grid") && stored !== currentView) {
+      updateParams({ view: stored });
+    }
+  }, [currentParams, currentView, storageKey, updateParams]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       updateParams({ q: searchText.trim() || null });
     }, 250);
@@ -180,7 +199,16 @@ export default function CookClient({
   );
 
   const openRecipe = (recipeId: string) => {
-    updateParams({ recipeId });
+    updateParams({ recipeId, cookRecipeId: null, cookView: null });
+  };
+
+  const openCookingView = (recipeId: string) => {
+    updateParams({ cookRecipeId: recipeId, cookView: "1", recipeId: null });
+  };
+
+  const handleViewChange = (nextView: ViewMode) => {
+    updateParams({ view: nextView });
+    window.localStorage.setItem(storageKey, nextView);
   };
 
   const renderTableThumbnail = (recipe: RecipeItem) => {
@@ -486,7 +514,7 @@ export default function CookClient({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => updateParams({ view: "table" })}
+              onClick={() => handleViewChange("table")}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                 currentView === "table"
                   ? "bg-slate-900 text-white"
@@ -497,7 +525,7 @@ export default function CookClient({
             </button>
             <button
               type="button"
-              onClick={() => updateParams({ view: "grid" })}
+              onClick={() => handleViewChange("grid")}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                 currentView === "grid"
                   ? "bg-slate-900 text-white"
@@ -702,11 +730,12 @@ export default function CookClient({
         </div>
       )}
 
-      {selectedRecipe && currentRecipeId === selectedRecipe.id && (
+      {selectedRecipe && currentRecipeId === selectedRecipe.id && !isCookingView && (
         <RecipeOverlay
           slug={slug}
           recipe={selectedRecipe}
           onClose={() => updateParams({ recipeId: null })}
+          onOpenCookingView={() => openCookingView(selectedRecipe.id)}
           onSaved={() => router.refresh()}
           onDeleted={() => {
             updateParams({ recipeId: null });
@@ -714,6 +743,15 @@ export default function CookClient({
           }}
         />
       )}
+
+      {selectedCookingRecipe &&
+        currentCookRecipeId === selectedCookingRecipe.id &&
+        isCookingView && (
+          <CookingViewOverlay
+            recipe={selectedCookingRecipe}
+            onClose={() => updateParams({ cookRecipeId: null, cookView: null })}
+          />
+        )}
     </div>
   );
 }

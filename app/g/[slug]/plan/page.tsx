@@ -10,6 +10,7 @@ import {
   parseDateISO,
   type PlanView,
 } from "@/lib/planDates";
+import { RecipeDetail } from "../cook/types";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -25,6 +26,46 @@ function parseView(value?: string): PlanView {
 function parseFocusedDate(value?: string) {
   if (!value) return getTodayUTC();
   return parseDateISO(value) ?? getTodayUTC();
+}
+
+async function fetchRecipeDetail(recipeId: string, workspaceId: string) {
+  const recipe = await prisma.recipe.findFirst({
+    where: { id: recipeId, workspaceId },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      sourceName: true,
+      sourceUrl: true,
+      photoUrl: true,
+      prepTimeMinutes: true,
+      cookTimeMinutes: true,
+      totalTimeMinutes: true,
+      servings: true,
+      yields: true,
+      rating: true,
+      directions: true,
+      isPrivate: true,
+      createdAt: true,
+      updatedAt: true,
+      ingredientLines: {
+        orderBy: { position: "asc" },
+        select: {
+          id: true,
+          ingredient: true,
+          position: true,
+        },
+      },
+    },
+  });
+
+  if (!recipe) return null;
+
+  return {
+    ...recipe,
+    createdAt: recipe.createdAt.toISOString(),
+    updatedAt: recipe.updatedAt.toISOString(),
+  };
 }
 
 export default async function PlanPage({
@@ -97,6 +138,9 @@ export default async function PlanPage({
   const view = parseView(getParam(resolvedSearchParams.view));
   const focusedDate = parseFocusedDate(getParam(resolvedSearchParams.date));
   const focusedDateISO = formatDateISO(focusedDate);
+  const recipeId = getParam(resolvedSearchParams.recipeId);
+  const cookRecipeId = getParam(resolvedSearchParams.cookRecipeId);
+  const cookView = getParam(resolvedSearchParams.cookView) === "1";
   const { start, end } = getViewRange(view, focusedDate);
   const endExclusive = addDays(end, 1);
 
@@ -147,6 +191,16 @@ export default async function PlanPage({
     photoUrl: item.recipe.photoUrl,
   }));
 
+  let selectedRecipe: RecipeDetail | null = null;
+  if (recipeId) {
+    selectedRecipe = await fetchRecipeDetail(recipeId, workspace.id);
+  }
+
+  let selectedCookingRecipe: RecipeDetail | null = null;
+  if (cookView && cookRecipeId) {
+    selectedCookingRecipe = await fetchRecipeDetail(cookRecipeId, workspace.id);
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <WorkspaceHeader
@@ -162,6 +216,8 @@ export default async function PlanPage({
         planItems={serializedPlanItems}
         view={view}
         focusedDateISO={focusedDateISO}
+        selectedRecipe={selectedRecipe}
+        selectedCookingRecipe={selectedCookingRecipe}
       />
     </div>
   );
