@@ -153,7 +153,7 @@ function MonthEventChip({
 }) {
   return (
     <div
-      className={`group flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 shadow-sm ${
+      className={`group flex w-full flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs text-slate-700 shadow-sm ${
         item.isPending ? "opacity-60" : ""
       }`}
     >
@@ -163,10 +163,14 @@ function MonthEventChip({
           alt=""
           loading="lazy"
           referrerPolicy="no-referrer"
-          className="h-5 w-5 rounded object-cover"
+          className="aspect-square w-full rounded-md object-cover"
         />
-      ) : null}
-      <span className="min-w-0 flex-1 whitespace-normal break-words font-medium text-slate-800">
+      ) : (
+        <div className="flex aspect-square w-full items-center justify-center rounded-md bg-slate-100 text-[10px] font-semibold text-slate-400">
+          No photo
+        </div>
+      )}
+      <span className="min-w-0 whitespace-normal break-words font-medium text-slate-800">
         {item.title}
       </span>
       <button
@@ -190,7 +194,7 @@ function WeekEventCard({
 }) {
   return (
     <div
-      className={`group flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-sm ${
+      className={`group flex w-full flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-700 shadow-sm ${
         item.isPending ? "opacity-60" : ""
       }`}
     >
@@ -200,14 +204,14 @@ function WeekEventCard({
           alt=""
           loading="lazy"
           referrerPolicy="no-referrer"
-          className="h-12 w-12 rounded-lg object-cover"
+          className="aspect-square w-full rounded-lg object-cover"
         />
       ) : (
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 text-[10px] font-semibold text-slate-400">
+        <div className="flex aspect-square w-full items-center justify-center rounded-lg bg-slate-100 text-[10px] font-semibold text-slate-400">
           No photo
         </div>
       )}
-      <span className="min-w-0 flex-1 whitespace-normal break-words text-sm font-medium text-slate-800">
+      <span className="min-w-0 whitespace-normal break-words text-sm font-medium text-slate-800">
         {item.title}
       </span>
       <button
