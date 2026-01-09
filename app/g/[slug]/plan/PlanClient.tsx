@@ -14,6 +14,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  type MouseEvent,
   useRef,
   useState,
   useTransition,
@@ -147,16 +148,46 @@ function RecipeRow({ recipe }: { recipe: RecipeItem }) {
 function MonthEventChip({
   item,
   onRemove,
+  slug,
 }: {
   item: PlanItem;
   onRemove: (itemId: string) => void;
+  slug: string;
 }) {
+  const router = useRouter();
+
+  const handleViewRecipe = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    router.push(`/g/${slug}/cook?recipeId=${item.recipeId}`);
+  };
+
+  const handleCookingView = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    router.push(`/g/${slug}/cook?cookRecipeId=${item.recipeId}&cookView=1`);
+  };
+
   return (
     <div
-      className={`group flex w-full flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs text-slate-700 shadow-sm ${
+      className={`group relative flex w-full flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs text-slate-700 shadow-sm ${
         item.isPending ? "opacity-60" : ""
       }`}
     >
+      <div className="pointer-events-none absolute right-2 top-2 flex flex-col gap-1 opacity-0 transition group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={handleViewRecipe}
+          className="pointer-events-auto rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
+        >
+          View recipe
+        </button>
+        <button
+          type="button"
+          onClick={handleCookingView}
+          className="pointer-events-auto rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
+        >
+          Cooking view
+        </button>
+      </div>
       {item.photoUrl ? (
         <img
           src={item.photoUrl}
@@ -188,16 +219,46 @@ function MonthEventChip({
 function WeekEventCard({
   item,
   onRemove,
+  slug,
 }: {
   item: PlanItem;
   onRemove: (itemId: string) => void;
+  slug: string;
 }) {
+  const router = useRouter();
+
+  const handleViewRecipe = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    router.push(`/g/${slug}/cook?recipeId=${item.recipeId}`);
+  };
+
+  const handleCookingView = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    router.push(`/g/${slug}/cook?cookRecipeId=${item.recipeId}&cookView=1`);
+  };
+
   return (
     <div
-      className={`group flex w-full flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-700 shadow-sm ${
+      className={`group relative flex w-full flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-700 shadow-sm ${
         item.isPending ? "opacity-60" : ""
       }`}
     >
+      <div className="pointer-events-none absolute right-3 top-3 flex flex-col gap-1 opacity-0 transition group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={handleViewRecipe}
+          className="pointer-events-auto rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
+        >
+          View recipe
+        </button>
+        <button
+          type="button"
+          onClick={handleCookingView}
+          className="pointer-events-auto rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
+        >
+          Cooking view
+        </button>
+      </div>
       {item.photoUrl ? (
         <img
           src={item.photoUrl}
@@ -234,6 +295,7 @@ function DayCell({
   view,
   items,
   onRemove,
+  slug,
 }: {
   dateISO: string;
   dayNumber: number;
@@ -242,6 +304,7 @@ function DayCell({
   view: PlanView;
   items: PlanItem[];
   onRemove: (itemId: string) => void;
+  slug: string;
 }) {
   const { isOver, setNodeRef } = useDroppable({
     id: dateISO,
@@ -267,9 +330,9 @@ function DayCell({
       <div className="flex flex-col gap-2">
         {items.map((item) => (
           view === "week" ? (
-            <WeekEventCard key={item.id} item={item} onRemove={onRemove} />
+            <WeekEventCard key={item.id} item={item} onRemove={onRemove} slug={slug} />
           ) : (
-            <MonthEventChip key={item.id} item={item} onRemove={onRemove} />
+            <MonthEventChip key={item.id} item={item} onRemove={onRemove} slug={slug} />
           )
         ))}
         {items.length === 0 ? (
@@ -630,6 +693,7 @@ export default function PlanClient({
                   view={view}
                   items={dayItems}
                   onRemove={handleRemoveItem}
+                  slug={slug}
                 />
               );
             })}
