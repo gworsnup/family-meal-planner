@@ -73,10 +73,10 @@ export default async function CookPage({
 
   if (!authed) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-[#f0ece0]">
         <WorkspaceHeader slug={slug} workspaceName={workspace.name} current="recipes" />
         <div className="mx-auto max-w-md px-6 py-10">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6">
             <h1 className="text-xl font-semibold text-slate-900">
               {workspace.name}
             </h1>
@@ -94,10 +94,10 @@ export default async function CookPage({
                 type="password"
                 placeholder="Passcode"
                 autoFocus
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
               />
               <button
-                className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                className="w-full rounded-lg bg-[#364c35] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2f402c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#364c35]/40"
               >
                 Unlock
               </button>
@@ -212,7 +212,7 @@ export default async function CookPage({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#f0ece0]">
       <WorkspaceHeader slug={slug} workspaceName={workspace.name} current="recipes" />
       <main className="mx-auto max-w-6xl px-6 py-6">
         <div className="mb-6">

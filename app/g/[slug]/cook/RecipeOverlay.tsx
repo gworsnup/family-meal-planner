@@ -108,6 +108,7 @@ export default function RecipeOverlay({
 
   const handleDelete = () => {
     if (!confirm("Delete this recipe?")) return;
+    onClose();
     startTransition(async () => {
       await deleteRecipe(slug, recipe.id);
       onDeleted();
@@ -120,7 +121,7 @@ export default function RecipeOverlay({
       onClick={onClose}
     >
       <div
-        className="flex h-[min(92vh,900px)] w-[min(1000px,96vw)] flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
+        className="flex h-[min(92vh,900px)] w-[min(1000px,96vw)] flex-col overflow-hidden rounded-2xl bg-white"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
@@ -153,7 +154,7 @@ export default function RecipeOverlay({
                   type="button"
                   onClick={handleSave}
                   disabled={isPending}
-                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+                  className="rounded-lg bg-[#364c35] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#2f402c]"
                 >
                   Save
                 </button>
@@ -199,7 +200,7 @@ export default function RecipeOverlay({
                       href={recipe.sourceUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-xs font-semibold text-emerald-600 underline"
+                      className="text-xs font-semibold text-[#364c35] underline"
                     >
                       Open TikTok
                     </a>
@@ -210,7 +211,7 @@ export default function RecipeOverlay({
                 <button
                   type="button"
                   onClick={() => setShowPhotoInput((value) => !value)}
-                  className="absolute bottom-3 right-3 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm"
+                  className="absolute bottom-3 right-3 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600"
                 >
                   Update photo
                 </button>
@@ -226,7 +227,7 @@ export default function RecipeOverlay({
                     }))
                   }
                   placeholder="Photo URL"
-                  className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
                 />
               )}
             </div>
@@ -242,7 +243,7 @@ export default function RecipeOverlay({
                       title: event.target.value,
                     }))
                   }
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-lg font-semibold text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-lg font-semibold text-slate-900 focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
                 />
               ) : (
                 <div className="text-2xl font-semibold text-slate-900">
@@ -263,7 +264,7 @@ export default function RecipeOverlay({
                           sourceName: event.target.value,
                         }))
                       }
-                      className="min-w-[160px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                      className="min-w-[160px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
                     />
                     <input
                       type="url"
@@ -275,7 +276,7 @@ export default function RecipeOverlay({
                           sourceUrl: event.target.value,
                         }))
                       }
-                      className="min-w-[160px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                      className="min-w-[160px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
                     />
                   </>
                 ) : (
@@ -285,7 +286,7 @@ export default function RecipeOverlay({
                         href={recipe.sourceUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="font-semibold text-emerald-600"
+                        className="font-semibold text-[#364c35]"
                       >
                         {recipe.sourceName || recipe.sourceUrl}
                       </a>
@@ -307,7 +308,7 @@ export default function RecipeOverlay({
                   }
                   placeholder="Description"
                   rows={3}
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
                 />
               ) : (
                 <div className="text-sm text-slate-600">
@@ -332,7 +333,7 @@ export default function RecipeOverlay({
                               : null,
                           }))
                         }
-                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
                       />
                     </label>
                     <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -349,7 +350,7 @@ export default function RecipeOverlay({
                               : null,
                           }))
                         }
-                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
                       />
                     </label>
                     <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -366,7 +367,7 @@ export default function RecipeOverlay({
                               : null,
                           }))
                         }
-                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
                       />
                     </label>
                   </>
@@ -398,7 +399,7 @@ export default function RecipeOverlay({
                           servings: event.target.value,
                         }))
                       }
-                      className="min-w-[120px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                      className="min-w-[120px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
                     />
                     <input
                       type="text"
@@ -410,7 +411,7 @@ export default function RecipeOverlay({
                           yields: event.target.value,
                         }))
                       }
-                      className="min-w-[120px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                      className="min-w-[120px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
                     />
                   </>
                 ) : (
@@ -454,7 +455,7 @@ export default function RecipeOverlay({
                           isPrivate: event.target.checked,
                         }))
                       }
-                      className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      className="h-4 w-4 rounded border-slate-300 text-[#364c35] focus:ring-[#364c35]"
                     />
                     Private recipe
                   </>
@@ -484,7 +485,7 @@ export default function RecipeOverlay({
                     }))
                   }
                   rows={10}
-                  className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
                 />
               ) : (
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
@@ -512,7 +513,7 @@ export default function RecipeOverlay({
                     }))
                   }
                   rows={10}
-                  className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
                 />
               ) : (
                 <div className="mt-2 whitespace-pre-line text-sm text-slate-600">
