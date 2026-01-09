@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 type RatingStarsProps = {
   value: number;
   onSet: (value: number) => void;
@@ -13,11 +15,14 @@ export default function RatingStars({
   disabled,
   stopPropagation,
 }: RatingStarsProps) {
+  const [hoverValue, setHoverValue] = useState<number | null>(null);
+  const displayValue = hoverValue ?? value;
+
   return (
-    <div style={{ display: "inline-flex", gap: 4 }}>
+    <div className="inline-flex items-center gap-1">
       {Array.from({ length: 5 }, (_, index) => {
         const starValue = index + 1;
-        const filled = value >= starValue;
+        const filled = displayValue >= starValue;
         return (
           <button
             key={starValue}
@@ -26,21 +31,30 @@ export default function RatingStars({
               if (stopPropagation) {
                 event.stopPropagation();
               }
+              if (disabled) return;
               onSet(value === starValue ? 0 : starValue);
             }}
+            onMouseEnter={() => {
+              if (!disabled) setHoverValue(starValue);
+            }}
+            onMouseLeave={() => setHoverValue(null)}
+            onFocus={() => {
+              if (!disabled) setHoverValue(starValue);
+            }}
+            onBlur={() => setHoverValue(null)}
             disabled={disabled}
             aria-label={`Set rating to ${starValue}`}
-            style={{
-              background: "none",
-              border: "none",
-              padding: 0,
-              cursor: disabled ? "not-allowed" : "pointer",
-              color: filled ? "#f59e0b" : "#cbd5f5",
-              fontSize: 18,
-              lineHeight: 1,
-            }}
+            className={`transition ${
+              disabled ? "cursor-not-allowed" : "cursor-pointer hover:scale-110"
+            }`}
           >
-            {filled ? "★" : "☆"}
+            <span
+              className={`text-lg leading-none transition ${
+                filled ? "text-amber-400" : "text-slate-300"
+              }`}
+            >
+              {filled ? "★" : "☆"}
+            </span>
           </button>
         );
       })}

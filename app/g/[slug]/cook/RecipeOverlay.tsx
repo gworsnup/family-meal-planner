@@ -5,16 +5,6 @@ import RatingStars from "./RatingStars";
 import { deleteRecipe, updateRecipe } from "./actions";
 import type { RecipeDetail, UpdateRecipeInput } from "./types";
 
-const overlayStyles = {
-  position: "fixed" as const,
-  inset: 0,
-  background: "rgba(0, 0, 0, 0.6)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 50,
-};
-
 type RecipeOverlayProps = {
   slug: string;
   recipe: RecipeDetail;
@@ -125,43 +115,25 @@ export default function RecipeOverlay({
   };
 
   return (
-    <div style={overlayStyles} onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+      onClick={onClose}
+    >
       <div
-        style={{
-          background: "white",
-          width: "min(1000px, 96vw)",
-          height: "min(92vh, 900px)",
-          borderRadius: 12,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
+        className="flex h-[min(92vh,900px)] w-[min(1000px,96vw)] flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div
-          style={{
-            padding: "16px 20px",
-            borderBottom: "1px solid #eee",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          <div style={{ fontWeight: 600, fontSize: 18 }}>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+          <div className="text-lg font-semibold text-slate-900">
             {isEditing ? formState.title : recipe.title}
           </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div className="flex flex-wrap gap-2">
             {!isEditing && (
               <>
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: 6,
-                    border: "1px solid #ccc",
-                  }}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
                 >
                   Edit
                 </button>
@@ -169,13 +141,7 @@ export default function RecipeOverlay({
                   type="button"
                   onClick={handleDelete}
                   disabled={isPending}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: 6,
-                    border: "1px solid #ef4444",
-                    color: "#ef4444",
-                    background: "white",
-                  }}
+                  className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-semibold text-red-600 hover:border-red-300"
                 >
                   Delete
                 </button>
@@ -187,13 +153,7 @@ export default function RecipeOverlay({
                   type="button"
                   onClick={handleSave}
                   disabled={isPending}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: 6,
-                    border: "1px solid #0f766e",
-                    background: "#0f766e",
-                    color: "white",
-                  }}
+                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
                 >
                   Save
                 </button>
@@ -204,11 +164,7 @@ export default function RecipeOverlay({
                     setIsEditing(false);
                     setShowPhotoInput(false);
                   }}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: 6,
-                    border: "1px solid #ccc",
-                  }}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
                 >
                   Cancel
                 </button>
@@ -217,67 +173,33 @@ export default function RecipeOverlay({
             <button
               type="button"
               onClick={onClose}
-              style={{
-                padding: "8px 12px",
-                borderRadius: 6,
-                border: "1px solid #ccc",
-              }}
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
             >
               Close
             </button>
           </div>
         </div>
 
-        <div
-          style={{
-            padding: 20,
-            display: "flex",
-            flexDirection: "column",
-            gap: 20,
-            overflowY: "auto",
-          }}
-        >
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 20 }}>
-            <div style={{ position: "relative" }}>
+        <div className="flex flex-col gap-6 overflow-y-auto p-6">
+          <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+            <div className="relative">
               {(isEditing ? formState.photoUrl : recipe.photoUrl) ? (
                 <img
                   src={isEditing ? formState.photoUrl ?? "" : recipe.photoUrl ?? ""}
                   alt={recipe.title}
                   loading="lazy"
                   referrerPolicy="no-referrer"
-                  style={{
-                    width: "100%",
-                    borderRadius: 10,
-                    objectFit: "cover",
-                    maxHeight: 320,
-                  }}
+                  className="max-h-80 w-full rounded-xl object-cover"
                 />
               ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: 220,
-                    borderRadius: 10,
-                    background: "#f3f3f3",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#777",
-                    gap: 8,
-                  }}
-                >
+                <div className="flex h-56 w-full flex-col items-center justify-center gap-2 rounded-xl bg-slate-100 text-sm text-slate-400">
                   <span>No photo</span>
                   {isTikTokUrl(recipe.sourceUrl) && recipe.sourceUrl && (
                     <a
                       href={recipe.sourceUrl}
                       target="_blank"
                       rel="noreferrer"
-                      style={{
-                        fontSize: 12,
-                        color: "#2563eb",
-                        textDecoration: "underline",
-                      }}
+                      className="text-xs font-semibold text-emerald-600 underline"
                     >
                       Open TikTok
                     </a>
@@ -288,15 +210,7 @@ export default function RecipeOverlay({
                 <button
                   type="button"
                   onClick={() => setShowPhotoInput((value) => !value)}
-                  style={{
-                    position: "absolute",
-                    right: 12,
-                    bottom: 12,
-                    padding: "8px 12px",
-                    borderRadius: 6,
-                    border: "1px solid #ccc",
-                    background: "white",
-                  }}
+                  className="absolute bottom-3 right-3 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm"
                 >
                   Update photo
                 </button>
@@ -312,18 +226,12 @@ export default function RecipeOverlay({
                     }))
                   }
                   placeholder="Photo URL"
-                  style={{
-                    width: "100%",
-                    marginTop: 12,
-                    padding: "8px 10px",
-                    borderRadius: 6,
-                    border: "1px solid #ccc",
-                  }}
+                  className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                 />
               )}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="flex flex-col gap-4">
               {isEditing ? (
                 <input
                   type="text"
@@ -334,21 +242,15 @@ export default function RecipeOverlay({
                       title: event.target.value,
                     }))
                   }
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: 8,
-                    border: "1px solid #ccc",
-                    fontSize: 18,
-                    fontWeight: 600,
-                  }}
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-lg font-semibold text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                 />
               ) : (
-                <div style={{ fontSize: 20, fontWeight: 700 }}>
+                <div className="text-2xl font-semibold text-slate-900">
                   {recipe.title}
                 </div>
               )}
 
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <div className="flex flex-wrap gap-3">
                 {isEditing ? (
                   <>
                     <input
@@ -361,13 +263,7 @@ export default function RecipeOverlay({
                           sourceName: event.target.value,
                         }))
                       }
-                      style={{
-                        flex: 1,
-                        minWidth: 160,
-                        padding: "8px 10px",
-                        borderRadius: 6,
-                        border: "1px solid #ccc",
-                      }}
+                      className="min-w-[160px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                     />
                     <input
                       type="url"
@@ -379,23 +275,17 @@ export default function RecipeOverlay({
                           sourceUrl: event.target.value,
                         }))
                       }
-                      style={{
-                        flex: 1,
-                        minWidth: 160,
-                        padding: "8px 10px",
-                        borderRadius: 6,
-                        border: "1px solid #ccc",
-                      }}
+                      className="min-w-[160px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                     />
                   </>
                 ) : (
-                  <div style={{ color: "#555" }}>
+                  <div className="text-sm text-slate-600">
                     {recipe.sourceUrl ? (
                       <a
                         href={recipe.sourceUrl}
                         target="_blank"
                         rel="noreferrer"
-                        style={{ color: "#0f766e" }}
+                        className="font-semibold text-emerald-600"
                       >
                         {recipe.sourceName || recipe.sourceUrl}
                       </a>
@@ -417,29 +307,19 @@ export default function RecipeOverlay({
                   }
                   placeholder="Description"
                   rows={3}
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: 6,
-                    border: "1px solid #ccc",
-                  }}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                 />
               ) : (
-                <div style={{ color: "#555" }}>
+                <div className="text-sm text-slate-600">
                   {recipe.description || "No description."}
                 </div>
               )}
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                  gap: 12,
-                }}
-              >
+              <div className="grid gap-3 sm:grid-cols-3">
                 {isEditing ? (
                   <>
-                    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <span style={{ fontSize: 12, color: "#555" }}>Prep (min)</span>
+                    <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Prep (min)
                       <input
                         type="number"
                         min={0}
@@ -452,15 +332,11 @@ export default function RecipeOverlay({
                               : null,
                           }))
                         }
-                        style={{
-                          padding: "8px 10px",
-                          borderRadius: 6,
-                          border: "1px solid #ccc",
-                        }}
+                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                       />
                     </label>
-                    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <span style={{ fontSize: 12, color: "#555" }}>Cook (min)</span>
+                    <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Cook (min)
                       <input
                         type="number"
                         min={0}
@@ -473,15 +349,11 @@ export default function RecipeOverlay({
                               : null,
                           }))
                         }
-                        style={{
-                          padding: "8px 10px",
-                          borderRadius: 6,
-                          border: "1px solid #ccc",
-                        }}
+                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                       />
                     </label>
-                    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <span style={{ fontSize: 12, color: "#555" }}>Total (min)</span>
+                    <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Total (min)
                       <input
                         type="number"
                         min={0}
@@ -494,30 +366,26 @@ export default function RecipeOverlay({
                               : null,
                           }))
                         }
-                        style={{
-                          padding: "8px 10px",
-                          borderRadius: 6,
-                          border: "1px solid #ccc",
-                        }}
+                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                       />
                     </label>
                   </>
                 ) : (
                   <>
-                    <div style={{ color: "#555" }}>
+                    <div className="text-sm text-slate-600">
                       Prep: {formatMinutes(recipe.prepTimeMinutes)}
                     </div>
-                    <div style={{ color: "#555" }}>
+                    <div className="text-sm text-slate-600">
                       Cook: {formatMinutes(recipe.cookTimeMinutes)}
                     </div>
-                    <div style={{ color: "#555" }}>
+                    <div className="text-sm text-slate-600">
                       Total: {formatMinutes(recipe.totalTimeMinutes)}
                     </div>
                   </>
                 )}
               </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              <div className="flex flex-wrap gap-3">
                 {isEditing ? (
                   <>
                     <input
@@ -530,13 +398,7 @@ export default function RecipeOverlay({
                           servings: event.target.value,
                         }))
                       }
-                      style={{
-                        flex: 1,
-                        minWidth: 120,
-                        padding: "8px 10px",
-                        borderRadius: 6,
-                        border: "1px solid #ccc",
-                      }}
+                      className="min-w-[120px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                     />
                     <input
                       type="text"
@@ -548,27 +410,25 @@ export default function RecipeOverlay({
                           yields: event.target.value,
                         }))
                       }
-                      style={{
-                        flex: 1,
-                        minWidth: 120,
-                        padding: "8px 10px",
-                        borderRadius: 6,
-                        border: "1px solid #ccc",
-                      }}
+                      className="min-w-[120px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                     />
                   </>
                 ) : (
                   <>
-                    <div style={{ color: "#555" }}>
+                    <div className="text-sm text-slate-600">
                       Servings: {recipe.servings || "—"}
                     </div>
-                    <div style={{ color: "#555" }}>Yields: {recipe.yields || "—"}</div>
+                    <div className="text-sm text-slate-600">
+                      Yields: {recipe.yields || "—"}
+                    </div>
                   </>
                 )}
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 13, color: "#555" }}>Rating:</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Rating
+                </span>
                 {isEditing ? (
                   <RatingStars
                     value={formState.rating ?? 0}
@@ -578,15 +438,11 @@ export default function RecipeOverlay({
                     stopPropagation
                   />
                 ) : (
-                  <RatingStars
-                    value={recipe.rating ?? 0}
-                    onSet={() => undefined}
-                    disabled
-                  />
+                  <RatingStars value={recipe.rating ?? 0} onSet={() => undefined} disabled />
                 )}
               </div>
 
-              <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label className="flex items-center gap-2 text-sm text-slate-600">
                 {isEditing ? (
                   <>
                     <input
@@ -598,25 +454,26 @@ export default function RecipeOverlay({
                           isPrivate: event.target.checked,
                         }))
                       }
+                      className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                     />
                     Private recipe
                   </>
                 ) : (
-                  <div style={{ color: "#555" }}>
+                  <div>
                     Privacy: {recipe.isPrivate ? "Private" : "Shared"}
                   </div>
                 )}
               </label>
 
-              <div style={{ fontSize: 12, color: "#777" }}>
+              <div className="text-xs text-slate-400">
                 Updated {formatDate(recipe.updatedAt)} · Created {formatDate(recipe.createdAt)}
               </div>
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          <div className="grid gap-6 lg:grid-cols-2">
             <div>
-              <h3 style={{ marginTop: 0 }}>Ingredients</h3>
+              <h3 className="text-base font-semibold text-slate-900">Ingredients</h3>
               {isEditing ? (
                 <textarea
                   value={formState.ingredientsText}
@@ -627,22 +484,15 @@ export default function RecipeOverlay({
                     }))
                   }
                   rows={10}
-                  style={{
-                    width: "100%",
-                    padding: "8px 10px",
-                    borderRadius: 6,
-                    border: "1px solid #ccc",
-                  }}
+                  className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                 />
               ) : (
-                <ul style={{ paddingLeft: 18, color: "#555" }}>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
                   {recipe.ingredientLines.length > 0 ? (
                     recipe.ingredientLines
                       .slice()
                       .sort((a, b) => a.position - b.position)
-                      .map((line) => (
-                        <li key={line.id}>{line.ingredient}</li>
-                      ))
+                      .map((line) => <li key={line.id}>{line.ingredient}</li>)
                   ) : (
                     <li>No ingredients listed.</li>
                   )}
@@ -651,7 +501,7 @@ export default function RecipeOverlay({
             </div>
 
             <div>
-              <h3 style={{ marginTop: 0 }}>Directions</h3>
+              <h3 className="text-base font-semibold text-slate-900">Directions</h3>
               {isEditing ? (
                 <textarea
                   value={formState.directions ?? ""}
@@ -662,15 +512,10 @@ export default function RecipeOverlay({
                     }))
                   }
                   rows={10}
-                  style={{
-                    width: "100%",
-                    padding: "8px 10px",
-                    borderRadius: 6,
-                    border: "1px solid #ccc",
-                  }}
+                  className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                 />
               ) : (
-                <div style={{ whiteSpace: "pre-line", color: "#555" }}>
+                <div className="mt-2 whitespace-pre-line text-sm text-slate-600">
                   {recipe.directions || "No directions provided."}
                 </div>
               )}

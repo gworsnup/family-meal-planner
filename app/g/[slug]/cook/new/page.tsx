@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
+import WorkspaceHeader from "../_components/WorkspaceHeader";
 
 function parseOptionalInt(value: FormDataEntryValue | null) {
   if (typeof value !== "string") return null;
@@ -35,7 +36,11 @@ export default async function NewRecipePage({
 
   const workspace = await prisma.workspace.findUnique({ where: { slug } });
   if (!workspace) {
-    return <div style={{ padding: 24 }}>Workspace not found.</div>;
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-10 text-slate-700">
+        Workspace not found.
+      </div>
+    );
   }
 
   const cookieStore = await cookies();
@@ -43,22 +48,35 @@ export default async function NewRecipePage({
 
   if (!authed) {
     return (
-      <div style={{ padding: 24, maxWidth: 420 }}>
-        <h1>{workspace.name}</h1>
-        <p>Enter passcode to continue.</p>
+      <div className="min-h-screen bg-slate-50">
+        <WorkspaceHeader slug={slug} workspaceName={workspace.name} current="recipes" />
+        <div className="mx-auto max-w-md px-6 py-10">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h1 className="text-xl font-semibold text-slate-900">
+              {workspace.name}
+            </h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Enter passcode to continue.
+            </p>
 
-        <form action={`/api/workspace/${slug}/login`} method="post">
-          <input
-            name="passcode"
-            type="password"
-            placeholder="Passcode"
-            autoFocus
-            style={{ padding: 12, width: "100%", marginTop: 12 }}
-          />
-          <button style={{ marginTop: 12, padding: 12, width: "100%" }}>
-            Unlock
-          </button>
-        </form>
+            <form
+              action={`/api/workspace/${slug}/login`}
+              method="post"
+              className="mt-6 space-y-3"
+            >
+              <input
+                name="passcode"
+                type="password"
+                placeholder="Passcode"
+                autoFocus
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+              />
+              <button className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
+                Unlock
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     );
   }
@@ -131,180 +149,195 @@ export default async function NewRecipePage({
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 760, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <div>
-          <h1 style={{ margin: 0 }}>Add recipe</h1>
-          <p style={{ marginTop: 4, color: "#555" }}>to {workspace.name}</p>
-        </div>
-        <Link href={`/g/${slug}/cook`} style={{ color: "#0f766e", textDecoration: "none" }}>
-          ← Back to Cook
-        </Link>
-      </div>
-
-      <form action={createRecipe} style={{ display: "grid", gap: 12 }}>
-        <div style={{ display: "grid", gap: 6 }}>
-          <label htmlFor="title" style={{ fontWeight: 600 }}>
-            Title *
-          </label>
-          <input
-            id="title"
-            name="title"
-            required
-            style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-            placeholder="Recipe title"
-          />
-        </div>
-
-        <div style={{ display: "grid", gap: 6 }}>
-          <label htmlFor="sourceUrl" style={{ fontWeight: 600 }}>
-            Source URL
-          </label>
-          <input
-            id="sourceUrl"
-            name="sourceUrl"
-            type="url"
-            style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-            placeholder="https://example.com/recipe"
-          />
-        </div>
-
-        <div style={{ display: "grid", gap: 6 }}>
-          <label htmlFor="photoUrl" style={{ fontWeight: 600 }}>
-            Photo URL
-          </label>
-          <input
-            id="photoUrl"
-            name="photoUrl"
-            type="url"
-            style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-            placeholder="https://example.com/photo.jpg"
-          />
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-          <div style={{ display: "grid", gap: 6 }}>
-            <label htmlFor="prepTimeMinutes" style={{ fontWeight: 600 }}>
-              Prep time (minutes)
-            </label>
-            <input
-              id="prepTimeMinutes"
-              name="prepTimeMinutes"
-              type="number"
-              min="0"
-              style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-              placeholder="15"
-            />
+    <div className="min-h-screen bg-slate-50">
+      <WorkspaceHeader slug={slug} workspaceName={workspace.name} current="recipes" />
+      <main className="mx-auto max-w-4xl px-6 py-8">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900">
+                Add recipe
+              </h1>
+              <p className="mt-1 text-sm text-slate-600">
+                Save a recipe to {workspace.name}.
+              </p>
+            </div>
+            <Link
+              href={`/g/${slug}/cook`}
+              className="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+            >
+              ← Back to Recipes
+            </Link>
           </div>
-          <div style={{ display: "grid", gap: 6 }}>
-            <label htmlFor="cookTimeMinutes" style={{ fontWeight: 600 }}>
-              Cook time (minutes)
-            </label>
-            <input
-              id="cookTimeMinutes"
-              name="cookTimeMinutes"
-              type="number"
-              min="0"
-              style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-              placeholder="30"
-            />
-          </div>
-          <div style={{ display: "grid", gap: 6 }}>
-            <label htmlFor="totalTimeMinutes" style={{ fontWeight: 600 }}>
-              Total time (minutes)
-            </label>
-            <input
-              id="totalTimeMinutes"
-              name="totalTimeMinutes"
-              type="number"
-              min="0"
-              style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-              placeholder="45"
-            />
-          </div>
-        </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-          <div style={{ display: "grid", gap: 6 }}>
-            <label htmlFor="servings" style={{ fontWeight: 600 }}>
-              Servings
-            </label>
-            <input
-              id="servings"
-              name="servings"
-              style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-              placeholder="4"
-            />
-          </div>
-          <div style={{ display: "grid", gap: 6 }}>
-            <label htmlFor="yields" style={{ fontWeight: 600 }}>
-              Yields
-            </label>
-            <input
-              id="yields"
-              name="yields"
-              style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-              placeholder="1 loaf"
-            />
-          </div>
-          <div style={{ display: "grid", gap: 6 }}>
-            <label htmlFor="rating" style={{ fontWeight: 600 }}>
-              Rating (0-5)
-            </label>
-            <input
-              id="rating"
-              name="rating"
-              type="number"
-              min="0"
-              max="5"
-              style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-              placeholder="5"
-            />
-          </div>
-        </div>
+          <form action={createRecipe} className="grid gap-5">
+            <div className="grid gap-2">
+              <label htmlFor="title" className="text-sm font-semibold text-slate-800">
+                Title *
+              </label>
+              <input
+                id="title"
+                name="title"
+                required
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                placeholder="Recipe title"
+              />
+            </div>
 
-        <div style={{ display: "grid", gap: 6 }}>
-          <label htmlFor="ingredients" style={{ fontWeight: 600 }}>
-            Ingredients (one per line)
-          </label>
-          <textarea
-            id="ingredients"
-            name="ingredients"
-            rows={6}
-            style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-            placeholder={"2 cups flour\n1 tsp salt\n1 cup water"}
-          />
-        </div>
+            <div className="grid gap-2">
+              <label htmlFor="sourceUrl" className="text-sm font-semibold text-slate-800">
+                Source URL
+              </label>
+              <input
+                id="sourceUrl"
+                name="sourceUrl"
+                type="url"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                placeholder="https://example.com/recipe"
+              />
+            </div>
 
-        <div style={{ display: "grid", gap: 6 }}>
-          <label htmlFor="directions" style={{ fontWeight: 600 }}>
-            Directions
-          </label>
-          <textarea
-            id="directions"
-            name="directions"
-            rows={6}
-            style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-            placeholder="Write out the steps"
-          />
-        </div>
+            <div className="grid gap-2">
+              <label htmlFor="photoUrl" className="text-sm font-semibold text-slate-800">
+                Photo URL
+              </label>
+              <input
+                id="photoUrl"
+                name="photoUrl"
+                type="url"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                placeholder="https://example.com/photo.jpg"
+              />
+            </div>
 
-        <button
-          type="submit"
-          style={{
-            padding: "12px 16px",
-            background: "#0f766e",
-            color: "white",
-            border: "none",
-            borderRadius: 6,
-            fontWeight: 600,
-            cursor: "pointer",
-            width: "fit-content",
-          }}
-        >
-          Save recipe
-        </button>
-      </form>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-2">
+                <label
+                  htmlFor="prepTimeMinutes"
+                  className="text-sm font-semibold text-slate-800"
+                >
+                  Prep time (minutes)
+                </label>
+                <input
+                  id="prepTimeMinutes"
+                  name="prepTimeMinutes"
+                  type="number"
+                  min="0"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  placeholder="15"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label
+                  htmlFor="cookTimeMinutes"
+                  className="text-sm font-semibold text-slate-800"
+                >
+                  Cook time (minutes)
+                </label>
+                <input
+                  id="cookTimeMinutes"
+                  name="cookTimeMinutes"
+                  type="number"
+                  min="0"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  placeholder="30"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label
+                  htmlFor="totalTimeMinutes"
+                  className="text-sm font-semibold text-slate-800"
+                >
+                  Total time (minutes)
+                </label>
+                <input
+                  id="totalTimeMinutes"
+                  name="totalTimeMinutes"
+                  type="number"
+                  min="0"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  placeholder="45"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-2">
+                <label htmlFor="servings" className="text-sm font-semibold text-slate-800">
+                  Servings
+                </label>
+                <input
+                  id="servings"
+                  name="servings"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  placeholder="4"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="yields" className="text-sm font-semibold text-slate-800">
+                  Yields
+                </label>
+                <input
+                  id="yields"
+                  name="yields"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  placeholder="1 loaf"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="rating" className="text-sm font-semibold text-slate-800">
+                  Rating (0-5)
+                </label>
+                <input
+                  id="rating"
+                  name="rating"
+                  type="number"
+                  min="0"
+                  max="5"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  placeholder="5"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <label
+                htmlFor="ingredients"
+                className="text-sm font-semibold text-slate-800"
+              >
+                Ingredients (one per line)
+              </label>
+              <textarea
+                id="ingredients"
+                name="ingredients"
+                rows={6}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                placeholder={"2 cups flour\n1 tsp salt\n1 cup water"}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <label htmlFor="directions" className="text-sm font-semibold text-slate-800">
+                Directions
+              </label>
+              <textarea
+                id="directions"
+                name="directions"
+                rows={6}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                placeholder="Write out the steps"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-fit rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            >
+              Save recipe
+            </button>
+          </form>
+        </div>
+      </main>
     </div>
   );
 }
