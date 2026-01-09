@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
+import WorkspaceHeader from "../_components/WorkspaceHeader";
 import CookClient from "./CookClient";
 import { RecipeDetail } from "./types";
 
@@ -61,7 +61,11 @@ export default async function CookPage({
 
   const workspace = await prisma.workspace.findUnique({ where: { slug } });
   if (!workspace) {
-    return <div style={{ padding: 24 }}>Workspace not found.</div>;
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-10 text-slate-700">
+        Workspace not found.
+      </div>
+    );
   }
 
   const cookieStore = await cookies();
@@ -69,22 +73,37 @@ export default async function CookPage({
 
   if (!authed) {
     return (
-      <div style={{ padding: 24, maxWidth: 420 }}>
-        <h1>{workspace.name}</h1>
-        <p>Enter passcode to continue.</p>
+      <div className="min-h-screen bg-slate-50">
+        <WorkspaceHeader slug={slug} workspaceName={workspace.name} current="recipes" />
+        <div className="mx-auto max-w-md px-6 py-10">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h1 className="text-xl font-semibold text-slate-900">
+              {workspace.name}
+            </h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Enter passcode to continue.
+            </p>
 
-        <form action={`/api/workspace/${slug}/login`} method="post">
-          <input
-            name="passcode"
-            type="password"
-            placeholder="Passcode"
-            autoFocus
-            style={{ padding: 12, width: "100%", marginTop: 12 }}
-          />
-          <button style={{ marginTop: 12, padding: 12, width: "100%" }}>
-            Unlock
-          </button>
-        </form>
+            <form
+              action={`/api/workspace/${slug}/login`}
+              method="post"
+              className="mt-6 space-y-3"
+            >
+              <input
+                name="passcode"
+                type="password"
+                placeholder="Passcode"
+                autoFocus
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+              />
+              <button
+                className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              >
+                Unlock
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     );
   }
@@ -193,47 +212,34 @@ export default async function CookPage({
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-        }}
-      >
-        <div>
-          <h1 style={{ margin: 0 }}>{workspace.name} · Cook</h1>
-          <p style={{ marginTop: 4, color: "#555" }}>
-            Recipes in this workspace.
+    <div className="min-h-screen bg-slate-50">
+      <WorkspaceHeader slug={slug} workspaceName={workspace.name} current="recipes" />
+      <main className="mx-auto max-w-6xl px-6 py-6">
+        <div className="mb-6">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold text-slate-900">Recipes</h1>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
+              {workspace.name}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-slate-600">
+            Browse, import, and organize your favorite recipes.
           </p>
         </div>
-        <Link
-          href={`/g/${slug}/cook/new`}
-          style={{
-            padding: "10px 14px",
-            background: "#0f766e",
-            color: "white",
-            borderRadius: 6,
-            textDecoration: "none",
-          }}
-        >
-          Add recipe
-        </Link>
-      </div>
 
-      <CookClient
-        slug={slug}
-        recipes={listRecipes}
-        view={view}
-        q={q}
-        minRating={minRating}
-        hasPhoto={hasPhoto}
-        privateOnly={privateOnly}
-        sort={sort}
-        dir={dir}
-        selectedRecipe={selectedRecipe}
-      />
+        <CookClient
+          slug={slug}
+          recipes={listRecipes}
+          view={view}
+          q={q}
+          minRating={minRating}
+          hasPhoto={hasPhoto}
+          privateOnly={privateOnly}
+          sort={sort}
+          dir={dir}
+          selectedRecipe={selectedRecipe}
+        />
+      </main>
     </div>
   );
 }

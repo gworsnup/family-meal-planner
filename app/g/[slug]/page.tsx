@@ -42,7 +42,7 @@ export default async function WorkspacePage({
     <div style={{ padding: 24 }}>
       <h1>{workspace.name}</h1>
       <p>✅ Unlocked.</p>
-      <p>Next: we’ll build Cook / Plan / Shop under this workspace.</p>
+      <p>Next: we’ll build Recipes / Plan / Shopping List under this workspace.</p>
     </div>
   );
 }

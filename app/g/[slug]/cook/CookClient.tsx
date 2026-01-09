@@ -186,7 +186,7 @@ export default function CookClient({
     updateParams({ recipeId });
   };
 
-  const renderThumbnail = (recipe: RecipeItem) => {
+  const renderTableThumbnail = (recipe: RecipeItem) => {
     if (recipe.photoUrl) {
       return (
         <img
@@ -194,42 +194,42 @@ export default function CookClient({
           alt={recipe.title}
           loading="lazy"
           referrerPolicy="no-referrer"
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 8,
-            objectFit: "cover",
-            display: "block",
-            background: "#f3f3f3",
-          }}
+          className="h-16 w-16 rounded-xl object-cover shadow-sm"
         />
       );
     }
 
     return (
-      <div
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: 8,
-          background: "#f3f3f3",
-          color: "#777",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 11,
-          textAlign: "center",
-          padding: 4,
-        }}
-      >
+      <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100 text-[11px] font-medium text-slate-400">
         No photo
+      </div>
+    );
+  };
+
+  const renderGridImage = (recipe: RecipeItem) => {
+    if (recipe.photoUrl) {
+      return (
+        <img
+          src={recipe.photoUrl}
+          alt={recipe.title}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className="h-40 w-full rounded-t-2xl object-cover"
+        />
+      );
+    }
+
+    return (
+      <div className="flex h-40 w-full flex-col items-center justify-center gap-2 rounded-t-2xl bg-slate-100 text-sm text-slate-400">
+        <span className="text-2xl">🍽️</span>
+        <span>No photo</span>
       </div>
     );
   };
 
   const sortIndicator = (field: SortField) => {
     if (currentSort !== field) return "";
-    return currentDir === "asc" ? " ▲" : " ▼";
+    return currentDir === "asc" ? "▲" : "▼";
   };
 
   const handleSort = (field: SortField) => {
@@ -332,301 +332,281 @@ export default function CookClient({
     }
   })();
 
+  const isImportActive =
+    isImportPending || importStatus === "queued" || importStatus === "running";
+
+  const importStatusTone =
+    importStatus === "failed"
+      ? "border-red-200 bg-red-50 text-red-700"
+      : importStatus === "success" || importStatus === "partial"
+        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+        : "border-slate-200 bg-slate-50 text-slate-600";
+
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 12,
-          alignItems: "flex-end",
-          marginBottom: 16,
-          background: "#fff",
-          border: "1px solid #eee",
-          borderRadius: 8,
-          padding: 12,
-        }}
-      >
-        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ fontSize: 12, color: "#555" }}>Recipe URL</span>
-          <input
-            type="url"
-            value={importUrl}
-            onChange={(event) => {
-              setImportUrl(event.target.value);
-              if (importStatus === "failed") {
-                setImportStatus("idle");
-                setImportMessage(null);
-              }
-            }}
-            placeholder="https://example.com/recipe"
-            style={{
-              padding: "8px 10px",
-              borderRadius: 6,
-              border: "1px solid #ccc",
-              minWidth: 260,
-            }}
-          />
-        </label>
-        <button
-          type="button"
-          onClick={handleImport}
-          disabled={isImportPending || importStatus === "queued" || importStatus === "running"}
-          style={{
-            padding: "9px 14px",
-            borderRadius: 6,
-            border: "1px solid #0f766e",
-            background: "#0f766e",
-            color: "white",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          {isImportPending ? "Starting…" : "Add from URL"}
-        </button>
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
+            <label className="flex w-full flex-1 flex-col gap-2 text-sm text-slate-600">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Recipe URL
+              </span>
+              <input
+                type="url"
+                value={importUrl}
+                onChange={(event) => {
+                  setImportUrl(event.target.value);
+                  if (importStatus === "failed") {
+                    setImportStatus("idle");
+                    setImportMessage(null);
+                  }
+                }}
+                placeholder="https://example.com/recipe"
+                disabled={isImportActive}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:bg-slate-100 disabled:text-slate-400"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={handleImport}
+              disabled={isImportActive}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+            >
+              {isImportPending ? "Starting…" : "Add from URL"}
+            </button>
+          </div>
+          <Link
+            href={`/g/${slug}/cook/new`}
+            className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+          >
+            Add recipe
+          </Link>
+        </div>
+
         {importStatusLabel && (
-          <span style={{ fontSize: 13, color: importStatus === "failed" ? "#b91c1c" : "#555" }}>
-            {importStatusLabel}
-          </span>
+          <div
+            className={`mt-3 flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${importStatusTone}`}
+          >
+            {isImportActive && (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500/30 border-t-emerald-600" />
+            )}
+            <span>{importStatusLabel}</span>
+          </div>
+        )}
+
+        {isImportActive && (
+          <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full w-1/3 animate-pulse rounded-full bg-emerald-500/60" />
+          </div>
         )}
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 12,
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 16,
-          background: "#fafafa",
-          padding: 12,
-          borderRadius: 8,
-          border: "1px solid #eee",
-        }}
-      >
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 12, color: "#555" }}>Search</span>
-            <input
-              type="search"
-              placeholder="Search recipes"
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-              style={{
-                padding: "8px 10px",
-                borderRadius: 6,
-                border: "1px solid #ccc",
-                minWidth: 220,
-              }}
-            />
-          </label>
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-1 flex-wrap items-end gap-4">
+            <label className="flex flex-col gap-2 text-sm text-slate-600">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Search
+              </span>
+              <input
+                type="search"
+                placeholder="Search recipes"
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+                className="min-w-[220px] rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+              />
+            </label>
 
-          <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 12, color: "#555" }}>Min rating</span>
-            <select
-              value={currentMinRating}
-              onChange={(event) =>
-                updateParams({
-                  minRating:
-                    event.target.value === "0" ? null : event.target.value,
-                })
-              }
-              style={{
-                padding: "8px 10px",
-                borderRadius: 6,
-                border: "1px solid #ccc",
-              }}
+            <label className="flex flex-col gap-2 text-sm text-slate-600">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Min rating
+              </span>
+              <select
+                value={currentMinRating}
+                onChange={(event) =>
+                  updateParams({
+                    minRating:
+                      event.target.value === "0" ? null : event.target.value,
+                  })
+                }
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+              >
+                <option value="0">Any</option>
+                <option value="1">1+</option>
+                <option value="2">2+</option>
+                <option value="3">3+</option>
+                <option value="4">4+</option>
+                <option value="5">5</option>
+              </select>
+            </label>
+
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={currentHasPhoto}
+                onChange={(event) =>
+                  updateParams({ hasPhoto: event.target.checked ? "1" : null })
+                }
+                className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              Has photo
+            </label>
+
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={currentPrivateOnly}
+                onChange={(event) =>
+                  updateParams({ private: event.target.checked ? "1" : null })
+                }
+                className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              Private only
+            </label>
+
+            <label className="flex flex-col gap-2 text-sm text-slate-600">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Sort
+              </span>
+              <select
+                value={`${currentSort}:${currentDir}`}
+                onChange={(event) => handleSortSelect(event.target.value)}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => updateParams({ view: "table" })}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                currentView === "table"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "border border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900"
+              }`}
             >
-              <option value="0">Any</option>
-              <option value="1">1+</option>
-              <option value="2">2+</option>
-              <option value="3">3+</option>
-              <option value="4">4+</option>
-              <option value="5">5</option>
-            </select>
-          </label>
-
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginTop: 18,
-              fontSize: 14,
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={currentHasPhoto}
-              onChange={(event) =>
-                updateParams({ hasPhoto: event.target.checked ? "1" : null })
-              }
-            />
-            Has photo
-          </label>
-
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginTop: 18,
-              fontSize: 14,
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={currentPrivateOnly}
-              onChange={(event) =>
-                updateParams({ private: event.target.checked ? "1" : null })
-              }
-            />
-            Private only
-          </label>
-
-          <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 12, color: "#555" }}>Sort</span>
-            <select
-              value={`${currentSort}:${currentDir}`}
-              onChange={(event) => handleSortSelect(event.target.value)}
-              style={{
-                padding: "8px 10px",
-                borderRadius: 6,
-                border: "1px solid #ccc",
-              }}
+              Table
+            </button>
+            <button
+              type="button"
+              onClick={() => updateParams({ view: "grid" })}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                currentView === "grid"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "border border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900"
+              }`}
             >
-              {sortOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            type="button"
-            onClick={() => updateParams({ view: "table" })}
-            style={{
-              padding: "8px 12px",
-              borderRadius: 6,
-              border: "1px solid #ccc",
-              background: currentView === "table" ? "#0f766e" : "white",
-              color: currentView === "table" ? "white" : "#333",
-            }}
-          >
-            Table
-          </button>
-          <button
-            type="button"
-            onClick={() => updateParams({ view: "grid" })}
-            style={{
-              padding: "8px 12px",
-              borderRadius: 6,
-              border: "1px solid #ccc",
-              background: currentView === "grid" ? "#0f766e" : "white",
-              color: currentView === "grid" ? "white" : "#333",
-            }}
-          >
-            Grid
-          </button>
+              Grid
+            </button>
+          </div>
         </div>
       </div>
 
       {recipes.length === 0 && (
-        <div
-          style={{
-            padding: 16,
-            color: "#555",
-            border: "1px solid #eee",
-            borderRadius: 8,
-          }}
-        >
-          No recipes yet. <Link href={`/g/${slug}/cook/new`}>Add your first one.</Link>
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-2xl">
+            🍲
+          </div>
+          <h3 className="mt-4 text-lg font-semibold text-slate-900">
+            No recipes yet
+          </h3>
+          <p className="mt-2 text-sm text-slate-600">
+            Add a recipe manually or import one from a URL to get started.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <Link
+              href={`/g/${slug}/cook/new`}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+            >
+              Add recipe
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                const input = document.querySelector<HTMLInputElement>(
+                  'input[type="url"]',
+                );
+                input?.focus();
+              }}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+            >
+              Import from URL
+            </button>
+          </div>
         </div>
       )}
 
       {recipes.length > 0 && currentView === "table" && (
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>
-                <th style={{ padding: "10px 6px" }}>Photo</th>
-                <th style={{ padding: "10px 6px" }}>
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <table className="w-full border-collapse text-sm">
+            <thead className="bg-white/95 backdrop-blur">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <th className="px-4 py-3">Photo</th>
+                <th className="px-4 py-3">
                   <button
                     type="button"
                     onClick={() => handleSort("title")}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      fontWeight: 600,
-                    }}
+                    className="inline-flex items-center gap-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-700"
                   >
-                    Title{sortIndicator("title")}
+                    Title
+                    <span className="text-[11px] text-slate-400">
+                      {sortIndicator("title")}
+                    </span>
                   </button>
                 </th>
-                <th style={{ padding: "10px 6px" }}>
+                <th className="px-4 py-3">
                   <button
                     type="button"
                     onClick={() => handleSort("sourceName")}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      fontWeight: 600,
-                    }}
+                    className="inline-flex items-center gap-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-700"
                   >
-                    Source{sortIndicator("sourceName")}
+                    Source
+                    <span className="text-[11px] text-slate-400">
+                      {sortIndicator("sourceName")}
+                    </span>
                   </button>
                 </th>
-                <th style={{ padding: "10px 6px" }}>
+                <th className="px-4 py-3">
                   <button
                     type="button"
                     onClick={() => handleSort("rating")}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      fontWeight: 600,
-                    }}
+                    className="inline-flex items-center gap-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-700"
                   >
-                    Rating{sortIndicator("rating")}
+                    Rating
+                    <span className="text-[11px] text-slate-400">
+                      {sortIndicator("rating")}
+                    </span>
                   </button>
                 </th>
-                <th style={{ padding: "10px 6px" }}>
+                <th className="px-4 py-3">
                   <button
                     type="button"
                     onClick={() => handleSort("totalTimeMinutes")}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      fontWeight: 600,
-                    }}
+                    className="inline-flex items-center gap-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-700"
                   >
-                    Total time{sortIndicator("totalTimeMinutes")}
+                    Total time
+                    <span className="text-[11px] text-slate-400">
+                      {sortIndicator("totalTimeMinutes")}
+                    </span>
                   </button>
                 </th>
-                <th style={{ padding: "10px 6px" }}>
+                <th className="px-4 py-3">
                   <button
                     type="button"
                     onClick={() => handleSort("updatedAt")}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      fontWeight: 600,
-                    }}
+                    className="inline-flex items-center gap-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-700"
                   >
-                    Updated{sortIndicator("updatedAt")}
+                    Updated
+                    <span className="text-[11px] text-slate-400">
+                      {sortIndicator("updatedAt")}
+                    </span>
                   </button>
                 </th>
               </tr>
@@ -635,31 +615,24 @@ export default function CookClient({
               {recipes.map((recipe) => (
                 <tr
                   key={recipe.id}
-                  style={{ borderBottom: "1px solid #eee", cursor: "pointer" }}
+                  className="cursor-pointer border-t border-slate-100 text-slate-700 transition hover:bg-emerald-50/40"
                   onClick={() => openRecipe(recipe.id)}
                 >
-                  <td style={{ padding: "10px 6px" }}>{renderThumbnail(recipe)}</td>
-                  <td style={{ padding: "10px 6px", fontWeight: 600 }}>
-                    {recipe.title}
-                    {recipe.isPrivate && (
-                      <span
-                        style={{
-                          marginLeft: 8,
-                          padding: "2px 6px",
-                          fontSize: 11,
-                          borderRadius: 12,
-                          background: "#fef3c7",
-                          color: "#92400e",
-                        }}
-                      >
-                        Private
-                      </span>
-                    )}
+                  <td className="px-4 py-3">{renderTableThumbnail(recipe)}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2 font-semibold text-slate-900">
+                      {recipe.title}
+                      {recipe.isPrivate && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                          Private
+                        </span>
+                      )}
+                    </div>
                   </td>
-                  <td style={{ padding: "10px 6px", color: "#333" }}>
+                  <td className="px-4 py-3 text-slate-600">
                     {formatSource(recipe.sourceName, recipe.sourceUrl)}
                   </td>
-                  <td style={{ padding: "10px 6px" }}>
+                  <td className="px-4 py-3">
                     <RatingStars
                       value={recipe.rating ?? 0}
                       onSet={(value) => handleRating(recipe.id, value)}
@@ -667,10 +640,10 @@ export default function CookClient({
                       stopPropagation
                     />
                   </td>
-                  <td style={{ padding: "10px 6px" }}>
+                  <td className="px-4 py-3 text-slate-600">
                     {formatMinutes(getTotalMinutes(recipe))}
                   </td>
-                  <td style={{ padding: "10px 6px", color: "#555" }}>
+                  <td className="px-4 py-3 text-slate-500">
                     {formatUpdated(new Date(recipe.updatedAt))}
                   </td>
                 </tr>
@@ -681,58 +654,48 @@ export default function CookClient({
       )}
 
       {recipes.length > 0 && currentView === "grid" && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-            gap: 16,
-          }}
-        >
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {recipes.map((recipe) => (
             <div
               key={recipe.id}
-              style={{
-                border: "1px solid #eee",
-                borderRadius: 12,
-                padding: 12,
-                display: "flex",
-                flexDirection: "column",
-                gap: 10,
-                background: "white",
-                cursor: "pointer",
-              }}
+              role="button"
+              tabIndex={0}
+              className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
               onClick={() => openRecipe(recipe.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openRecipe(recipe.id);
+                }
+              }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                {renderThumbnail(recipe)}
-                {recipe.isPrivate && (
-                  <span
-                    style={{
-                      padding: "2px 6px",
-                      fontSize: 11,
-                      borderRadius: 12,
-                      background: "#fef3c7",
-                      color: "#92400e",
-                      height: "fit-content",
-                    }}
-                  >
-                    Private
-                  </span>
-                )}
+              {renderGridImage(recipe)}
+              <div className="flex flex-1 flex-col gap-3 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="line-clamp-2 text-base font-semibold text-slate-900">
+                    {recipe.title}
+                  </h3>
+                  {recipe.isPrivate && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                      Private
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-slate-500">
+                  {formatSource(recipe.sourceName, recipe.sourceUrl)}
+                </p>
+                <div className="text-xs text-slate-500">
+                  Total time: {formatMinutes(getTotalMinutes(recipe))}
+                </div>
+                <div className="mt-auto">
+                  <RatingStars
+                    value={recipe.rating ?? 0}
+                    onSet={(value) => handleRating(recipe.id, value)}
+                    disabled={isRatingPending}
+                    stopPropagation
+                  />
+                </div>
               </div>
-              <div style={{ fontWeight: 600 }}>{recipe.title}</div>
-              <div style={{ color: "#555", fontSize: 13 }}>
-                {formatSource(recipe.sourceName, recipe.sourceUrl)}
-              </div>
-              <div style={{ fontSize: 13, color: "#555" }}>
-                Total time: {formatMinutes(getTotalMinutes(recipe))}
-              </div>
-              <RatingStars
-                value={recipe.rating ?? 0}
-                onSet={(value) => handleRating(recipe.id, value)}
-                disabled={isRatingPending}
-                stopPropagation
-              />
             </div>
           ))}
         </div>
