@@ -229,20 +229,9 @@ export default async function CookPage({
         current="recipes"
       />
       <main className="mx-auto max-w-7xl px-6 py-8 sm:px-8">
-        <div className="mb-6">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-slate-900">Recipes</h1>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
-              {workspace.name}
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-slate-600">
-            Browse, import, and organize your favorite recipes.
-          </p>
-        </div>
-
         <CookClient
           slug={slug}
+          workspaceName={workspace.name}
           recipes={listRecipes}
           view={view}
           q={q}
