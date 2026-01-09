@@ -135,13 +135,89 @@ function RecipeRow({ recipe }: { recipe: RecipeItem }) {
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-sm font-medium text-slate-900">
-          {recipe.title}
-        </p>
+        <p className="text-sm font-medium text-slate-900">{recipe.title}</p>
         <p className="mt-0.5 text-xs text-slate-500">
           {formatSource(recipe.sourceName, recipe.sourceUrl)}
         </p>
       </div>
+    </div>
+  );
+}
+
+function MonthEventChip({
+  item,
+  onRemove,
+}: {
+  item: PlanItem;
+  onRemove: (itemId: string) => void;
+}) {
+  return (
+    <div
+      className={`group flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 shadow-sm ${
+        item.isPending ? "opacity-60" : ""
+      }`}
+    >
+      {item.photoUrl ? (
+        <img
+          src={item.photoUrl}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className="h-5 w-5 rounded object-cover"
+        />
+      ) : null}
+      <span className="min-w-0 flex-1 whitespace-normal break-words font-medium text-slate-800">
+        {item.title}
+      </span>
+      <button
+        type="button"
+        onClick={() => onRemove(item.id)}
+        className="ml-auto hidden text-[10px] font-semibold text-slate-400 hover:text-slate-900 group-hover:block"
+        aria-label="Remove from day"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+function WeekEventCard({
+  item,
+  onRemove,
+}: {
+  item: PlanItem;
+  onRemove: (itemId: string) => void;
+}) {
+  return (
+    <div
+      className={`group flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-sm ${
+        item.isPending ? "opacity-60" : ""
+      }`}
+    >
+      {item.photoUrl ? (
+        <img
+          src={item.photoUrl}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className="h-12 w-12 rounded-lg object-cover"
+        />
+      ) : (
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 text-[10px] font-semibold text-slate-400">
+          No photo
+        </div>
+      )}
+      <span className="min-w-0 flex-1 whitespace-normal break-words text-sm font-medium text-slate-800">
+        {item.title}
+      </span>
+      <button
+        type="button"
+        onClick={() => onRemove(item.id)}
+        className="ml-auto hidden text-[10px] font-semibold text-slate-400 hover:text-slate-900 group-hover:block"
+        aria-label="Remove from day"
+      >
+        ✕
+      </button>
     </div>
   );
 }
@@ -151,6 +227,7 @@ function DayCell({
   dayNumber,
   isMuted,
   isToday,
+  view,
   items,
   onRemove,
 }: {
@@ -158,6 +235,7 @@ function DayCell({
   dayNumber: number;
   isMuted: boolean;
   isToday: boolean;
+  view: PlanView;
   items: PlanItem[];
   onRemove: (itemId: string) => void;
 }) {
@@ -184,33 +262,11 @@ function DayCell({
       </div>
       <div className="flex flex-col gap-2">
         {items.map((item) => (
-          <div
-            key={item.id}
-            className={`group flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 shadow-sm ${
-              item.isPending ? "opacity-60" : ""
-            }`}
-          >
-            {item.photoUrl ? (
-              <img
-                src={item.photoUrl}
-                alt=""
-                loading="lazy"
-                referrerPolicy="no-referrer"
-                className="h-5 w-5 rounded object-cover"
-              />
-            ) : null}
-            <span className="min-w-0 flex-1 truncate font-medium text-slate-800">
-              {item.title}
-            </span>
-            <button
-              type="button"
-              onClick={() => onRemove(item.id)}
-              className="ml-auto hidden text-[10px] font-semibold text-slate-400 hover:text-slate-900 group-hover:block"
-              aria-label="Remove from day"
-            >
-              ✕
-            </button>
-          </div>
+          view === "week" ? (
+            <WeekEventCard key={item.id} item={item} onRemove={onRemove} />
+          ) : (
+            <MonthEventChip key={item.id} item={item} onRemove={onRemove} />
+          )
         ))}
         {items.length === 0 ? (
           <p className="text-[11px] text-slate-300">Drop recipe here</p>
@@ -240,7 +296,6 @@ export default function PlanClient({
   const [ratingFilter, setRatingFilter] = useState<(typeof ratingOptions)[number]["value"]>(
     "any",
   );
-  const [hasPhotoOnly, setHasPhotoOnly] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -306,10 +361,9 @@ export default function PlanClient({
         const minRating = Number(ratingFilter);
         if ((recipe.rating ?? 0) < minRating) return false;
       }
-      if (hasPhotoOnly && !recipe.photoUrl) return false;
       return true;
     });
-  }, [recipes, searchText, sourceFilter, ratingFilter, hasPhotoOnly]);
+  }, [recipes, searchText, sourceFilter, ratingFilter]);
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -425,7 +479,7 @@ export default function PlanClient({
       onDragCancel={() => setActiveRecipeId(null)}
     >
       <main className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-6 py-6 lg:flex-row">
-        <section className="flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:h-[calc(100vh-200px)] lg:max-w-[420px] lg:flex-[0_0_28%]">
+        <section className="flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:h-[calc(100vh-200px)] lg:min-w-[260px] lg:max-w-[320px] lg:flex-[0_0_20%]">
           <div>
             <h1 className="text-lg font-semibold text-slate-900">{workspaceName}</h1>
             <p className="text-xs text-slate-500">Plan meals for the week ahead.</p>
@@ -466,15 +520,6 @@ export default function PlanClient({
                 ))}
               </select>
             </div>
-            <label className="flex items-center gap-2 text-xs text-slate-500">
-              <input
-                type="checkbox"
-                checked={hasPhotoOnly}
-                onChange={(event) => setHasPhotoOnly(event.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-              />
-              Has photo
-            </label>
             <p className="text-[11px] text-slate-400">
               {filteredRecipes.length} recipes · drag into calendar
             </p>
@@ -561,8 +606,8 @@ export default function PlanClient({
             style={{
               gridTemplateRows:
                 view === "week"
-                  ? "minmax(220px, 1fr)"
-                  : `repeat(${Math.ceil(days.length / 7)}, minmax(140px, 1fr))`,
+                  ? "minmax(220px, auto)"
+                  : `repeat(${Math.ceil(days.length / 7)}, minmax(140px, auto))`,
             }}
           >
             {days.map((date) => {
@@ -578,6 +623,7 @@ export default function PlanClient({
                   dayNumber={date.getUTCDate()}
                   isMuted={isMuted}
                   isToday={isToday}
+                  view={view}
                   items={dayItems}
                   onRemove={handleRemoveItem}
                 />
@@ -603,7 +649,7 @@ export default function PlanClient({
               </div>
             )}
             <div className="min-w-0">
-              <p className="line-clamp-2 text-sm font-medium text-slate-900">
+              <p className="whitespace-normal break-words text-sm font-medium text-slate-900">
                 {activeRecipe.title}
               </p>
               <p className="text-xs text-slate-500">
