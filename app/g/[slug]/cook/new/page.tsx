@@ -48,7 +48,7 @@ export default async function NewRecipePage({
 
   if (!authed) {
     return (
-      <div className="min-h-screen bg-[#f0ece0]">
+      <div className="min-h-screen bg-white">
         <WorkspaceHeader slug={slug} workspaceName={workspace.name} current="recipes" />
         <div className="mx-auto max-w-md px-6 py-10">
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -69,9 +69,9 @@ export default async function NewRecipePage({
                 type="password"
                 placeholder="Passcode"
                 autoFocus
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
               />
-              <button className="w-full rounded-lg bg-[#364c35] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2f402c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#364c35]/40">
+              <button className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30">
                 Unlock
               </button>
             </form>
@@ -149,7 +149,7 @@ export default async function NewRecipePage({
   }
 
   return (
-    <div className="min-h-screen bg-[#f0ece0]">
+    <div className="min-h-screen bg-white">
       <WorkspaceHeader slug={slug} workspaceName={workspace.name} current="recipes" />
       <main className="mx-auto max-w-4xl px-6 py-8">
         <div className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -164,7 +164,7 @@ export default async function NewRecipePage({
             </div>
             <Link
               href={`/g/${slug}/cook`}
-              className="text-sm font-semibold text-[#364c35] hover:text-[#2f402c]"
+              className="text-sm font-semibold text-slate-900 hover:text-slate-700"
             >
               ← Back to Recipes
             </Link>
@@ -179,7 +179,7 @@ export default async function NewRecipePage({
                 id="title"
                 name="title"
                 required
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 placeholder="Recipe title"
               />
             </div>
@@ -192,7 +192,7 @@ export default async function NewRecipePage({
                 id="sourceUrl"
                 name="sourceUrl"
                 type="url"
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 placeholder="https://example.com/recipe"
               />
             </div>
@@ -205,7 +205,7 @@ export default async function NewRecipePage({
                 id="photoUrl"
                 name="photoUrl"
                 type="url"
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 placeholder="https://example.com/photo.jpg"
               />
             </div>
@@ -223,7 +223,7 @@ export default async function NewRecipePage({
                   name="prepTimeMinutes"
                   type="number"
                   min="0"
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                   placeholder="15"
                 />
               </div>
@@ -239,7 +239,7 @@ export default async function NewRecipePage({
                   name="cookTimeMinutes"
                   type="number"
                   min="0"
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                   placeholder="30"
                 />
               </div>
@@ -255,7 +255,7 @@ export default async function NewRecipePage({
                   name="totalTimeMinutes"
                   type="number"
                   min="0"
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                   placeholder="45"
                 />
               </div>
@@ -269,7 +269,7 @@ export default async function NewRecipePage({
                 <input
                   id="servings"
                   name="servings"
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                   placeholder="4"
                 />
               </div>
@@ -280,7 +280,7 @@ export default async function NewRecipePage({
                 <input
                   id="yields"
                   name="yields"
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                   placeholder="1 loaf"
                 />
               </div>
@@ -294,7 +294,7 @@ export default async function NewRecipePage({
                   type="number"
                   min="0"
                   max="5"
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                   placeholder="5"
                 />
               </div>
@@ -311,7 +311,7 @@ export default async function NewRecipePage({
                 id="ingredients"
                 name="ingredients"
                 rows={6}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 placeholder={"2 cups flour\n1 tsp salt\n1 cup water"}
               />
             </div>
@@ -324,14 +324,14 @@ export default async function NewRecipePage({
                 id="directions"
                 name="directions"
                 rows={6}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 placeholder="Write out the steps"
               />
             </div>
 
             <button
               type="submit"
-              className="w-fit rounded-lg bg-[#364c35] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2f402c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#364c35]/40"
+              className="w-fit rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30"
             >
               Save recipe
             </button>

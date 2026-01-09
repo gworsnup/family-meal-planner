@@ -40,8 +40,7 @@ type CookClientProps = {
   view: ViewMode;
   q: string;
   minRating: number;
-  hasPhoto: boolean;
-  privateOnly: boolean;
+  manualOnly: boolean;
   sort: SortField;
   dir: SortDirection;
   selectedRecipe: RecipeDetail | null;
@@ -102,8 +101,7 @@ export default function CookClient({
   view,
   q,
   minRating,
-  hasPhoto,
-  privateOnly,
+  manualOnly,
   sort,
   dir,
   selectedRecipe,
@@ -133,12 +131,9 @@ export default function CookClient({
     const parsed = Number(raw ?? minRating);
     return Number.isNaN(parsed) ? minRating : parsed;
   })();
-  const currentHasPhoto = currentParams.get("hasPhoto")
-    ? currentParams.get("hasPhoto") === "1"
-    : hasPhoto;
-  const currentPrivateOnly = currentParams.get("private")
-    ? currentParams.get("private") === "1"
-    : privateOnly;
+  const currentManualOnly = currentParams.get("manual")
+    ? currentParams.get("manual") === "1"
+    : manualOnly;
   const currentRecipeId = currentParams.get("recipeId") ?? selectedRecipe?.id ?? null;
 
   const [searchText, setSearchText] = useState(currentParams.get("q") ?? q);
@@ -194,13 +189,13 @@ export default function CookClient({
           alt={recipe.title}
           loading="lazy"
           referrerPolicy="no-referrer"
-          className="h-16 w-16 rounded-xl object-cover"
+          className="h-20 w-20 rounded-xl object-cover"
         />
       );
     }
 
     return (
-      <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100 text-[11px] font-medium text-slate-400">
+      <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-100 text-[11px] font-medium text-slate-400">
         No photo
       </div>
     );
@@ -214,13 +209,13 @@ export default function CookClient({
           alt={recipe.title}
           loading="lazy"
           referrerPolicy="no-referrer"
-          className="h-40 w-full rounded-t-2xl object-cover"
+          className="h-44 w-full rounded-t-2xl object-cover"
         />
       );
     }
 
     return (
-      <div className="flex h-40 w-full flex-col items-center justify-center gap-2 rounded-t-2xl bg-slate-100 text-sm text-slate-400">
+      <div className="flex h-44 w-full flex-col items-center justify-center gap-2 rounded-t-2xl bg-slate-100 text-sm text-slate-400">
         <span className="text-2xl">🍽️</span>
         <span>No photo</span>
       </div>
@@ -339,7 +334,7 @@ export default function CookClient({
     importStatus === "failed"
       ? "border-red-200 bg-red-50 text-red-700"
       : importStatus === "success" || importStatus === "partial"
-        ? "border-[#c6c0b3] bg-[#ebe7db] text-[#364c35]"
+        ? "border-slate-200 bg-slate-50 text-slate-700"
         : "border-slate-200 bg-slate-50 text-slate-600";
 
   return (
@@ -363,21 +358,21 @@ export default function CookClient({
                 }}
                 placeholder="https://example.com/recipe"
                 disabled={isImportActive}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30 disabled:bg-slate-100 disabled:text-slate-400"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 disabled:bg-slate-100 disabled:text-slate-400"
               />
             </label>
             <button
               type="button"
               onClick={handleImport}
               disabled={isImportActive}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#364c35]/40 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
             >
               {isImportPending ? "Starting…" : "Add from URL"}
             </button>
           </div>
           <Link
             href={`/g/${slug}/cook/new`}
-            className="inline-flex items-center justify-center rounded-lg bg-[#364c35] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2f402c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#364c35]/40"
+            className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30"
           >
             Add recipe
           </Link>
@@ -388,7 +383,7 @@ export default function CookClient({
             className={`mt-3 flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${importStatusTone}`}
           >
             {isImportActive && (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#364c35]/30 border-t-[#364c35]" />
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900/20 border-t-slate-900" />
             )}
             <span>{importStatusLabel}</span>
           </div>
@@ -396,7 +391,7 @@ export default function CookClient({
 
         {isImportActive && (
           <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full w-1/3 animate-pulse rounded-full bg-[#364c35]/60" />
+            <div className="h-full w-1/3 animate-pulse rounded-full bg-slate-900/40" />
           </div>
         )}
       </div>
@@ -413,7 +408,7 @@ export default function CookClient({
                 placeholder="Search recipes"
                 value={searchText}
                 onChange={(event) => setSearchText(event.target.value)}
-                className="min-w-[220px] rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                className="min-w-[220px] rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
               />
             </label>
 
@@ -429,7 +424,7 @@ export default function CookClient({
                       event.target.value === "0" ? null : event.target.value,
                   })
                 }
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
               >
                 <option value="0">Any</option>
                 <option value="1">1+</option>
@@ -443,25 +438,13 @@ export default function CookClient({
             <label className="flex items-center gap-2 text-sm text-slate-600">
               <input
                 type="checkbox"
-                checked={currentHasPhoto}
+                checked={currentManualOnly}
                 onChange={(event) =>
-                  updateParams({ hasPhoto: event.target.checked ? "1" : null })
+                  updateParams({ manual: event.target.checked ? "1" : null })
                 }
-                className="h-4 w-4 rounded border-slate-300 text-[#364c35] focus:ring-[#364c35]"
+                className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900/30"
               />
-              Has photo
-            </label>
-
-            <label className="flex items-center gap-2 text-sm text-slate-600">
-              <input
-                type="checkbox"
-                checked={currentPrivateOnly}
-                onChange={(event) =>
-                  updateParams({ private: event.target.checked ? "1" : null })
-                }
-                className="h-4 w-4 rounded border-slate-300 text-[#364c35] focus:ring-[#364c35]"
-              />
-              Private only
+              Manually Added
             </label>
 
             <label className="flex flex-col gap-2 text-sm text-slate-600">
@@ -471,7 +454,7 @@ export default function CookClient({
               <select
                 value={`${currentSort}:${currentDir}`}
                 onChange={(event) => handleSortSelect(event.target.value)}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
               >
                 {sortOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -488,8 +471,8 @@ export default function CookClient({
               onClick={() => updateParams({ view: "table" })}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                 currentView === "table"
-                  ? "bg-[#364c35] text-white"
-                  : "border border-slate-300 text-slate-600 hover:border-slate-400 hover:text-slate-900"
+                  ? "bg-slate-900 text-white"
+                  : "border border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900"
               }`}
             >
               Table
@@ -499,8 +482,8 @@ export default function CookClient({
               onClick={() => updateParams({ view: "grid" })}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                 currentView === "grid"
-                  ? "bg-[#364c35] text-white"
-                  : "border border-slate-300 text-slate-600 hover:border-slate-400 hover:text-slate-900"
+                  ? "bg-slate-900 text-white"
+                  : "border border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900"
               }`}
             >
               Grid
@@ -511,7 +494,7 @@ export default function CookClient({
 
       {recipes.length === 0 && (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#e4dfd2] text-2xl">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-2xl">
             🍲
           </div>
           <h3 className="mt-4 text-lg font-semibold text-slate-900">
@@ -523,7 +506,7 @@ export default function CookClient({
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <Link
               href={`/g/${slug}/cook/new`}
-              className="rounded-lg bg-[#364c35] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2f402c]"
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
               Add recipe
             </Link>
@@ -535,7 +518,7 @@ export default function CookClient({
                 );
                 input?.focus();
               }}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
             >
               Import from URL
             </button>
@@ -615,7 +598,7 @@ export default function CookClient({
               {recipes.map((recipe) => (
                 <tr
                   key={recipe.id}
-                  className="cursor-pointer border-t border-slate-100 text-slate-700 transition hover:bg-[#ebe7db]"
+                  className="cursor-pointer border-t border-slate-100 text-slate-700 transition hover:bg-slate-50"
                   onClick={() => openRecipe(recipe.id)}
                 >
                   <td className="px-4 py-3">{renderTableThumbnail(recipe)}</td>
@@ -660,7 +643,7 @@ export default function CookClient({
               key={recipe.id}
               role="button"
               tabIndex={0}
-              className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-[#b9b1a4]"
+              className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-sm"
               onClick={() => openRecipe(recipe.id)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {

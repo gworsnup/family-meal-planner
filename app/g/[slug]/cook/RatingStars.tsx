@@ -45,11 +45,13 @@ export default function RatingStars({
             disabled={disabled}
             aria-label={`Set rating to ${starValue}`}
             className={`transition ${
-              disabled ? "cursor-not-allowed" : "cursor-pointer hover:scale-110"
+              disabled
+                ? "cursor-not-allowed"
+                : "cursor-pointer hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
             }`}
           >
             <span
-              className={`text-lg leading-none transition ${
+              className={`text-lg leading-none transition-colors ${
                 filled ? "text-amber-400" : "text-slate-300"
               }`}
             >
