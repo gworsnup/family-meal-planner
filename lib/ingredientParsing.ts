@@ -190,7 +190,7 @@ const VOLUME_TO_ML: Record<string, number> = {
   tsp: 5,
 };
 
-function parseFraction(value: string) {
+function parseFraction(value: string): number | null {
   if (!value) return null;
   const trimmed = value.trim();
   if (trimmed.includes(" ")) {
