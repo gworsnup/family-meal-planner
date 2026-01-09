@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import WorkspaceHeader from "../_components/WorkspaceHeader";
+import WorkspaceHeader from "../../_components/WorkspaceHeader";
 
 function parseOptionalInt(value: FormDataEntryValue | null) {
   if (typeof value !== "string") return null;
