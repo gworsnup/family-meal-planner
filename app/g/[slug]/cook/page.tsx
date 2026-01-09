@@ -73,7 +73,7 @@ export default async function CookPage({
 
   if (!authed) {
     return (
-      <div className="min-h-screen bg-[#f0ece0]">
+      <div className="min-h-screen bg-white">
         <WorkspaceHeader slug={slug} workspaceName={workspace.name} current="recipes" />
         <div className="mx-auto max-w-md px-6 py-10">
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -94,10 +94,10 @@ export default async function CookPage({
                 type="password"
                 placeholder="Passcode"
                 autoFocus
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[#364c35] focus:outline-none focus:ring-2 focus:ring-[#364c35]/30"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
               />
               <button
-                className="w-full rounded-lg bg-[#364c35] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2f402c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#364c35]/40"
+                className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30"
               >
                 Unlock
               </button>
@@ -111,8 +111,7 @@ export default async function CookPage({
   const view = parseView(getParam(resolvedSearchParams.view));
   const q = getParam(resolvedSearchParams.q) ?? "";
   const minRating = parseMinRating(getParam(resolvedSearchParams.minRating));
-  const hasPhoto = parseBooleanFlag(getParam(resolvedSearchParams.hasPhoto));
-  const privateOnly = parseBooleanFlag(getParam(resolvedSearchParams.private));
+  const manualOnly = parseBooleanFlag(getParam(resolvedSearchParams.manual));
   const recipeId = getParam(resolvedSearchParams.recipeId);
   const sort = parseSort(getParam(resolvedSearchParams.sort));
   const dir = parseDir(getParam(resolvedSearchParams.dir), sort);
@@ -121,8 +120,12 @@ export default async function CookPage({
     workspaceId: string;
     title?: { contains: string; mode: "insensitive" };
     rating?: { gte: number };
-    isPrivate?: boolean;
-    AND?: Array<{ photoUrl?: { not: string | null } }>;
+    AND?: Array<{
+      photoUrl?: { not: string | null };
+      sourceUrl?: { equals: string | null } | null;
+      OR?: Array<{ sourceUrl: { equals: string | null } | null }>;
+      import?: { is: null };
+    }>;
   } = {
     workspaceId: workspace.id,
   };
@@ -135,16 +138,12 @@ export default async function CookPage({
     where.rating = { gte: minRating };
   }
 
-  if (hasPhoto) {
+  if (manualOnly) {
     where.AND = [
       ...(where.AND ?? []),
-      { photoUrl: { not: null } },
-      { photoUrl: { not: "" } },
+      { OR: [{ sourceUrl: { equals: null } }, { sourceUrl: { equals: "" } }] },
+      { import: { is: null } },
     ];
-  }
-
-  if (privateOnly) {
-    where.isPrivate = true;
   }
 
   const recipes = await prisma.recipe.findMany({
@@ -212,9 +211,9 @@ export default async function CookPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#f0ece0]">
+    <div className="min-h-screen bg-white">
       <WorkspaceHeader slug={slug} workspaceName={workspace.name} current="recipes" />
-      <main className="mx-auto max-w-6xl px-6 py-6">
+      <main className="mx-auto max-w-7xl px-6 py-8 sm:px-8">
         <div className="mb-6">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold text-slate-900">Recipes</h1>
@@ -233,8 +232,7 @@ export default async function CookPage({
           view={view}
           q={q}
           minRating={minRating}
-          hasPhoto={hasPhoto}
-          privateOnly={privateOnly}
+          manualOnly={manualOnly}
           sort={sort}
           dir={dir}
           selectedRecipe={selectedRecipe}
