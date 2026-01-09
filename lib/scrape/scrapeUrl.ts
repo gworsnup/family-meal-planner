@@ -585,6 +585,11 @@ function extractInstagramImage(html: string) {
 }
 
 export async function scrapeUrl(url: string): Promise<ScrapeResult> {
+  const shouldLogParser =
+    process.env.SCRAPER_DEBUG === "1" || process.env.NODE_ENV !== "production";
+  if (shouldLogParser) {
+    console.log("Scrape start", { url });
+  }
   const { html, finalUrl } = await safeFetchHtml(url);
   const resolvedUrl = finalUrl ?? url;
   const hostname = (() => {
@@ -666,8 +671,6 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
         parsed.title ??
         baseResult.title ??
         caption.split("\n").find(Boolean)?.slice(0, 80).trim();
-      const shouldLogParser =
-        process.env.SCRAPER_DEBUG === "1" || process.env.NODE_ENV !== "production";
       if (shouldLogParser) {
         console.log("TikTok caption parse", {
           extractionSource: tiktokResult.source,
@@ -738,8 +741,6 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
         sourceDomain: "instagram",
       });
       const parsed = parseInstagramCaptionToRecipe(caption, baseResult.title);
-      const shouldLogParser =
-        process.env.SCRAPER_DEBUG === "1" || process.env.NODE_ENV !== "production";
       if (shouldLogParser) {
         console.log("Instagram caption parse", {
           extractedTitle: llmParsed?.title ?? parsed.title,

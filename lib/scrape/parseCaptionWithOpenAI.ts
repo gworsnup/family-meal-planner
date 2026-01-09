@@ -38,6 +38,10 @@ const SYSTEM_PROMPT =
 
 const captionCache = new Map<string, Promise<CaptionRecipeFields | null>>();
 
+function shouldLogDebug() {
+  return process.env.SCRAPER_DEBUG === "1" || process.env.NODE_ENV !== "production";
+}
+
 function buildCacheKey(request: CaptionRecipeRequest) {
   const hash = createHash("sha256").update(request.captionText).digest("hex");
   return `${request.sourceDomain}:${hash}`;
@@ -94,16 +98,36 @@ export async function parseCaptionWithOpenAI(
   if (!request.sourceDomain) return null;
 
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    if (shouldLogDebug()) {
+      console.log("OpenAI caption parse skipped: missing OPENAI_API_KEY", {
+        sourceDomain: request.sourceDomain,
+        captionLength: request.captionText.length,
+      });
+    }
+    return null;
+  }
 
   const cacheKey = buildCacheKey(request);
   const cached = captionCache.get(cacheKey);
   if (cached) {
+    if (shouldLogDebug()) {
+      console.log("OpenAI caption parse cache hit", {
+        sourceDomain: request.sourceDomain,
+        captionLength: request.captionText.length,
+      });
+    }
     return cached;
   }
 
   const task = (async () => {
     try {
+      if (shouldLogDebug()) {
+        console.log("OpenAI caption parse request", {
+          sourceDomain: request.sourceDomain,
+          captionLength: request.captionText.length,
+        });
+      }
       const response = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
         headers: {
@@ -132,10 +156,31 @@ export async function parseCaptionWithOpenAI(
 
       const payload = await response.json();
       const text = extractResponseText(payload);
-      if (!text) return null;
+      if (!text) {
+        if (shouldLogDebug()) {
+          console.log("OpenAI caption parse response missing output_text", {
+            sourceDomain: request.sourceDomain,
+          });
+        }
+        return null;
+      }
       const parsed = JSON.parse(text);
-      return coerceRecipeFields(parsed);
+      const coerced = coerceRecipeFields(parsed);
+      if (shouldLogDebug()) {
+        console.log("OpenAI caption parse response", {
+          sourceDomain: request.sourceDomain,
+          hasTitle: Boolean(coerced?.title),
+          ingredientCount: coerced?.ingredients.length ?? 0,
+          directionCount: coerced?.directions.length ?? 0,
+        });
+      }
+      return coerced;
     } catch {
+      if (shouldLogDebug()) {
+        console.log("OpenAI caption parse failed", {
+          sourceDomain: request.sourceDomain,
+        });
+      }
       return null;
     }
   })();
