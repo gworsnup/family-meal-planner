@@ -43,13 +43,23 @@ export default async function NewRecipePage({
     );
   }
 
+  const workspaces = await prisma.workspace.findMany({
+    select: { name: true, slug: true },
+    orderBy: { name: "asc" },
+  });
+
   const cookieStore = await cookies();
   const authed = cookieStore.get(`wsp_${slug}`)?.value === "1";
 
   if (!authed) {
     return (
       <div className="min-h-screen bg-white">
-        <WorkspaceHeader slug={slug} workspaceName={workspace.name} current="recipes" />
+        <WorkspaceHeader
+          slug={slug}
+          workspaceName={workspace.name}
+          workspaces={workspaces}
+          current="recipes"
+        />
         <div className="mx-auto max-w-md px-6 py-10">
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
             <h1 className="text-xl font-semibold text-slate-900">
@@ -150,7 +160,12 @@ export default async function NewRecipePage({
 
   return (
     <div className="min-h-screen bg-white">
-      <WorkspaceHeader slug={slug} workspaceName={workspace.name} current="recipes" />
+      <WorkspaceHeader
+        slug={slug}
+        workspaceName={workspace.name}
+        workspaces={workspaces}
+        current="recipes"
+      />
       <main className="mx-auto max-w-4xl px-6 py-8">
         <div className="rounded-2xl border border-slate-200 bg-white p-6">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
