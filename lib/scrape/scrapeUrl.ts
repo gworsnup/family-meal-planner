@@ -1,6 +1,7 @@
 import "server-only";
 
 import { parseRecipeFromCaption } from "./parseCaption";
+import { parseCaptionWithOpenAI } from "./parseCaptionWithOpenAI";
 import { parseInstagramCaptionToRecipe } from "./parseInstagramCaption";
 import { normalizeTikTokCaption, parseTikTokCaptionToRecipe } from "./parseTikTokCaption";
 import { decodeHtmlEntities } from "./html";
@@ -584,6 +585,11 @@ function extractInstagramImage(html: string) {
 }
 
 export async function scrapeUrl(url: string): Promise<ScrapeResult> {
+  const shouldLogParser =
+    process.env.SCRAPER_DEBUG === "1" || process.env.NODE_ENV !== "production";
+  if (shouldLogParser) {
+    console.log("Scrape start", { url });
+  }
   const { html, finalUrl } = await safeFetchHtml(url);
   const resolvedUrl = finalUrl ?? url;
   const hostname = (() => {
@@ -647,37 +653,65 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
     const caption = tiktokResult.caption;
     const tiktokImage = extractTikTokImageUrl(html, resolvedUrl);
     if (caption) {
+      if (shouldLogParser) {
+        console.log("TikTok LLM caption parse check", {
+          hasApiKey: Boolean(process.env.OPENAI_API_KEY),
+        });
+      }
+      const llmParsed = await parseCaptionWithOpenAI({
+        captionText: caption,
+        sourceDomain: "tiktok",
+      });
       const parsed = parseTikTokCaptionToRecipe(caption);
+      const llmDirections =
+        llmParsed?.directions && llmParsed.directions.length > 0
+          ? llmParsed.directions.join("\n")
+          : undefined;
       const fallbackDescription =
+        llmParsed?.description ??
         parsed.description ??
         (caption.slice(0, 240).trim() || baseResult.description);
       const title =
+        llmParsed?.title ??
         parsed.title ??
         baseResult.title ??
         caption.split("\n").find(Boolean)?.slice(0, 80).trim();
-      const shouldLogParser =
-        process.env.SCRAPER_DEBUG === "1" || process.env.NODE_ENV !== "production";
       if (shouldLogParser) {
         console.log("TikTok caption parse", {
           extractionSource: tiktokResult.source,
           imageSource: tiktokImage.source,
           imageUrl: tiktokImage.url,
           captionLength: caption.length,
-          ingredientCount: parsed.ingredients?.length ?? 0,
-          directionsLength: parsed.directions?.length ?? 0,
+          ingredientCount:
+            llmParsed?.ingredients.length ?? parsed.ingredients?.length ?? 0,
+          directionsLength:
+            llmDirections?.length ?? parsed.directions?.length ?? 0,
+          llmUsed: Boolean(llmParsed),
         });
       }
       return {
         ...baseResult,
         title,
         description: fallbackDescription,
-        ingredients: parsed.ingredients ?? undefined,
-        directions: parsed.directions ?? undefined,
+        ingredients:
+          llmParsed?.ingredients && llmParsed.ingredients.length > 0
+            ? llmParsed.ingredients
+            : parsed.ingredients ?? undefined,
+        directions: llmDirections ?? parsed.directions ?? undefined,
+        prepTimeMinutes: llmParsed?.prepTimeMinutes ?? baseResult.prepTimeMinutes,
+        cookTimeMinutes: llmParsed?.cookTimeMinutes ?? baseResult.cookTimeMinutes,
+        totalTimeMinutes: llmParsed?.totalTimeMinutes ?? baseResult.totalTimeMinutes,
+        servings: llmParsed?.servings ?? baseResult.servings ?? null,
+        yields: llmParsed?.yields ?? baseResult.yields ?? null,
         sourceName: "tiktok.com",
         sourceUrl: url,
         photoUrl: tiktokImage.url ?? baseResult.photoUrl ?? undefined,
         confidence:
-          (parsed.ingredients?.length ?? 0) > 0 || parsed.directions ? "medium" : "low",
+          (llmParsed?.ingredients.length ?? parsed.ingredients?.length ?? 0) > 0 ||
+          llmDirections ||
+          parsed.directions
+            ? "medium"
+            : "low",
         raw: {
           ...baseResult.raw,
           caption,
@@ -685,6 +719,7 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
           captionSource: tiktokResult.source,
           imageUrl: tiktokImage.url,
           imageSource: tiktokImage.source,
+          llmParsed,
           parsed,
         },
       };
@@ -707,34 +742,62 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
     const caption = extractCaptionFromHtml(html, hostname);
     const instagramImage = extractInstagramImage(html);
     if (caption) {
+      if (shouldLogParser) {
+        console.log("Instagram LLM caption parse check", {
+          hasApiKey: Boolean(process.env.OPENAI_API_KEY),
+        });
+      }
+      const llmParsed = await parseCaptionWithOpenAI({
+        captionText: caption,
+        sourceDomain: "instagram",
+      });
       const parsed = parseInstagramCaptionToRecipe(caption, baseResult.title);
-      const shouldLogParser =
-        process.env.SCRAPER_DEBUG === "1" || process.env.NODE_ENV !== "production";
       if (shouldLogParser) {
         console.log("Instagram caption parse", {
-          extractedTitle: parsed.title,
-          descriptionLength: parsed.description?.length ?? 0,
-          ingredientCount: parsed.ingredientLines?.length ?? 0,
-          directionsLength: parsed.directionsText?.length ?? 0,
+          extractedTitle: llmParsed?.title ?? parsed.title,
+          descriptionLength:
+            llmParsed?.description?.length ?? parsed.description?.length ?? 0,
+          ingredientCount:
+            llmParsed?.ingredients.length ?? parsed.ingredientLines?.length ?? 0,
+          directionsLength:
+            llmParsed?.directions.join("\n").length ??
+            parsed.directionsText?.length ??
+            0,
           titleHeuristic: parsed.titleHeuristic,
+          llmUsed: Boolean(llmParsed),
         });
       }
       return {
         ...baseResult,
-        title: parsed.title ?? baseResult.title,
-        description: parsed.description ?? baseResult.description,
+        title: llmParsed?.title ?? parsed.title ?? baseResult.title,
+        description:
+          llmParsed?.description ?? parsed.description ?? baseResult.description,
         ingredients:
-          parsed.ingredientLines && parsed.ingredientLines.length > 0
-            ? parsed.ingredientLines.map((line) => line.ingredient)
-            : undefined,
-        directions: parsed.directionsText ?? undefined,
+          llmParsed?.ingredients && llmParsed.ingredients.length > 0
+            ? llmParsed.ingredients
+            : parsed.ingredientLines && parsed.ingredientLines.length > 0
+              ? parsed.ingredientLines.map((line) => line.ingredient)
+              : undefined,
+        directions:
+          llmParsed?.directions && llmParsed.directions.length > 0
+            ? llmParsed.directions.join("\n")
+            : parsed.directionsText ?? undefined,
+        prepTimeMinutes: llmParsed?.prepTimeMinutes ?? baseResult.prepTimeMinutes,
+        cookTimeMinutes: llmParsed?.cookTimeMinutes ?? baseResult.cookTimeMinutes,
+        totalTimeMinutes: llmParsed?.totalTimeMinutes ?? baseResult.totalTimeMinutes,
+        servings: llmParsed?.servings ?? baseResult.servings ?? null,
+        yields: llmParsed?.yields ?? baseResult.yields ?? null,
         sourceName: hostname,
         sourceUrl: url,
         photoUrl: baseResult.photoUrl ?? instagramImage ?? undefined,
-        confidence: parsed.ingredientLines?.length ? "medium" : "low",
+        confidence:
+          (llmParsed?.ingredients.length ?? parsed.ingredientLines?.length ?? 0) > 0
+            ? "medium"
+            : "low",
         raw: {
           ...baseResult.raw,
           caption,
+          llmParsed,
           parsed,
         },
       };
