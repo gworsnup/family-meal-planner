@@ -185,6 +185,22 @@ function MonthEventChip({
         item.isPending || isDragging ? "opacity-60" : ""
       }`}
     >
+      <div className="pointer-events-none absolute right-2 top-2 flex flex-col gap-1 opacity-0 transition group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={handleViewRecipe}
+          className="pointer-events-auto rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
+        >
+          View recipe
+        </button>
+        <button
+          type="button"
+          onClick={handleCookingView}
+          className="pointer-events-auto rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
+        >
+          Cooking view
+        </button>
+      </div>
       {item.photoUrl ? (
         <img
           src={item.photoUrl}
@@ -198,6 +214,24 @@ function MonthEventChip({
           No photo
         </div>
       )}
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          onClick={handleViewRecipe}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="rounded-full bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white hover:bg-slate-800"
+        >
+          View recipe
+        </button>
+        <button
+          type="button"
+          onClick={handleCookingView}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="rounded-full bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white hover:bg-slate-800"
+        >
+          Cooking view
+        </button>
+      </div>
       <span className="min-w-0 whitespace-normal break-words font-medium text-slate-800">
         {item.title}
       </span>
@@ -267,6 +301,22 @@ function WeekEventCard({
         item.isPending || isDragging ? "opacity-60" : ""
       }`}
     >
+      <div className="pointer-events-none absolute right-3 top-3 flex flex-col gap-1 opacity-0 transition group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={handleViewRecipe}
+          className="pointer-events-auto rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
+        >
+          View recipe
+        </button>
+        <button
+          type="button"
+          onClick={handleCookingView}
+          className="pointer-events-auto rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
+        >
+          Cooking view
+        </button>
+      </div>
       {item.photoUrl ? (
         <img
           src={item.photoUrl}
@@ -280,6 +330,24 @@ function WeekEventCard({
           No photo
         </div>
       )}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={handleViewRecipe}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white hover:bg-slate-800"
+        >
+          View recipe
+        </button>
+        <button
+          type="button"
+          onClick={handleCookingView}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white hover:bg-slate-800"
+        >
+          Cooking view
+        </button>
+      </div>
       <span className="min-w-0 whitespace-normal break-words text-sm font-medium text-slate-800">
         {item.title}
       </span>
