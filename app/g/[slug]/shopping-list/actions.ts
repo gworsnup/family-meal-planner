@@ -9,6 +9,7 @@ import { buildAggregatedSourceView, type WeekList } from "@/lib/ingredientParsin
 import { endOfWeek, formatDateISO } from "@/lib/planDates";
 import type { SmartListData, SmartListItem } from "@/lib/smartListTypes";
 import { SMART_LIST_CATEGORIES } from "@/lib/smartListConfig";
+import { randomUUID } from "crypto";
 
 const SYSTEM_PROMPT =
   "You are a precise shopping list normalizer.\n" +
@@ -189,11 +190,13 @@ export async function generateSmartList({
     throw new Error("Week not found");
   }
 
-  const existing = await prisma.shoppingListSmart.findFirst({
+  const existing = await prisma.shoppingListSmart.findUnique({
     where: {
-      workspaceId: workspace.id,
-      weekId: week.id,
-      version: week.version,
+      workspaceId_weekId_version: {
+        workspaceId: workspace.id,
+        weekId: week.id,
+        version: week.version,
+      },
     },
     include: {
       items: {
@@ -422,40 +425,78 @@ export async function generateSmartList({
 
   try {
     const writeStart = Date.now();
-    const smartList = await prisma.$transaction(async (tx) => {
-      const created = await tx.shoppingListSmart.create({
-        data: {
+    console.log("[SmartList] db write start", {
+      slug,
+      weekId,
+      version: week.version,
+      itemCount: normalizedItems.length,
+    });
+    const smartListId = randomUUID();
+    const itemRows = normalizedItems.map((item, index) => ({
+      id: randomUUID(),
+      smartListId,
+      category: item.category,
+      displayText: item.displayText,
+      quantityValue: item.quantityValue,
+      quantityUnit: item.quantityUnit,
+      isEstimated: item.isEstimated,
+      isMerged: item.isMerged,
+      sortKey: index,
+    }));
+    const provenanceRows = itemRows.flatMap((itemRow, index) =>
+      normalizedItems[index].sources.map((source) => ({
+        id: randomUUID(),
+        smartItemId: itemRow.id,
+        sourceText: source,
+        sourceRecipeId: allowedSources.get(source) ?? null,
+      })),
+    );
+
+    const createSmartList = prisma.shoppingListSmart.create({
+      data: {
+        id: smartListId,
+        workspaceId: workspace.id,
+        weekId: week.id,
+        version: week.version,
+        model,
+      },
+    });
+    const createItems = prisma.shoppingListSmartItem.createMany({
+      data: itemRows,
+    });
+    const createProvenance = prisma.shoppingListSmartProvenance.createMany({
+      data: provenanceRows,
+    });
+
+    await prisma.$transaction([createSmartList, createItems, createProvenance]);
+
+    const smartList = await prisma.shoppingListSmart.findUnique({
+      where: {
+        workspaceId_weekId_version: {
           workspaceId: workspace.id,
           weekId: week.id,
           version: week.version,
-          model,
-          items: {
-            create: normalizedItems.map((item, index) => ({
-              category: item.category,
-              displayText: item.displayText,
-              quantityValue: item.quantityValue,
-              quantityUnit: item.quantityUnit,
-              isEstimated: item.isEstimated,
-              isMerged: item.isMerged,
-              sortKey: index,
-              provenance: {
-                create: item.sources.map((source) => ({
-                  sourceText: source,
-                  sourceRecipeId: allowedSources.get(source) ?? null,
-                })),
-              },
-            })),
-          },
         },
-        include: {
-          items: {
-            include: { provenance: true },
-            orderBy: { sortKey: "asc" },
-          },
+      },
+      include: {
+        items: {
+          include: { provenance: true },
+          orderBy: { sortKey: "asc" },
         },
-      });
+      },
+    });
 
-      return created;
+    if (!smartList) {
+      throw new Error("Smart list write failed");
+    }
+
+    console.log("[SmartList] db write finished", {
+      slug,
+      weekId,
+      version: week.version,
+      durationMs: Date.now() - writeStart,
+      itemCount: smartList.items.length,
+      provenanceCount: provenanceRows.length,
     });
 
     console.log("[SmartList] created", {
@@ -464,6 +505,7 @@ export async function generateSmartList({
       version: week.version,
       smartListId: smartList.id,
       itemCount: smartList.items.length,
+      provenanceCount: provenanceRows.length,
       dbWriteDurationMs: Date.now() - writeStart,
     });
     return { smartList: buildSmartListData(smartList) };
@@ -472,11 +514,13 @@ export async function generateSmartList({
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
-      const existingRecord = await prisma.shoppingListSmart.findFirst({
+      const existingRecord = await prisma.shoppingListSmart.findUnique({
         where: {
-          workspaceId: workspace.id,
-          weekId: week.id,
-          version: week.version,
+          workspaceId_weekId_version: {
+            workspaceId: workspace.id,
+            weekId: week.id,
+            version: week.version,
+          },
         },
         include: {
           items: {
