@@ -8,33 +8,14 @@ import {
   type CategoryView,
   type WeekList,
 } from "@/lib/ingredientParsing";
+import type { SmartListData } from "@/lib/smartListTypes";
+import { generateSmartList } from "./actions";
 
 type ShopClientProps = {
+  workspaceSlug: string;
   workspaceName: string;
   weekLists: WeekList[];
 };
-
-function Toggle({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-      />
-      {label}
-    </label>
-  );
-}
 
 function CategorySection({
   category,
@@ -80,71 +61,22 @@ function CategorySection({
   );
 }
 
-function CategorySectionByRecipe({
-  category,
-  hoverRecipeId,
-  checkedItems,
-  toggleItem,
-}: {
-  category: CategoryView;
-  hoverRecipeId: string | null;
-  checkedItems: Set<string>;
-  toggleItem: (key: string) => void;
-}) {
-  if (!category.recipes || category.recipes.length === 0) return null;
-  return (
-    <section className="space-y-3">
-      <h3 className="text-sm font-semibold text-slate-900">{category.label}</h3>
-      <div className="space-y-4">
-        {category.recipes.map((recipe) => (
-          <div key={recipe.id} className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-              {recipe.title}
-            </p>
-            <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              {recipe.items.map((item) => {
-                const key = `${recipe.id}-${item.id}`;
-                const isHighlighted =
-                  hoverRecipeId && item.recipeIds.includes(hoverRecipeId);
-                const isChecked = checkedItems.has(key);
-                return (
-                  <li
-                    key={key}
-                    className={`flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 transition ${
-                      isHighlighted
-                        ? "border-slate-300 bg-slate-100"
-                        : "bg-white hover:border-slate-300"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => toggleItem(key)}
-                      className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                    />
-                    <span className="flex-1">{item.display}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export default function ShopClient({
+  workspaceSlug,
   workspaceName,
   weekLists,
 }: ShopClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const [aggregate, setAggregate] = useState(true);
-  const [metric, setMetric] = useState(false);
   const [hoverRecipeId, setHoverRecipeId] = useState<string | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<"aggregated" | "smart">("aggregated");
+  const [smartListByWeek, setSmartListByWeek] = useState<
+    Record<string, SmartListData | null>
+  >({});
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const weekParam = searchParams.get("week");
   const weekStarts = weekLists.map((week) => week.weekStart);
@@ -165,8 +97,8 @@ export default function ShopClient({
   );
 
   const categoryViews = useMemo(
-    () => buildShoppingView(selectedWeek ?? null, { aggregate, metric }),
-    [selectedWeek, aggregate, metric]
+    () => buildShoppingView(selectedWeek ?? null, { aggregate: true, metric: false }),
+    [selectedWeek]
   );
 
   const categoriesInOrder = useMemo(() => {
@@ -191,6 +123,63 @@ export default function ShopClient({
       }
       return next;
     });
+  };
+
+  useEffect(() => {
+    const nextMap: Record<string, SmartListData | null> = {};
+    weekLists.forEach((week) => {
+      if (week.weekId) {
+        nextMap[week.weekId] = week.smartList ?? null;
+      }
+    });
+    setSmartListByWeek(nextMap);
+  }, [weekLists]);
+
+  useEffect(() => {
+    if (!selectedWeek?.weekId) return;
+    const smartList = smartListByWeek[selectedWeek.weekId];
+    if (!smartList && viewMode === "smart") {
+      setViewMode("aggregated");
+    }
+  }, [selectedWeek?.weekId, smartListByWeek, viewMode]);
+
+  useEffect(() => {
+    setErrorMessage(null);
+  }, [selectedWeek?.weekId]);
+
+  const currentSmartList = selectedWeek?.weekId
+    ? smartListByWeek[selectedWeek.weekId] ?? null
+    : null;
+  const smartListReady =
+    !!currentSmartList &&
+    !!selectedWeek?.version &&
+    currentSmartList.version === selectedWeek.version;
+  const smartListOutdated =
+    !!currentSmartList &&
+    !!selectedWeek?.version &&
+    currentSmartList.version < selectedWeek.version;
+
+  const handleGenerateSmartList = async () => {
+    if (!selectedWeek?.weekId || isGenerating || smartListReady) return;
+    setIsGenerating(true);
+    setErrorMessage(null);
+    try {
+      const result = await generateSmartList({
+        slug: workspaceSlug,
+        weekId: selectedWeek.weekId,
+      });
+      setSmartListByWeek((prev) => ({
+        ...prev,
+        [selectedWeek.weekId as string]: result.smartList,
+      }));
+      setViewMode("smart");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Couldn’t generate smart list.",
+      );
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -285,24 +274,74 @@ export default function ShopClient({
                   : "Select a week to see ingredients."}
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <Toggle
-                label="Aggregate"
-                checked={aggregate}
-                onChange={setAggregate}
-              />
-              <Toggle
-                label="Convert to metric"
-                checked={metric}
-                onChange={setMetric}
-              />
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center rounded-full border border-slate-200 bg-slate-100 p-1 text-xs font-medium text-slate-600">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("aggregated")}
+                  className={`rounded-full px-3 py-1 transition ${
+                    viewMode === "aggregated"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Aggregated
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("smart")}
+                  disabled={!currentSmartList}
+                  className={`rounded-full px-3 py-1 transition ${
+                    viewMode === "smart"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  } ${!currentSmartList ? "cursor-not-allowed opacity-50" : ""}`}
+                >
+                  Smart List
+                </button>
+              </div>
+              {smartListOutdated ? (
+                <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">
+                  Out of date
+                </span>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleGenerateSmartList}
+                disabled={!selectedWeek || smartListReady || isGenerating}
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition ${
+                  smartListReady || !selectedWeek
+                    ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                    : "bg-slate-900 text-white hover:bg-slate-800"
+                }`}
+              >
+                <span className="flex h-4 w-4 items-center justify-center">
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    className="h-4 w-4 fill-current"
+                  >
+                    <path d="M12 2l1.4 4.2L18 7.6l-4.2 1.4L12 13.2l-1.4-4.2L6.4 7.6l4.2-1.4L12 2zm7 10l.9 2.7 2.7.9-2.7.9L19 19l-.9-2.7-2.7-.9 2.7-.9L19 12zm-14 1l.9 2.7 2.7.9-2.7.9L5 20l-.9-2.7-2.7-.9 2.7-.9L5 13z" />
+                  </svg>
+                </span>
+                {smartListReady
+                  ? "Smart List Ready"
+                  : isGenerating
+                  ? "Generating..."
+                  : "Generate Smart List"}
+              </button>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
             {selectedWeek ? (
               <div className="space-y-8">
-                {categoriesInOrder.map((category) =>
-                  aggregate ? (
+                {errorMessage ? (
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                    Couldn’t generate smart list. Try again.
+                  </div>
+                ) : null}
+                {viewMode === "aggregated" ? (
+                  categoriesInOrder.map((category) => (
                     <CategorySection
                       key={category.key}
                       category={category}
@@ -310,15 +349,71 @@ export default function ShopClient({
                       checkedItems={checkedItems}
                       toggleItem={toggleItem}
                     />
-                  ) : (
-                    <CategorySectionByRecipe
-                      key={category.key}
-                      category={category}
-                      hoverRecipeId={hoverRecipeId}
-                      checkedItems={checkedItems}
-                      toggleItem={toggleItem}
-                    />
-                  )
+                  ))
+                ) : currentSmartList ? (
+                  currentSmartList.categories.map((category) => (
+                    <section key={category.name} className="space-y-3">
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        {category.name}
+                      </h3>
+                      <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                        {category.items.map((item) => {
+                          const isChecked = checkedItems.has(item.id);
+                          return (
+                            <li
+                              key={item.id}
+                              className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:border-slate-300"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => toggleItem(item.id)}
+                                className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                              />
+                              <div className="flex-1 space-y-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-medium text-slate-800">
+                                    {item.displayText}
+                                  </span>
+                                  {item.isEstimated ? (
+                                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                                      Estimated
+                                    </span>
+                                  ) : null}
+                                  {item.isMerged ? (
+                                    <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+                                      Merged
+                                    </span>
+                                  ) : null}
+                                </div>
+                                {item.provenance.length > 0 ? (
+                                  <details className="group relative text-xs text-slate-500">
+                                    <summary className="cursor-pointer select-none text-xs font-medium text-slate-500">
+                                      Derived from {item.provenance.length} item
+                                      {item.provenance.length === 1 ? "" : "s"}
+                                    </summary>
+                                    <div className="mt-2 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600 shadow-md">
+                                      <ul className="space-y-1">
+                                        {item.provenance.map((source) => (
+                                          <li key={source.id} className="leading-snug">
+                                            {source.sourceText}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  </details>
+                                ) : null}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </section>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-500">
+                    Generate a smart list to see normalized items.
+                  </p>
                 )}
               </div>
             ) : (

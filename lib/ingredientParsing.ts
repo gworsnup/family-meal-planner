@@ -9,6 +9,9 @@ export type ParsedIngredient = {
 export type WeekList = {
   weekStart: string;
   title: string;
+  weekId?: string;
+  version?: number;
+  smartList?: import("./smartListTypes").SmartListData | null;
   recipes: Array<{
     id: string;
     title: string;
@@ -44,6 +47,16 @@ export type CategoryView = {
   label: string;
   items: IngredientDisplayItem[];
   recipes?: Array<{ id: string; title: string; items: IngredientDisplayItem[] }>;
+};
+
+export type AggregatedSourceItem = IngredientDisplayItem & {
+  sources: Array<{ recipeId: string; sourceText: string }>;
+};
+
+export type AggregatedSourceCategoryView = {
+  key: CategoryKey;
+  label: string;
+  items: AggregatedSourceItem[];
 };
 
 const UNIT_ALIASES: Record<string, string> = {
@@ -529,4 +542,78 @@ export function buildShoppingView(
 
 export function getCategoryOrder() {
   return CATEGORY_ORDER;
+}
+
+export function buildAggregatedSourceView(
+  week: WeekList | null,
+): AggregatedSourceCategoryView[] {
+  const categoryMap = new Map<CategoryKey, AggregatedSourceCategoryView>();
+  CATEGORY_ORDER.forEach(({ key, label }) => {
+    categoryMap.set(key, { key, label, items: [] });
+  });
+
+  if (!week) return Array.from(categoryMap.values());
+
+  const itemMap = new Map<string, AggregatedSourceItem>();
+
+  week.recipes.forEach((recipe) => {
+    recipe.ingredientLines.forEach((line) => {
+      const parsed = parseIngredientLine(line.ingredient);
+      const category = categorizeIngredient(parsed.name);
+      const unit = unitCategory(parsed.unit);
+      const key = [
+        category,
+        parsed.name,
+        unit ?? "none",
+        parsed.notes ?? "none",
+        parsed.quantity === null ? "noq" : "q",
+      ].join("|");
+
+      const existing = itemMap.get(key);
+      if (existing && isMergeable(existing, { unit, quantity: parsed.quantity })) {
+        const nextQuantity =
+          existing.quantity !== null && parsed.quantity !== null
+            ? existing.quantity + parsed.quantity
+            : existing.quantity ?? parsed.quantity;
+        existing.quantity = nextQuantity ?? null;
+        existing.recipeIds = Array.from(new Set([...existing.recipeIds, recipe.id]));
+        existing.display = formatDisplayItem({
+          name: existing.name,
+          quantity: existing.quantity,
+          unit: existing.unit,
+          notes: existing.notes,
+        });
+        existing.sources.push({ recipeId: recipe.id, sourceText: parsed.raw });
+        return;
+      }
+
+      const displayItem: AggregatedSourceItem = {
+        id: key,
+        name: parsed.name,
+        quantity: parsed.quantity,
+        unit,
+        notes: parsed.notes,
+        raw: parsed.raw,
+        display: formatDisplayItem({
+          name: parsed.name,
+          quantity: parsed.quantity,
+          unit,
+          notes: parsed.notes,
+        }),
+        recipeIds: [recipe.id],
+        sources: [{ recipeId: recipe.id, sourceText: parsed.raw }],
+      };
+
+      itemMap.set(key, displayItem);
+    });
+  });
+
+  itemMap.forEach((item) => {
+    const category = categorizeIngredient(item.name);
+    const categoryView = categoryMap.get(category);
+    if (!categoryView) return;
+    categoryView.items.push(item);
+  });
+
+  return Array.from(categoryMap.values());
 }
