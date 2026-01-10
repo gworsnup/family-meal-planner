@@ -12,23 +12,67 @@ import { SMART_LIST_CATEGORIES } from "@/lib/smartListConfig";
 import { randomUUID } from "crypto";
 
 const SYSTEM_PROMPT =
-  "You are a precise shopping list normalizer.\n" +
-  "You only return strict JSON that matches the schema.\n" +
-  "Never invent ingredients. Only use the provided sources.\n" +
-  "Only normalize, merge, or convert when confident.\n" +
-  "If conversion is ambiguous, keep the original unit and mark isEstimated true.\n" +
-  "Prefer metric (g/ml) when obvious (tbsp/tsp/ml, cups to ml for liquids).\n" +
-  "Merge only obvious duplicates; otherwise keep separate.\n" +
-  "Categories must be one of the provided category list.\n" +
-  "Keep item text concise and user-facing.\n";
+  "You are a shopping list normalizer and aggregator.\n" +
+  "\n" +
+  "Return ONLY strict JSON that matches the provided schema. No prose.\n" +
+  "\n" +
+  "Hard rules\n" +
+  "- Never invent ingredients or quantities. Use ONLY the provided source lines.\n" +
+  "- Do not guess conversions. Convert only when the mapping is widely standard and unambiguous.\n" +
+  "- If anything is uncertain (ingredient identity, unit meaning, density, typical size), KEEP the original unit and set isEstimated=true.\n" +
+  "- When you merge items, you MUST:\n" +
+  "  1) prove they are the same ingredient (obvious synonym),\n" +
+  "  2) keep a mergedFrom list of the original lines,\n" +
+  "  3) compute totals correctly (no rounding until after summing),\n" +
+  "  4) preserve the most user-friendly unit.\n" +
+  "\n" +
+  "Validation pass (must do before returning JSON)\n" +
+  "- Arithmetic check: for every merged item, total must equal the sum of its parts after any explicit conversions.\n" +
+  "- Unit sanity check:\n" +
+  "  - Do NOT use ml for solids (bread, cheese, peanut butter, nuts, lentils). Prefer g, pcs, or tbsp/tsp.\n" +
+  "  - Do NOT use g for liquids. Prefer ml.\n" +
+  "  - For herbs/spices: prefer tsp/tbsp, pinch, pcs.\n" +
+  "- Shopping practicality:\n" +
+  "  - Avoid fractional “pcs” (e.g., 0.5 cucumber). Round UP to whole pcs and set isEstimated=true, while keeping the recipe-derived amount in mergedFrom.\n" +
+  "  - Avoid tiny ml totals (<15 ml). Prefer tsp/tbsp if originally given; otherwise keep ml but set isEstimated=true.\n" +
+  "  - Round ml totals to a sensible increment (nearest 5 or 10) ONLY after exact summation, and only if it improves readability; if rounding changes the value, set isEstimated=true.\n" +
+  "\n" +
+  "Categorization rules\n" +
+  "- Categories MUST be one of the provided category list.\n" +
+  "- Prefer correct store categories over a generic “Other”.\n" +
+  "  Examples:\n" +
+  "  - Produce: vegetables, fruit, salad leaves, fresh herbs\n" +
+  "  - Pantry: oils, sauces, vinegar, honey, dry pulses, nuts\n" +
+  "  - Dairy: cheese, butter, buttermilk\n" +
+  "  - Bakery/Bread: bread, buns, wraps\n" +
+  "  - Meat/Fish: meats, fish\n" +
+  "  - Canned/Jarred: canned tomatoes etc.\n" +
+  "  - Drinks: wine etc.\n" +
+  "\n" +
+  "Merging rules (strict)\n" +
+  "- Merge only obvious duplicates/synonyms (e.g., “spring onion” + “spring onions”; “garlic clove” + “cloves garlic”).\n" +
+  "- Do NOT merge different forms that change purchasing meaning unless explicit (e.g., “parmesan grated” vs “parmesan wedge” → keep separate unless clearly same).\n" +
+  "\n" +
+  "Output requirements\n" +
+  "- Item text must be concise and user-facing (what you’d shop for).\n" +
+  "- Each item must include:\n" +
+  "  - name (canonical)\n" +
+  "  - quantity + unit (user-facing)\n" +
+  "  - isEstimated boolean\n" +
+  "  - category\n" +
+  "  - mergedFrom: array of original source ingredient strings (and their quantities/units)\n" +
+  "  - notes (optional) ONLY if needed to explain an estimate/rounding.\n";
 
 type SmartListLLMItem = {
-  displayText: string;
+  name?: string;
+  displayText?: string;
   quantityValue?: number | null;
   quantityUnit?: string | null;
   isEstimated?: boolean;
   isMerged?: boolean;
-  sources: string[];
+  mergedFrom?: string[];
+  sources?: string[];
+  notes?: string | null;
 };
 
 type SmartListLLMCategory = {
@@ -330,7 +374,7 @@ export async function generateSmartList({
           content: [
             {
               type: "input_text",
-              text: `Use the provided items with provenance. JSON schema:\n{\n  "categories": [{"name": "Produce", "items": [{"displayText": "Carrots — 500 g", "quantityValue": 500, "quantityUnit": "g", "isEstimated": false, "isMerged": true, "sources": ["2 carrots, chopped"]}]}],\n  "notes": ["..."]\n}\n\nInput:\n${JSON.stringify(promptPayload)}`,
+              text: `Use the provided items with provenance. JSON schema:\n{\n  "categories": [{"name": "Produce", "items": [{"name": "Carrots", "quantityValue": 500, "quantityUnit": "g", "isEstimated": false, "isMerged": true, "category": "Produce", "mergedFrom": ["2 carrots, chopped"]}]}],\n  "notes": ["..."]\n}\n\nInput:\n${JSON.stringify(promptPayload)}`,
             },
           ],
         },
@@ -385,18 +429,31 @@ export async function generateSmartList({
     }
     const normalizedCategory = normalizeCategory(category.name);
     category.items.forEach((item) => {
-      if (!item || typeof item.displayText !== "string" || !Array.isArray(item.sources)) {
+      if (!item) {
         return;
       }
-      const displayText = sanitizeText(item.displayText, 140);
-      if (!displayText) return;
-      const sources = item.sources
+      const sourcesRaw = Array.isArray(item.mergedFrom)
+        ? item.mergedFrom
+        : Array.isArray(item.sources)
+        ? item.sources
+        : [];
+      const sources = sourcesRaw
         .filter((source) => typeof source === "string")
         .map((source) => source.trim())
         .filter((source) => source && allowedSources.has(source));
       if (sources.length === 0) {
         return;
       }
+      const displayTextCandidate =
+        typeof item.displayText === "string"
+          ? item.displayText
+          : typeof item.name === "string"
+          ? `${item.quantityValue ?? ""}${item.quantityUnit ? ` ${item.quantityUnit}` : ""} ${
+              item.name
+            }`.trim()
+          : "";
+      const displayText = sanitizeText(displayTextCandidate, 140);
+      if (!displayText) return;
       normalizedItems.push({
         category: normalizedCategory,
         displayText,
