@@ -219,6 +219,7 @@ export async function generateSmartList({
     throw new Error("Missing OpenAI API key");
   }
   const model = process.env.OPENAI_MODEL_SMARTLIST ?? "gpt-5-nano";
+  const openAIStart = Date.now();
   console.log("[SmartList] OpenAI request start", {
     slug,
     weekId,
@@ -412,8 +413,15 @@ export async function generateSmartList({
     console.log("[SmartList] OpenAI returned no usable items", { slug, weekId });
     throw new Error("OpenAI returned no usable items");
   }
+  console.log("[SmartList] OpenAI request finished", {
+    slug,
+    weekId,
+    durationMs: Date.now() - openAIStart,
+    itemCount: normalizedItems.length,
+  });
 
   try {
+    const writeStart = Date.now();
     const smartList = await prisma.$transaction(async (tx) => {
       const created = await tx.shoppingListSmart.create({
         data: {
@@ -456,6 +464,7 @@ export async function generateSmartList({
       version: week.version,
       smartListId: smartList.id,
       itemCount: smartList.items.length,
+      dbWriteDurationMs: Date.now() - writeStart,
     });
     return { smartList: buildSmartListData(smartList) };
   } catch (error) {
