@@ -162,9 +162,11 @@ export async function generateSmartList({
   slug: string;
   weekId: string;
 }): Promise<{ smartList: SmartListData }> {
+  console.log("[SmartList] generateSmartList start", { slug, weekId });
   const cookieStore = await cookies();
   const authed = cookieStore.get(`wsp_${slug}`)?.value === "1";
   if (!authed) {
+    console.log("[SmartList] unauthorized", { slug, weekId });
     throw new Error("Unauthorized");
   }
 
@@ -174,6 +176,7 @@ export async function generateSmartList({
   });
 
   if (!workspace) {
+    console.log("[SmartList] workspace not found", { slug, weekId });
     throw new Error("Workspace not found");
   }
 
@@ -182,6 +185,7 @@ export async function generateSmartList({
   });
 
   if (!week) {
+    console.log("[SmartList] week not found", { slug, weekId });
     throw new Error("Week not found");
   }
 
@@ -200,14 +204,27 @@ export async function generateSmartList({
   });
 
   if (existing) {
+    console.log("[SmartList] cache hit", {
+      slug,
+      weekId,
+      version: week.version,
+      smartListId: existing.id,
+    });
     return { smartList: buildSmartListData(existing) };
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
+    console.log("[SmartList] missing OpenAI API key", { slug, weekId });
     throw new Error("Missing OpenAI API key");
   }
   const model = process.env.OPENAI_MODEL_SMARTLIST ?? "gpt-5-nano";
+  console.log("[SmartList] OpenAI request start", {
+    slug,
+    weekId,
+    model,
+    version: week.version,
+  });
 
   const weekStart = week.weekStart;
   const weekEnd = endOfWeek(weekStart);
@@ -267,6 +284,7 @@ export async function generateSmartList({
   );
 
   if (flattenedItems.length === 0) {
+    console.log("[SmartList] no ingredients to normalize", { slug, weekId });
     throw new Error("No ingredients to normalize");
   }
 
@@ -319,12 +337,19 @@ export async function generateSmartList({
 
   if (!response.ok) {
     const body = await response.text();
+    console.log("[SmartList] OpenAI HTTP error", {
+      slug,
+      weekId,
+      status: response.status,
+      body: body.slice(0, 200),
+    });
     throw new Error(`OpenAI error ${response.status}: ${body.slice(0, 200)}`);
   }
 
   const payload = (await response.json()) as OpenAIResponsePayload;
   const text = extractResponseText(payload);
   if (!text) {
+    console.log("[SmartList] OpenAI missing output text", { slug, weekId });
     throw new Error("OpenAI response missing output text");
   }
 
@@ -336,6 +361,7 @@ export async function generateSmartList({
   }
 
   if (!parsed || !Array.isArray(parsed.categories)) {
+    console.log("[SmartList] OpenAI invalid response", { slug, weekId });
     throw new Error("Invalid OpenAI response");
   }
 
@@ -383,6 +409,7 @@ export async function generateSmartList({
   });
 
   if (normalizedItems.length === 0) {
+    console.log("[SmartList] OpenAI returned no usable items", { slug, weekId });
     throw new Error("OpenAI returned no usable items");
   }
 
@@ -423,6 +450,13 @@ export async function generateSmartList({
       return created;
     });
 
+    console.log("[SmartList] created", {
+      slug,
+      weekId,
+      version: week.version,
+      smartListId: smartList.id,
+      itemCount: smartList.items.length,
+    });
     return { smartList: buildSmartListData(smartList) };
   } catch (error) {
     if (
@@ -443,9 +477,20 @@ export async function generateSmartList({
         },
       });
       if (existingRecord) {
+        console.log("[SmartList] race cache hit", {
+          slug,
+          weekId,
+          version: week.version,
+          smartListId: existingRecord.id,
+        });
         return { smartList: buildSmartListData(existingRecord) };
       }
     }
+    console.log("[SmartList] failed", {
+      slug,
+      weekId,
+      message: error instanceof Error ? error.message : String(error),
+    });
     throw error;
   }
 }
