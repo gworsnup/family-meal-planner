@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { parseDateISO } from "@/lib/planDates";
+import { parseDateISO, startOfWeek } from "@/lib/planDates";
 
 type AddMealPlanInput = {
   slug: string;
@@ -28,6 +28,26 @@ function normalizeDate(dateISO: string) {
     throw new Error("Invalid date");
   }
   return date;
+}
+
+async function bumpShoppingWeekVersion(workspaceId: string, date: Date) {
+  const weekStart = startOfWeek(date);
+  await prisma.shoppingListWeek.upsert({
+    where: {
+      workspaceId_weekStart: {
+        workspaceId,
+        weekStart,
+      },
+    },
+    update: {
+      version: { increment: 1 },
+    },
+    create: {
+      workspaceId,
+      weekStart,
+      version: 1,
+    },
+  });
 }
 
 export async function addMealPlanItem({
@@ -72,6 +92,8 @@ export async function addMealPlanItem({
       select: { id: true, date: true, recipeId: true },
     });
 
+    await bumpShoppingWeekVersion(workspace.id, date);
+
     return {
       item: {
         id: item.id,
@@ -112,13 +134,20 @@ export async function removeMealPlanItem({
     throw new Error("Workspace not found");
   }
 
-  const deleted = await prisma.mealPlanItem.deleteMany({
+  const existing = await prisma.mealPlanItem.findFirst({
+    where: { id: itemId, workspaceId: workspace.id },
+    select: { id: true, date: true },
+  });
+
+  if (!existing) {
+    throw new Error("Meal plan item not found");
+  }
+
+  await prisma.mealPlanItem.deleteMany({
     where: { id: itemId, workspaceId: workspace.id },
   });
 
-  if (deleted.count === 0) {
-    throw new Error("Meal plan item not found");
-  }
+  await bumpShoppingWeekVersion(workspace.id, existing.date);
 }
 
 export async function moveMealPlanItem({
@@ -144,6 +173,15 @@ export async function moveMealPlanItem({
 
   const date = normalizeDate(dateISO);
 
+  const existing = await prisma.mealPlanItem.findFirst({
+    where: { id: itemId, workspaceId: workspace.id },
+    select: { id: true, date: true },
+  });
+
+  if (!existing) {
+    throw new Error("Meal plan item not found");
+  }
+
   const updated = await prisma.mealPlanItem.updateMany({
     where: { id: itemId, workspaceId: workspace.id },
     data: { date },
@@ -151,6 +189,15 @@ export async function moveMealPlanItem({
 
   if (updated.count === 0) {
     throw new Error("Meal plan item not found");
+  }
+
+  const previousWeekStart = startOfWeek(existing.date).getTime();
+  const nextWeekStart = startOfWeek(date).getTime();
+  if (previousWeekStart === nextWeekStart) {
+    await bumpShoppingWeekVersion(workspace.id, date);
+  } else {
+    await bumpShoppingWeekVersion(workspace.id, existing.date);
+    await bumpShoppingWeekVersion(workspace.id, date);
   }
 
   return { itemId, dateISO };

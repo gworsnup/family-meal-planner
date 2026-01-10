@@ -19,6 +19,8 @@ model Workspace {
   recipeImports RecipeImport[]
   tags          Tag[]
   mealPlanItems MealPlanItem[]
+  shoppingListWeeks ShoppingListWeek[]
+  shoppingListSmarts ShoppingListSmart[]
 }
 
 model Recipe {
@@ -72,6 +74,64 @@ model MealPlanItem {
 
   @@index([workspaceId, date])
   @@unique([workspaceId, date, recipeId])
+}
+
+model ShoppingListWeek {
+  id          String   @id @default(cuid())
+  workspaceId String
+  weekStart   DateTime
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace  Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  smartLists ShoppingListSmart[]
+
+  @@unique([workspaceId, weekStart])
+  @@index([workspaceId, weekStart])
+}
+
+model ShoppingListSmart {
+  id          String   @id @default(cuid())
+  workspaceId String
+  weekId      String
+  version     Int
+  model       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  week      ShoppingListWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  items     ShoppingListSmartItem[]
+
+  @@index([workspaceId, weekId])
+  @@unique([workspaceId, weekId, version])
+}
+
+model ShoppingListSmartItem {
+  id            String   @id @default(cuid())
+  smartListId   String
+  category      String
+  displayText   String
+  quantityValue Decimal?
+  quantityUnit  String?
+  isEstimated   Boolean  @default(false)
+  isMerged      Boolean  @default(false)
+  sortKey       Int      @default(0)
+
+  smartList  ShoppingListSmart           @relation(fields: [smartListId], references: [id], onDelete: Cascade)
+  provenance ShoppingListSmartProvenance[]
+}
+
+model ShoppingListSmartProvenance {
+  id           String  @id @default(cuid())
+  smartItemId  String
+  sourceRecipeId String?
+  sourceText   String
+  sourceCount  Int?
+  notes        String?
+
+  smartItem ShoppingListSmartItem @relation(fields: [smartItemId], references: [id], onDelete: Cascade)
 }
 
 model RecipeImport {
