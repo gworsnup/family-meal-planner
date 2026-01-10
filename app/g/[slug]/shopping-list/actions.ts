@@ -265,7 +265,7 @@ export async function generateSmartList({
     console.log("[SmartList] missing OpenAI API key", { slug, weekId });
     throw new Error("Missing OpenAI API key");
   }
-  const model = process.env.OPENAI_MODEL_SMARTLIST ?? "gpt-5-nano";
+  const model = process.env.OPENAI_MODEL_SMARTLIST ?? "gpt-5-mini";
   const openAIStart = Date.now();
   console.log("[SmartList] OpenAI request start", {
     slug,
