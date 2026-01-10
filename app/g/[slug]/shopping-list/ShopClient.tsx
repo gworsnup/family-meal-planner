@@ -10,7 +10,7 @@ import {
 } from "@/lib/ingredientParsing";
 
 type ShopClientProps = {
-  slug: string;
+  workspaceName: string;
   weekLists: WeekList[];
 };
 
@@ -51,7 +51,7 @@ function CategorySection({
   return (
     <section className="space-y-3">
       <h3 className="text-sm font-semibold text-slate-900">{category.label}</h3>
-      <ul className="space-y-2">
+      <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {category.items.map((item) => {
           const isHighlighted =
             hoverRecipeId && item.recipeIds.includes(hoverRecipeId);
@@ -101,7 +101,7 @@ function CategorySectionByRecipe({
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
               {recipe.title}
             </p>
-            <ul className="space-y-2">
+            <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
               {recipe.items.map((item) => {
                 const key = `${recipe.id}-${item.id}`;
                 const isHighlighted =
@@ -134,7 +134,10 @@ function CategorySectionByRecipe({
   );
 }
 
-export default function ShopClient({ slug, weekLists }: ShopClientProps) {
+export default function ShopClient({
+  workspaceName,
+  weekLists,
+}: ShopClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -199,7 +202,7 @@ export default function ShopClient({ slug, weekLists }: ShopClientProps) {
               Weekly lists
             </h2>
             <p className="text-xs text-slate-500">
-              {slug.toUpperCase()} • Upcoming weeks
+              Weekly lists for {workspaceName} • Upcoming weeks
             </p>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
@@ -216,8 +219,8 @@ export default function ShopClient({ slug, weekLists }: ShopClientProps) {
                       key={week.weekStart}
                       className={`rounded-xl border p-3 transition ${
                         isSelected
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                          ? "border-slate-300 bg-slate-100 text-slate-900"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
                       }`}
                     >
                       <button
@@ -228,7 +231,7 @@ export default function ShopClient({ slug, weekLists }: ShopClientProps) {
                         <p className="text-sm font-semibold">{week.title}</p>
                         <p
                           className={`mt-1 text-xs ${
-                            isSelected ? "text-slate-200" : "text-slate-500"
+                            isSelected ? "text-slate-600" : "text-slate-500"
                           }`}
                         >
                           {week.recipes.length} planned meal
@@ -242,9 +245,20 @@ export default function ShopClient({ slug, weekLists }: ShopClientProps) {
                               key={`${recipe.id}-${index}`}
                               onMouseEnter={() => setHoverRecipeId(recipe.id)}
                               onMouseLeave={() => setHoverRecipeId(null)}
-                              className="rounded-lg border border-white/20 px-2 py-1 text-xs text-white/90 transition hover:bg-white/10"
+                              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                             >
-                              {recipe.title}
+                              {recipe.photoUrl ? (
+                                <img
+                                  src={recipe.photoUrl}
+                                  alt=""
+                                  className="h-7 w-7 rounded-md object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-200 text-[10px] font-semibold text-slate-500">
+                                  —
+                                </div>
+                              )}
+                              <span className="flex-1">{recipe.title}</span>
                             </div>
                           ))}
                         </div>

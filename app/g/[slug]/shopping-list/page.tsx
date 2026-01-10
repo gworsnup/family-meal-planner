@@ -156,7 +156,7 @@ export default async function ShoppingListPage({
         workspaces={workspaces}
         current="shopping"
       />
-      <ShopClient slug={slug} weekLists={weekLists} />
+      <ShopClient workspaceName={workspace.name} weekLists={weekLists} />
     </div>
   );
 }
