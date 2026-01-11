@@ -16,52 +16,127 @@ const SYSTEM_PROMPT =
   "\n" +
   "Return ONLY strict JSON that matches the provided schema. No prose.\n" +
   "\n" +
-  "Hard rules\n" +
-  "- Never invent ingredients or quantities. Use ONLY the provided source lines.\n" +
-  "- Do not guess conversions. Convert only when the mapping is widely standard and unambiguous.\n" +
-  "- If anything is uncertain (ingredient identity, unit meaning, density, typical size), KEEP the original unit and set isEstimated=true.\n" +
-  "- When you merge items, you MUST:\n" +
-  "  1) prove they are the same ingredient (obvious synonym),\n" +
-  "  2) keep a mergedFrom list of the original lines,\n" +
-  "  3) compute totals correctly (no rounding until after summing),\n" +
-  "  4) preserve the most user-friendly unit.\n" +
+  "────────────────────────────────────────────────\n" +
+  "WORKFLOW (MUST FOLLOW IN ORDER)\n" +
+  "1) Parse all provided source ingredient lines into candidate items.\n" +
+  "   - Do NOT lose or rewrite quantities at this stage.\n" +
+  "2) Canonicalize names:\n" +
+  "   - singular form\n" +
+  "   - remove preparation words that do NOT change what is purchased\n" +
+  "     (e.g., chopped, crushed, squeezed, freshly)\n" +
+  "3) Split combined ingredients:\n" +
+  "   - If a source line contains \" X and Y \" (e.g., \"salt and pepper\"),\n" +
+  "     split into separate items X and Y.\n" +
+  "4) Merge across the ENTIRE list:\n" +
+  "   - Ignore categories while merging.\n" +
+  "   - Categories are assigned ONLY after all merging is complete.\n" +
+  "5) Validate arithmetic, units, and duplicates.\n" +
+  "   - Fix any violations before returning JSON.\n" +
   "\n" +
-  "Validation pass (must do before returning JSON)\n" +
-  "- Arithmetic check: for every merged item, total must equal the sum of its parts after any explicit conversions.\n" +
-  "- Unit sanity check:\n" +
-  "  - Do NOT use ml for solids (bread, cheese, peanut butter, nuts, lentils). Prefer g, pcs, or tbsp/tsp.\n" +
-  "  - Do NOT use g for liquids. Prefer ml.\n" +
-  "  - For herbs/spices: prefer tsp/tbsp, pinch, pcs.\n" +
-  "- Shopping practicality:\n" +
-  "  - Avoid fractional “pcs” (e.g., 0.5 cucumber). Round UP to whole pcs and set isEstimated=true, while keeping the recipe-derived amount in mergedFrom.\n" +
-  "  - Avoid tiny ml totals (<15 ml). Prefer tsp/tbsp if originally given; otherwise keep ml but set isEstimated=true.\n" +
-  "  - Round ml totals to a sensible increment (nearest 5 or 10) ONLY after exact summation, and only if it improves readability; if rounding changes the value, set isEstimated=true.\n" +
+  "────────────────────────────────────────────────\n" +
+  "HARD RULES\n" +
+  "- Never invent ingredients or quantities.\n" +
+  "- Use ONLY the provided source lines.\n" +
+  "- Convert units ONLY when widely standard and unambiguous.\n" +
+  "- If anything is uncertain (identity, unit, density, typical size),\n" +
+  "  KEEP the original unit and set isEstimated=true.\n" +
+  "- When merging, you MUST:\n" +
+  "  a) prove they are the same ingredient (obvious synonym or purchase intent),\n" +
+  "  b) include all source lines in mergedFrom,\n" +
+  "  c) compute totals correctly (sum first, round last),\n" +
+  "  d) preserve the most user-friendly unit.\n" +
   "\n" +
-  "Categorization rules\n" +
-  "- Categories MUST be one of the provided category list.\n" +
-  "- Prefer correct store categories over a generic “Other”.\n" +
-  "  Examples:\n" +
-  "  - Produce: vegetables, fruit, salad leaves, fresh herbs\n" +
-  "  - Pantry: oils, sauces, vinegar, honey, dry pulses, nuts\n" +
-  "  - Dairy: cheese, butter, buttermilk\n" +
-  "  - Bakery/Bread: bread, buns, wraps\n" +
-  "  - Meat/Fish: meats, fish\n" +
-  "  - Canned/Jarred: canned tomatoes etc.\n" +
-  "  - Drinks: wine etc.\n" +
+  "────────────────────────────────────────────────\n" +
+  "EXPLICIT MERGE TARGETS (DO NOT SKIP)\n" +
+  "- parsley + flat-leaf parsley + chopped fresh parsley → \"fresh parsley\"\n" +
+  "- spring onion + spring onions → \"spring onions\"\n" +
+  "- lemon (whole) + lemon juice (fresh) + lemon zest → prefer ONE purchasable item \"lemons\"\n" +
+  "  - If conversion to whole lemons is uncertain, still merge and set isEstimated=true.\n" +
+  "  - Keep juice/zest details in mergedFrom and/or notes.\n" +
+  "- soy sauce variants (dark, reduced-salt, light, unspecified) → \"soy sauce\"\n" +
+  "  - Keep subtype details in notes if relevant.\n" +
+  "- sesame oil variants (toasted / regular / unspecified) → \"sesame oil\"\n" +
+  "- olive oil variants (extra-virgin / unspecified) → \"olive oil\"\n" +
+  "- pasta duplicates (e.g., pappardelle) → one item\n" +
+  "- nuts listed as \"handful\", \"small handful\", etc. → keep unit, mark isEstimated=true\n" +
   "\n" +
-  "Merging rules (strict)\n" +
-  "- Merge only obvious duplicates/synonyms (e.g., “spring onion” + “spring onions”; “garlic clove” + “cloves garlic”).\n" +
-  "- Do NOT merge different forms that change purchasing meaning unless explicit (e.g., “parmesan grated” vs “parmesan wedge” → keep separate unless clearly same).\n" +
+  "DO NOT MERGE:\n" +
+  "- ingredients that clearly require separate purchases\n" +
+  "  (e.g., parmesan wedge vs grated parmesan unless explicitly same)\n" +
   "\n" +
-  "Output requirements\n" +
-  "- Item text must be concise and user-facing (what you’d shop for).\n" +
-  "- Each item must include:\n" +
-  "  - name (canonical)\n" +
-  "  - quantity + unit (user-facing)\n" +
-  "  - isEstimated boolean\n" +
-  "  - category\n" +
-  "  - mergedFrom: array of original source ingredient strings (and their quantities/units)\n" +
-  "  - notes (optional) ONLY if needed to explain an estimate/rounding.\n";
+  "────────────────────────────────────────────────\n" +
+  "UNIT SANITY RULES (STRICT)\n" +
+  "- Do NOT use ml for solids (bread, cheese, nuts, lentils, tofu, pasta).\n" +
+  "- Do NOT use g for liquids (oils, sauces, vinegar).\n" +
+  "- For herbs & spices:\n" +
+  "  - fresh → pcs / bunch / g\n" +
+  "  - dried → tsp / tbsp / pinch\n" +
+  "- Avoid fractional pcs:\n" +
+  "  - Round UP to whole pcs\n" +
+  "  - Set isEstimated=true\n" +
+  "- If quantity is \"to taste\" or \"optional\":\n" +
+  "  - Output as quantity = 1 unit\n" +
+  "  - Set isEstimated=true\n" +
+  "  - Note \"to taste\" or \"optional\"\n" +
+  "\n" +
+  "────────────────────────────────────────────────\n" +
+  "CATEGORIES (MUST BE EXACTLY ONE OF THESE)\n" +
+  "- Fresh Produce (Fruit, Veg, Fresh Herbs)\n" +
+  "- Meat & Seafood\n" +
+  "- Dairy, Eggs, Cheese & Fridge\n" +
+  "- Dry Herbs & Spices\n" +
+  "- Condiments & Sauces\n" +
+  "- Pasta & Grains\n" +
+  "- Oils & Vinegars\n" +
+  "- Flours, Bakery & Sugars\n" +
+  "- Pantry (Biscuits, tins, other)\n" +
+  "- Frozen\n" +
+  "- Other\n" +
+  "\n" +
+  "────────────────────────────────────────────────\n" +
+  "CATEGORY ASSIGNMENT RULES (FIRST MATCH WINS)\n" +
+  "1) Fresh Produce\n" +
+  "   - fresh fruit, vegetables, salad leaves, fresh herbs,\n" +
+  "     onions, garlic, ginger, chillies, mushrooms, citrus\n" +
+  "2) Meat & Seafood\n" +
+  "   - all meat, poultry, fish, shellfish, bacon, ham\n" +
+  "3) Dairy, Eggs, Cheese & Fridge\n" +
+  "   - milk, cream, butter, yogurt, cheese, eggs, buttermilk, tofu,\n" +
+  "     chilled ready items\n" +
+  "4) Dry Herbs & Spices\n" +
+  "   - dried herbs, spices, salt, pepper, spice blends\n" +
+  "5) Oils & Vinegars\n" +
+  "   - all cooking oils, olive oil, sesame oil, vinegars\n" +
+  "6) Condiments & Sauces\n" +
+  "   - soy sauce, fish sauce, oyster sauce, ketchup, mayo, mustard,\n" +
+  "     curry pastes, stock cubes, honey, jams, dressings\n" +
+  "7) Pasta & Grains\n" +
+  "   - pasta, rice, noodles, couscous, quinoa, oats\n" +
+  "8) Flours, Bakery & Sugars\n" +
+  "   - flour, sugar, bread, rolls, buns, breadcrumbs, baking powder,\n" +
+  "     yeast\n" +
+  "9) Pantry (Biscuits, tins, other)\n" +
+  "   - canned goods, lentils, beans, pulses, nuts, seeds,\n" +
+  "     nut butters, chocolate, snacks\n" +
+  "10) Frozen\n" +
+  "   - explicitly frozen items\n" +
+  "11) Other\n" +
+  "   - ONLY if none of the above apply\n" +
+  "\n" +
+  "CATEGORY CONSTRAINTS\n" +
+  "- Fresh Produce must NEVER appear in Pantry or Other.\n" +
+  "- Oils must NEVER appear in Condiments unless explicitly a sauce.\n" +
+  "- Canned or jarred goods must NEVER appear in Other.\n" +
+  "\n" +
+  "────────────────────────────────────────────────\n" +
+  "OUTPUT REQUIREMENTS\n" +
+  "Each item MUST include:\n" +
+  "- name (canonical, shopper-facing)\n" +
+  "- quantity + unit (user-facing)\n" +
+  "- isEstimated (boolean)\n" +
+  "- category (from enum above)\n" +
+  "- mergedFrom (array of original source strings with quantities/units)\n" +
+  "- notes (optional, ONLY if needed to explain estimation, rounding, or subtype detail)\n";
 
 type SmartListLLMItem = {
   name?: string;
