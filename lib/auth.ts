@@ -14,6 +14,10 @@ export type CurrentUser = {
   workspace: { id: string; slug: string; name: string } | null;
 };
 
+export type WorkspaceUser = Omit<CurrentUser, "workspace"> & {
+  workspace: { id: string; slug: string; name: string };
+};
+
 export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
@@ -101,7 +105,7 @@ export async function requireAdmin() {
   return user;
 }
 
-export async function requireWorkspaceUser(slug: string) {
+export async function requireWorkspaceUser(slug: string): Promise<WorkspaceUser> {
   const user = await getCurrentUser();
   if (!user?.workspace || user.workspace.slug !== slug) {
     throw new Error("Unauthorized");
