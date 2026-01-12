@@ -481,18 +481,6 @@ export default function CookClient({
               </select>
             </label>
 
-            <label className="flex items-center gap-2 text-sm text-slate-600">
-              <input
-                type="checkbox"
-                checked={currentManualOnly}
-                onChange={(event) =>
-                  updateParams({ manual: event.target.checked ? "1" : null })
-                }
-                className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900/30"
-              />
-              Manually Added
-            </label>
-
             <label className="flex flex-col gap-2 text-sm text-slate-600">
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Sort
@@ -508,6 +496,18 @@ export default function CookClient({
                   </option>
                 ))}
               </select>
+            </label>
+
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={currentManualOnly}
+                onChange={(event) =>
+                  updateParams({ manual: event.target.checked ? "1" : null })
+                }
+                className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900/30"
+              />
+              Manually Added
             </label>
           </div>
 

@@ -61,6 +61,33 @@ function CategorySection({
   );
 }
 
+const SMART_CATEGORY_EMOJI: Record<string, string> = {
+  produce: "🥦",
+  fruit: "🍎",
+  fruits: "🍎",
+  vegetables: "🥕",
+  veggie: "🥕",
+  veggies: "🥕",
+  dairy: "🧀",
+  meat: "🥩",
+  seafood: "🐟",
+  bakery: "🥖",
+  pantry: "🥫",
+  frozen: "🧊",
+  beverages: "🥤",
+  snacks: "🍿",
+  spices: "🧂",
+  grains: "🌾",
+  pasta: "🍝",
+  condiments: "🍯",
+  canned: "🥫",
+};
+
+function getSmartCategoryEmoji(label: string) {
+  const key = label.trim().toLowerCase();
+  return SMART_CATEGORY_EMOJI[key] ?? "🍽️";
+}
+
 export default function ShopClient({
   workspaceSlug,
   workspaceName,
@@ -72,6 +99,7 @@ export default function ShopClient({
   const [hoverRecipeId, setHoverRecipeId] = useState<string | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"aggregated" | "smart">("aggregated");
+  const [hasManualViewSelection, setHasManualViewSelection] = useState(false);
   const [smartListByWeek, setSmartListByWeek] = useState<
     Record<string, SmartListData | null>
   >({});
@@ -144,6 +172,10 @@ export default function ShopClient({
   }, [selectedWeek?.weekId, smartListByWeek, viewMode]);
 
   useEffect(() => {
+    setHasManualViewSelection(false);
+  }, [selectedWeek?.weekId]);
+
+  useEffect(() => {
     setErrorMessage(null);
   }, [selectedWeek?.weekId]);
 
@@ -158,6 +190,12 @@ export default function ShopClient({
     !!currentSmartList &&
     !!selectedWeek?.version &&
     currentSmartList.version < selectedWeek.version;
+
+  useEffect(() => {
+    if (currentSmartList && !hasManualViewSelection && viewMode !== "smart") {
+      setViewMode("smart");
+    }
+  }, [currentSmartList, hasManualViewSelection, viewMode]);
 
   const handleGenerateSmartList = async () => {
     if (!selectedWeek?.weekId || isGenerating || smartListReady) return;
@@ -278,7 +316,10 @@ export default function ShopClient({
               <div className="flex items-center rounded-full border border-slate-200 bg-slate-100 p-1 text-xs font-medium text-slate-600">
                 <button
                   type="button"
-                  onClick={() => setViewMode("aggregated")}
+                  onClick={() => {
+                    setHasManualViewSelection(true);
+                    setViewMode("aggregated");
+                  }}
                   className={`rounded-full px-3 py-1 transition ${
                     viewMode === "aggregated"
                       ? "bg-white text-slate-900 shadow-sm"
@@ -289,7 +330,10 @@ export default function ShopClient({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setViewMode("smart")}
+                  onClick={() => {
+                    setHasManualViewSelection(true);
+                    setViewMode("smart");
+                  }}
                   disabled={!currentSmartList}
                   className={`rounded-full px-3 py-1 transition ${
                     viewMode === "smart"
@@ -315,6 +359,9 @@ export default function ShopClient({
                     : "bg-slate-900 text-white hover:bg-slate-800"
                 }`}
               >
+                {isGenerating ? (
+                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                ) : null}
                 <span className="flex h-4 w-4 items-center justify-center">
                   <svg
                     viewBox="0 0 24 24"
@@ -340,6 +387,17 @@ export default function ShopClient({
                     Couldn’t generate smart list. Try again.
                   </div>
                 ) : null}
+                {isGenerating ? (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600">
+                    <div className="flex items-center gap-2">
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400/40 border-t-slate-600" />
+                      Generating smart list…
+                    </div>
+                    <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-full w-1/2 animate-pulse rounded-full bg-slate-400" />
+                    </div>
+                  </div>
+                ) : null}
                 {viewMode === "aggregated" ? (
                   categoriesInOrder.map((category) => (
                     <CategorySection
@@ -353,7 +411,10 @@ export default function ShopClient({
                 ) : currentSmartList ? (
                   currentSmartList.categories.map((category) => (
                     <section key={category.name} className="space-y-3">
-                      <h3 className="text-sm font-semibold text-slate-900">
+                      <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                        <span aria-hidden="true">
+                          {getSmartCategoryEmoji(category.name)}
+                        </span>
                         {category.name}
                       </h3>
                       <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
