@@ -16,8 +16,8 @@ export default async function WorkspaceLayout({
     redirect(`/?next=/g/${slug}`);
   }
 
-  if (!user.workspace) {
-    if (!user.isAdmin) {
+  if (!user.isAdmin) {
+    if (!user.workspace) {
       redirect(
         "/?message=" +
           encodeURIComponent(
@@ -25,10 +25,10 @@ export default async function WorkspaceLayout({
           ),
       );
     }
-  }
 
-  if (!user.isAdmin && user.workspace.slug !== slug) {
-    redirect(`/g/${user.workspace.slug}/`);
+    if (user.workspace.slug !== slug) {
+      redirect(`/g/${user.workspace.slug}/`);
+    }
   }
 
   return <>{children}</>;
