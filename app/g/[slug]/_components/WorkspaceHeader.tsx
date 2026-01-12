@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import { logoutAction } from "@/app/actions/auth";
 
 type WorkspaceHeaderProps = {
   slug: string;
   workspaceName: string;
   workspaces: Array<{ slug: string; name: string }>;
   current?: "recipes" | "plan" | "shopping";
+  showLogout?: boolean;
 };
 
 const navItems = [
@@ -23,6 +25,7 @@ export default function WorkspaceHeader({
   workspaceName,
   workspaces,
   current = "recipes",
+  showLogout = true,
 }: WorkspaceHeaderProps) {
   const activeNav =
     navItems.find((item) => item.key === current) ?? navItems[0];
@@ -64,6 +67,13 @@ export default function WorkspaceHeader({
         </nav>
 
         <div className="flex items-center gap-3">
+          {showLogout ? (
+            <form action={logoutAction}>
+              <button className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20">
+                Log out
+              </button>
+            </form>
+          ) : null}
           <Link
             href={`/g/${slug}/cook`}
             className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white md:hidden"

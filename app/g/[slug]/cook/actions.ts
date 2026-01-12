@@ -1,7 +1,7 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
+import { requireWorkspaceUser } from "@/lib/auth";
 import { UpdateRecipeInput } from "./types";
 
 const MAX_RATING = 5;
@@ -12,28 +12,14 @@ export async function setRecipeRating(
   recipeId: string,
   rating: number,
 ) {
-  const cookieStore = await cookies();
-  const authed = cookieStore.get(`wsp_${slug}`)?.value === "1";
-
-  if (!authed) {
-    throw new Error("Unauthorized");
-  }
+  const user = await requireWorkspaceUser(slug);
 
   if (!Number.isInteger(rating) || rating < MIN_RATING || rating > MAX_RATING) {
     throw new Error("Invalid rating");
   }
 
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug },
-    select: { id: true },
-  });
-
-  if (!workspace) {
-    throw new Error("Workspace not found");
-  }
-
   const updateResult = await prisma.recipe.updateMany({
-    where: { id: recipeId, workspaceId: workspace.id },
+    where: { id: recipeId, workspaceId: user.workspace.id },
     data: { rating },
   });
 
@@ -43,26 +29,12 @@ export async function setRecipeRating(
 }
 
 export async function deleteRecipe(slug: string, recipeId: string) {
-  const cookieStore = await cookies();
-  const authed = cookieStore.get(`wsp_${slug}`)?.value === "1";
-
-  if (!authed) {
-    throw new Error("Unauthorized");
-  }
-
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug },
-    select: { id: true },
-  });
-
-  if (!workspace) {
-    throw new Error("Workspace not found");
-  }
+  const user = await requireWorkspaceUser(slug);
 
   const deleted = await prisma.recipe.deleteMany({
     where: {
       id: recipeId,
-      workspaceId: workspace.id,
+      workspaceId: user.workspace.id,
     },
   });
 
@@ -76,21 +48,7 @@ export async function updateRecipe(
   recipeId: string,
   data: UpdateRecipeInput,
 ) {
-  const cookieStore = await cookies();
-  const authed = cookieStore.get(`wsp_${slug}`)?.value === "1";
-
-  if (!authed) {
-    throw new Error("Unauthorized");
-  }
-
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug },
-    select: { id: true },
-  });
-
-  if (!workspace) {
-    throw new Error("Workspace not found");
-  }
+  const user = await requireWorkspaceUser(slug);
 
   if (!data.title.trim()) {
     throw new Error("Title is required");
@@ -128,7 +86,7 @@ export async function updateRecipe(
 
   await prisma.$transaction(async (tx) => {
     const updated = await tx.recipe.updateMany({
-      where: { id: recipeId, workspaceId: workspace.id },
+      where: { id: recipeId, workspaceId: user.workspace.id },
       data: {
         title: data.title.trim(),
         description: data.description?.trim() || null,
