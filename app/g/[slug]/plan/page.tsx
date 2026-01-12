@@ -1,3 +1,4 @@
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import WorkspaceHeader from "../_components/WorkspaceHeader";
 import PlanClient from "./PlanClient";
@@ -86,10 +87,15 @@ export default async function PlanPage({
     );
   }
 
-  const workspaces = await prisma.workspace.findMany({
-    select: { name: true, slug: true },
-    orderBy: { name: "asc" },
-  });
+  const user = await getCurrentUser();
+  const isAdmin = user?.isAdmin ?? false;
+
+  const workspaces = isAdmin
+    ? await prisma.workspace.findMany({
+        select: { name: true, slug: true },
+        orderBy: { name: "asc" },
+      })
+    : [];
 
   const view = parseView(getParam(resolvedSearchParams.view));
   const focusedDate = parseFocusedDate(getParam(resolvedSearchParams.date));
@@ -163,6 +169,7 @@ export default async function PlanPage({
         slug={slug}
         workspaceName={workspace.name}
         workspaces={workspaces}
+        isAdmin={isAdmin}
         current="plan"
       />
       <PlanClient

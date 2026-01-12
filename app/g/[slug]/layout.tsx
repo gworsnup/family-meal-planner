@@ -17,18 +17,17 @@ export default async function WorkspaceLayout({
   }
 
   if (!user.workspace) {
-    if (user.isAdmin) {
-      redirect("/admin");
+    if (!user.isAdmin) {
+      redirect(
+        "/?message=" +
+          encodeURIComponent(
+            "Account not assigned to a workspace. Ask your administrator.",
+          ),
+      );
     }
-    redirect(
-      "/?message=" +
-        encodeURIComponent(
-          "Account not assigned to a workspace. Ask your administrator.",
-        ),
-    );
   }
 
-  if (user.workspace.slug !== slug) {
+  if (!user.isAdmin && user.workspace.slug !== slug) {
     redirect(`/g/${user.workspace.slug}/`);
   }
 
