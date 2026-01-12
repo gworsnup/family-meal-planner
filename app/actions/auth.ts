@@ -101,7 +101,7 @@ export async function loginAction(
   }
 
   if (user.workspace) {
-    redirect(`/g/${user.workspace.slug}/`);
+    redirect(`/g/${user.workspace.slug}/cook`);
   }
 
   return {

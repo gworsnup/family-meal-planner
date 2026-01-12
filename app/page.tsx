@@ -16,7 +16,7 @@ export default async function Home({
       redirect("/admin");
     }
     if (user.workspace) {
-      redirect(`/g/${user.workspace.slug}/`);
+      redirect(`/g/${user.workspace.slug}/cook`);
     }
   }
 
