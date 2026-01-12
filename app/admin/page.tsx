@@ -147,6 +147,14 @@ export default async function AdminPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center justify-end gap-2">
+                        {user.workspace ? (
+                          <a
+                            href={`/g/${user.workspace.slug}/cook`}
+                            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                          >
+                            View workspace
+                          </a>
+                        ) : null}
                         <form
                           action={updateUserWorkspaceAction}
                           className="flex flex-wrap items-center gap-2"
