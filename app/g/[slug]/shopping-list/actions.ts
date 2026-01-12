@@ -2,7 +2,6 @@
 
 import "server-only";
 
-import { cookies } from "next/headers";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { buildAggregatedSourceView, type WeekList } from "@/lib/ingredientParsing";
@@ -10,6 +9,7 @@ import { endOfWeek, formatDateISO } from "@/lib/planDates";
 import type { SmartListData, SmartListItem } from "@/lib/smartListTypes";
 import { SMART_LIST_CATEGORIES } from "@/lib/smartListConfig";
 import { randomUUID } from "crypto";
+import { requireWorkspaceUser } from "@/lib/auth";
 
 const SYSTEM_PROMPT =
   "You are a shopping list normalizer and aggregator.\n" +
@@ -283,25 +283,10 @@ export async function generateSmartList({
   weekId: string;
 }): Promise<{ smartList: SmartListData }> {
   console.log("[SmartList] generateSmartList start", { slug, weekId });
-  const cookieStore = await cookies();
-  const authed = cookieStore.get(`wsp_${slug}`)?.value === "1";
-  if (!authed) {
-    console.log("[SmartList] unauthorized", { slug, weekId });
-    throw new Error("Unauthorized");
-  }
-
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug },
-    select: { id: true },
-  });
-
-  if (!workspace) {
-    console.log("[SmartList] workspace not found", { slug, weekId });
-    throw new Error("Workspace not found");
-  }
+  const user = await requireWorkspaceUser(slug);
 
   const week = await prisma.shoppingListWeek.findFirst({
-    where: { id: weekId, workspaceId: workspace.id },
+    where: { id: weekId, workspaceId: user.workspace.id },
   });
 
   if (!week) {
@@ -312,7 +297,7 @@ export async function generateSmartList({
   const existing = await prisma.shoppingListSmart.findUnique({
     where: {
       workspaceId_weekId_version: {
-        workspaceId: workspace.id,
+        workspaceId: user.workspace.id,
         weekId: week.id,
         version: week.version,
       },
@@ -354,7 +339,7 @@ export async function generateSmartList({
 
   const planItems = await prisma.mealPlanItem.findMany({
     where: {
-      workspaceId: workspace.id,
+      workspaceId: user.workspace.id,
       date: {
         gte: weekStart,
         lte: weekEnd,
