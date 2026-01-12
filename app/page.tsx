@@ -1,62 +1,48 @@
 import Image from "next/image";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+import LoginForm from "@/app/_components/LoginForm";
+import { getCurrentUser } from "@/lib/auth";
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  const user = await getCurrentUser();
+
+  if (user) {
+    if (user.isAdmin) {
+      redirect("/admin");
+    }
+    if (user.workspace) {
+      redirect(`/g/${user.workspace.slug}/cook`);
+    }
+  }
+
+  const next =
+    typeof searchParams.next === "string" ? searchParams.next : undefined;
+  const message =
+    typeof searchParams.message === "string" ? searchParams.message : undefined;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f0ece0] font-sans">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between bg-white px-16 py-32 sm:items-start">
-        <Image
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+      <main className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="flex flex-col items-center text-center">
+          <Image
+            src="/f-t-logo.png"
+            alt="FamilyTable"
+            width={200}
+            height={60}
+            priority
+            className="h-12 w-auto"
+          />
+          <p className="mt-3 text-sm text-slate-500">
+            Sign in to plan meals with your household.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#364c35] px-5 text-white transition-colors hover:bg-[#2f402c] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        <LoginForm next={next} message={message} />
       </main>
     </div>
   );
