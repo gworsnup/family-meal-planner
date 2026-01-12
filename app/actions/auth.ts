@@ -21,9 +21,18 @@ type LoginState =
   | { status: "error"; message: string };
 
 const loginSchema = z.object({
-  email: z.string().email("Enter a valid email address."),
-  password: z.string().min(8, "Password must be at least 8 characters."),
-  next: z.string().optional(),
+  email: z.preprocess(
+    (value) => (typeof value === "string" ? value.trim() : ""),
+    z.string().email("Enter a valid email address."),
+  ),
+  password: z.preprocess(
+    (value) => (typeof value === "string" ? value : ""),
+    z.string().min(8, "Password must be at least 8 characters."),
+  ),
+  next: z.preprocess(
+    (value) => (typeof value === "string" ? value : undefined),
+    z.string().optional(),
+  ),
 });
 
 export async function loginAction(
