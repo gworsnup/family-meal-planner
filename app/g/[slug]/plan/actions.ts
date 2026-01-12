@@ -1,9 +1,9 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { parseDateISO, startOfWeek } from "@/lib/planDates";
+import { requireWorkspaceUser } from "@/lib/auth";
 
 type AddMealPlanInput = {
   slug: string;
@@ -55,24 +55,10 @@ export async function addMealPlanItem({
   dateISO,
   recipeId,
 }: AddMealPlanInput) {
-  const cookieStore = await cookies();
-  const authed = cookieStore.get(`wsp_${slug}`)?.value === "1";
-
-  if (!authed) {
-    throw new Error("Unauthorized");
-  }
-
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug },
-    select: { id: true },
-  });
-
-  if (!workspace) {
-    throw new Error("Workspace not found");
-  }
+  const user = await requireWorkspaceUser(slug);
 
   const recipe = await prisma.recipe.findFirst({
-    where: { id: recipeId, workspaceId: workspace.id },
+    where: { id: recipeId, workspaceId: user.workspace.id },
     select: { id: true, title: true, photoUrl: true },
   });
 
@@ -85,14 +71,14 @@ export async function addMealPlanItem({
   try {
     const item = await prisma.mealPlanItem.create({
       data: {
-        workspaceId: workspace.id,
+        workspaceId: user.workspace.id,
         recipeId: recipe.id,
         date,
       },
       select: { id: true, date: true, recipeId: true },
     });
 
-    await bumpShoppingWeekVersion(workspace.id, date);
+    await bumpShoppingWeekVersion(user.workspace.id, date);
 
     return {
       item: {
@@ -118,24 +104,10 @@ export async function removeMealPlanItem({
   slug,
   itemId,
 }: RemoveMealPlanInput) {
-  const cookieStore = await cookies();
-  const authed = cookieStore.get(`wsp_${slug}`)?.value === "1";
-
-  if (!authed) {
-    throw new Error("Unauthorized");
-  }
-
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug },
-    select: { id: true },
-  });
-
-  if (!workspace) {
-    throw new Error("Workspace not found");
-  }
+  const user = await requireWorkspaceUser(slug);
 
   const existing = await prisma.mealPlanItem.findFirst({
-    where: { id: itemId, workspaceId: workspace.id },
+    where: { id: itemId, workspaceId: user.workspace.id },
     select: { id: true, date: true },
   });
 
@@ -144,10 +116,10 @@ export async function removeMealPlanItem({
   }
 
   await prisma.mealPlanItem.deleteMany({
-    where: { id: itemId, workspaceId: workspace.id },
+    where: { id: itemId, workspaceId: user.workspace.id },
   });
 
-  await bumpShoppingWeekVersion(workspace.id, existing.date);
+  await bumpShoppingWeekVersion(user.workspace.id, existing.date);
 }
 
 export async function moveMealPlanItem({
@@ -155,26 +127,12 @@ export async function moveMealPlanItem({
   itemId,
   dateISO,
 }: MoveMealPlanInput) {
-  const cookieStore = await cookies();
-  const authed = cookieStore.get(`wsp_${slug}`)?.value === "1";
-
-  if (!authed) {
-    throw new Error("Unauthorized");
-  }
-
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug },
-    select: { id: true },
-  });
-
-  if (!workspace) {
-    throw new Error("Workspace not found");
-  }
+  const user = await requireWorkspaceUser(slug);
 
   const date = normalizeDate(dateISO);
 
   const existing = await prisma.mealPlanItem.findFirst({
-    where: { id: itemId, workspaceId: workspace.id },
+    where: { id: itemId, workspaceId: user.workspace.id },
     select: { id: true, date: true },
   });
 
@@ -183,7 +141,7 @@ export async function moveMealPlanItem({
   }
 
   const updated = await prisma.mealPlanItem.updateMany({
-    where: { id: itemId, workspaceId: workspace.id },
+    where: { id: itemId, workspaceId: user.workspace.id },
     data: { date },
   });
 
@@ -194,10 +152,10 @@ export async function moveMealPlanItem({
   const previousWeekStart = startOfWeek(existing.date).getTime();
   const nextWeekStart = startOfWeek(date).getTime();
   if (previousWeekStart === nextWeekStart) {
-    await bumpShoppingWeekVersion(workspace.id, date);
+    await bumpShoppingWeekVersion(user.workspace.id, date);
   } else {
-    await bumpShoppingWeekVersion(workspace.id, existing.date);
-    await bumpShoppingWeekVersion(workspace.id, date);
+    await bumpShoppingWeekVersion(user.workspace.id, existing.date);
+    await bumpShoppingWeekVersion(user.workspace.id, date);
   }
 
   return { itemId, dateISO };

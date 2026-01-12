@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 
-import { hashPasscode } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 import { SetupForm } from "./SetupForm";
@@ -30,20 +29,18 @@ async function setupWorkspace(_prevState: SetupState, formData: FormData): Promi
   }
 
   const name = (formData.get("name") as string | null)?.trim();
-  const passcode = (formData.get("passcode") as string | null)?.trim();
 
-  if (!name || !passcode) {
-    return { status: "error", message: "Name and passcode are required." };
+  if (!name) {
+    return { status: "error", message: "Name is required." };
   }
 
   const existing = await prisma.workspace.findFirst();
   const slug = existing?.slug ?? randomSlug();
-  const passcodeHash = await hashPasscode(passcode);
 
   const workspace = await prisma.workspace.upsert({
     where: { slug },
-    update: { name, passcodeHash },
-    create: { slug, name, passcodeHash },
+    update: { name },
+    create: { slug, name },
   });
 
   return { status: "success", workspaceSlug: workspace.slug };
