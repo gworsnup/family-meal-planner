@@ -110,7 +110,7 @@ export async function requireWorkspaceUser(slug: string): Promise<WorkspaceUser>
   if (!user?.workspace || user.workspace.slug !== slug) {
     throw new Error("Unauthorized");
   }
-  return user;
+  return user as WorkspaceUser;
 }
 
 export function isSafeRedirect(value?: string | null) {
