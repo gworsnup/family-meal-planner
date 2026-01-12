@@ -30,8 +30,8 @@ export function sessionExpiryDate() {
   return new Date(Date.now() + SESSION_DURATION_DAYS * 24 * 60 * 60 * 1000);
 }
 
-export function setSessionCookie(token: string, expiresAt: Date) {
-  const cookieStore = cookies();
+export async function setSessionCookie(token: string, expiresAt: Date) {
+  const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
@@ -41,8 +41,8 @@ export function setSessionCookie(token: string, expiresAt: Date) {
   });
 }
 
-export function clearSessionCookie() {
-  const cookieStore = cookies();
+export async function clearSessionCookie() {
+  const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE);
 }
 
@@ -55,7 +55,7 @@ export async function verifyPassword(hash: string, password: string) {
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 

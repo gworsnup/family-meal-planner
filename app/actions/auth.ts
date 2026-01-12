@@ -79,7 +79,7 @@ export async function loginAction(
     },
   });
 
-  setSessionCookie(token, expiresAt);
+  await setSessionCookie(token, expiresAt);
 
   const next = isSafeRedirect(parsed.data.next) ? parsed.data.next : null;
 
@@ -102,13 +102,13 @@ export async function loginAction(
 }
 
 export async function logoutAction() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get("session")?.value;
   if (token) {
     await prisma.session.deleteMany({
       where: { tokenHash: sha256(token) },
     });
   }
-  clearSessionCookie();
+  await clearSessionCookie();
   redirect("/");
 }
