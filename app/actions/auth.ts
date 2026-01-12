@@ -37,7 +37,7 @@ export async function loginAction(
   });
 
   if (!parsed.success) {
-    const message = parsed.error.errors[0]?.message ?? "Invalid login details.";
+    const message = parsed.error.issues[0]?.message ?? "Invalid login details.";
     return { status: "error", message };
   }
 

@@ -37,7 +37,7 @@ export async function createWorkspaceAction(
   });
 
   if (!parsed.success) {
-    const message = parsed.error.errors[0]?.message ?? "Workspace name is required.";
+    const message = parsed.error.issues[0]?.message ?? "Workspace name is required.";
     return { status: "error", message };
   }
 
@@ -100,7 +100,7 @@ export async function createUserAction(
   });
 
   if (!parsed.success) {
-    const message = parsed.error.errors[0]?.message ?? "Invalid user details.";
+    const message = parsed.error.issues[0]?.message ?? "Invalid user details.";
     return { status: "error", message };
   }
 
