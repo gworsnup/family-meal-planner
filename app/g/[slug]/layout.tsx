@@ -16,20 +16,19 @@ export default async function WorkspaceLayout({
     redirect(`/?next=/g/${slug}`);
   }
 
-  if (!user.workspace) {
-    if (user.isAdmin) {
-      redirect("/admin");
+  if (!user.isAdmin) {
+    if (!user.workspace) {
+      redirect(
+        "/?message=" +
+          encodeURIComponent(
+            "Account not assigned to a workspace. Ask your administrator.",
+          ),
+      );
     }
-    redirect(
-      "/?message=" +
-        encodeURIComponent(
-          "Account not assigned to a workspace. Ask your administrator.",
-        ),
-    );
-  }
 
-  if (user.workspace.slug !== slug) {
-    redirect(`/g/${user.workspace.slug}/`);
+    if (user.workspace.slug !== slug) {
+      redirect(`/g/${user.workspace.slug}/`);
+    }
   }
 
   return <>{children}</>;

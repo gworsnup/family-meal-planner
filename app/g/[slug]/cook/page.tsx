@@ -1,3 +1,4 @@
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import WorkspaceHeader from "../_components/WorkspaceHeader";
 import CookClient from "./CookClient";
@@ -107,10 +108,15 @@ export default async function CookPage({
     );
   }
 
-  const workspaces = await prisma.workspace.findMany({
-    select: { name: true, slug: true },
-    orderBy: { name: "asc" },
-  });
+  const user = await getCurrentUser();
+  const isAdmin = user?.isAdmin ?? false;
+
+  const workspaces = isAdmin
+    ? await prisma.workspace.findMany({
+        select: { name: true, slug: true },
+        orderBy: { name: "asc" },
+      })
+    : [];
 
   const view = parseView(getParam(resolvedSearchParams.view));
   const q = getParam(resolvedSearchParams.q) ?? "";
@@ -191,6 +197,7 @@ export default async function CookPage({
         slug={slug}
         workspaceName={workspace.name}
         workspaces={workspaces}
+        isAdmin={isAdmin}
         current="recipes"
       />
       <main className="mx-auto max-w-7xl px-6 py-8 sm:px-8">

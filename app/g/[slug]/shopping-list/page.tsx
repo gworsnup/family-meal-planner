@@ -1,3 +1,4 @@
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import WorkspaceHeader from "../_components/WorkspaceHeader";
 import ShopClient from "./ShopClient";
@@ -46,10 +47,15 @@ export default async function ShoppingListPage({
     );
   }
 
-  const workspaces = await prisma.workspace.findMany({
-    select: { name: true, slug: true },
-    orderBy: { name: "asc" },
-  });
+  const user = await getCurrentUser();
+  const isAdmin = user?.isAdmin ?? false;
+
+  const workspaces = isAdmin
+    ? await prisma.workspace.findMany({
+        select: { name: true, slug: true },
+        orderBy: { name: "asc" },
+      })
+    : [];
 
   const startOfThisWeek = startOfWeek(getTodayUTC());
 
@@ -225,6 +231,7 @@ export default async function ShoppingListPage({
         slug={slug}
         workspaceName={workspace.name}
         workspaces={workspaces}
+        isAdmin={isAdmin}
         current="shopping"
       />
       <ShopClient
