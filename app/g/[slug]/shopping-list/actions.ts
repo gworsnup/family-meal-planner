@@ -572,7 +572,7 @@ export async function generateSmartList({
     const createSmartList = prisma.shoppingListSmart.create({
       data: {
         id: smartListId,
-        workspaceId: workspace.id,
+        workspaceId: user.workspace.id,
         weekId: week.id,
         version: week.version,
         model,
@@ -590,7 +590,7 @@ export async function generateSmartList({
     const smartList = await prisma.shoppingListSmart.findUnique({
       where: {
         workspaceId_weekId_version: {
-          workspaceId: workspace.id,
+          workspaceId: user.workspace.id,
           weekId: week.id,
           version: week.version,
         },
@@ -634,7 +634,7 @@ export async function generateSmartList({
       const existingRecord = await prisma.shoppingListSmart.findUnique({
         where: {
           workspaceId_weekId_version: {
-            workspaceId: workspace.id,
+            workspaceId: user.workspace.id,
             weekId: week.id,
             version: week.version,
           },
