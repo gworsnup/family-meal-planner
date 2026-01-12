@@ -1,9 +1,10 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { lookup } from "node:dns/promises";
 import { isIP, isIPv4, isIPv6 } from "node:net";
 import { prisma } from "@/lib/db";
+import { requireWorkspaceUser } from "@/lib/auth";
 
 const MAX_URL_LENGTH = 2000;
 
@@ -83,28 +84,14 @@ async function getBaseUrl() {
 }
 
 export async function startRecipeImport(slug: string, url: string) {
-  const cookieStore = await cookies();
-  const authed = cookieStore.get(`wsp_${slug}`)?.value === "1";
-
-  if (!authed) {
-    throw new Error("Unauthorized");
-  }
+  const user = await requireWorkspaceUser(slug);
 
   const cleanedUrl = url.trim();
   await assertSafeUrl(cleanedUrl);
 
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug },
-    select: { id: true },
-  });
-
-  if (!workspace) {
-    throw new Error("Workspace not found");
-  }
-
   const recipe = await prisma.recipe.create({
     data: {
-      workspaceId: workspace.id,
+      workspaceId: user.workspace.id,
       title: "Importing…",
       sourceUrl: cleanedUrl,
       isDraft: true,
@@ -114,7 +101,7 @@ export async function startRecipeImport(slug: string, url: string) {
 
   const recipeImport = await prisma.recipeImport.create({
     data: {
-      workspaceId: workspace.id,
+      workspaceId: user.workspace.id,
       recipeId: recipe.id,
       sourceUrl: cleanedUrl,
       status: "queued",

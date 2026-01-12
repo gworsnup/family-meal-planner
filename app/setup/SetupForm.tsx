@@ -32,16 +32,6 @@ export function SetupForm({ action, secret, defaultName }: Props) {
         />
       </label>
 
-      <label style={{ display: "grid", gap: 4 }}>
-        <span>Passcode</span>
-        <input
-          name="passcode"
-          required
-          type="password"
-          style={{ padding: 8, border: "1px solid #ccc", borderRadius: 4 }}
-        />
-      </label>
-
       <button
         type="submit"
         disabled={pending}
