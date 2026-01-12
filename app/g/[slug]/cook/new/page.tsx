@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { requireWorkspaceUser } from "@/lib/auth";
 import WorkspaceHeader from "../../_components/WorkspaceHeader";
@@ -43,10 +44,15 @@ export default async function NewRecipePage({
     );
   }
 
-  const workspaces = await prisma.workspace.findMany({
-    select: { name: true, slug: true },
-    orderBy: { name: "asc" },
-  });
+  const user = await getCurrentUser();
+  const isAdmin = user?.isAdmin ?? false;
+
+  const workspaces = isAdmin
+    ? await prisma.workspace.findMany({
+        select: { name: true, slug: true },
+        orderBy: { name: "asc" },
+      })
+    : [];
 
   async function createRecipe(formData: FormData) {
     "use server";
@@ -112,6 +118,7 @@ export default async function NewRecipePage({
         slug={slug}
         workspaceName={workspace.name}
         workspaces={workspaces}
+        isAdmin={isAdmin}
         current="recipes"
       />
       <main className="mx-auto max-w-4xl px-6 py-8">
