@@ -43,7 +43,7 @@ function CategorySection({
               key={item.id}
               className={`flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 transition ${
                 isHighlighted
-                  ? "border-slate-300 bg-slate-100"
+                  ? "border-slate-300 bg-[#fcfcfc]"
                   : "bg-white hover:border-slate-300"
               }`}
             >
@@ -247,7 +247,7 @@ export default function ShopClient({
                       key={week.weekStart}
                       className={`rounded-xl border p-3 transition ${
                         isSelected
-                          ? "border-slate-300 bg-slate-100 text-slate-900"
+                          ? "border-slate-300 bg-[#fcfcfc] text-slate-900"
                           : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-[#fcfcfc]"
                       }`}
                     >
@@ -314,7 +314,7 @@ export default function ShopClient({
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center rounded-full border border-slate-200 bg-slate-100 p-1 text-xs font-medium text-slate-600">
+              <div className="flex items-center rounded-full border border-slate-200 bg-[#fcfcfc] p-1 text-xs font-medium text-slate-600">
                 <button
                   type="button"
                   onClick={() => {
