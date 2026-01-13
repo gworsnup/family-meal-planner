@@ -62,6 +62,7 @@ export default async function ShoppingListPage({
   const planItems = await prisma.mealPlanItem.findMany({
     where: {
       workspaceId: workspace.id,
+      type: "RECIPE",
       date: {
         gte: startOfThisWeek,
       },
@@ -86,17 +87,25 @@ export default async function ShoppingListPage({
     },
   });
 
+  const recipePlanItems = planItems.filter((item) => item.type === "RECIPE" && item.recipe);
+  if (recipePlanItems.length !== planItems.length) {
+    console.warn("[ShoppingList] skipping non-recipe plan items", {
+      slug,
+      skipped: planItems.length - recipePlanItems.length,
+    });
+  }
+
   const weeks = new Map<string, WeekList>();
 
-  planItems.forEach((item) => {
+  recipePlanItems.forEach((item) => {
     const weekStartDate = startOfWeek(item.date);
     const weekStartISO = formatDateISO(weekStartDate);
     const existing = weeks.get(weekStartISO);
     const recipeEntry = {
-      id: item.recipe.id,
-      title: item.recipe.title,
-      photoUrl: item.recipe.photoUrl,
-      ingredientLines: item.recipe.ingredientLines,
+      id: item.recipe!.id,
+      title: item.recipe!.title,
+      photoUrl: item.recipe!.photoUrl,
+      ingredientLines: item.recipe!.ingredientLines,
     };
     if (existing) {
       existing.recipes.push(recipeEntry);

@@ -8,7 +8,8 @@ import { requireWorkspaceUser } from "@/lib/auth";
 type AddMealPlanInput = {
   slug: string;
   dateISO: string;
-  recipeId: string;
+  recipeId?: string | null;
+  type?: "RECIPE" | "TAKEAWAY";
 };
 
 type RemoveMealPlanInput = {
@@ -54,39 +55,61 @@ export async function addMealPlanItem({
   slug,
   dateISO,
   recipeId,
+  type = "RECIPE",
 }: AddMealPlanInput) {
   const user = await requireWorkspaceUser(slug);
 
-  const recipe = await prisma.recipe.findFirst({
-    where: { id: recipeId, workspaceId: user.workspace.id },
-    select: { id: true, title: true, photoUrl: true },
-  });
+  if (type === "RECIPE" && !recipeId) {
+    throw new Error("Recipe is required");
+  }
 
-  if (!recipe) {
+  if (type === "TAKEAWAY" && recipeId) {
+    throw new Error("Recipe not allowed for takeaway items");
+  }
+
+  let recipe: { id: string; title: string; photoUrl: string | null } | null = null;
+  if (type === "RECIPE") {
+    const resolvedRecipeId = recipeId;
+    if (!resolvedRecipeId) {
+      throw new Error("Recipe is required");
+    }
+    recipe = await prisma.recipe.findFirst({
+      where: { id: resolvedRecipeId, workspaceId: user.workspace.id },
+      select: { id: true, title: true, photoUrl: true },
+    });
+  }
+
+  if (type === "RECIPE" && !recipe) {
     throw new Error("Recipe not found");
   }
 
   const date = normalizeDate(dateISO);
+  const title = type === "TAKEAWAY" ? "Take Away Night" : recipe?.title ?? "Recipe";
 
   try {
     const item = await prisma.mealPlanItem.create({
       data: {
         workspaceId: user.workspace.id,
-        recipeId: recipe.id,
+        recipeId: recipe?.id ?? null,
         date,
+        type,
+        title,
       },
-      select: { id: true, date: true, recipeId: true },
+      select: { id: true, date: true, recipeId: true, type: true, title: true },
     });
 
-    await bumpShoppingWeekVersion(user.workspace.id, date);
+    if (type === "RECIPE") {
+      await bumpShoppingWeekVersion(user.workspace.id, date);
+    }
 
     return {
       item: {
         id: item.id,
         dateISO,
         recipeId: item.recipeId,
-        title: recipe.title,
-        photoUrl: recipe.photoUrl,
+        type: item.type,
+        title: item.title ?? title,
+        photoUrl: recipe?.photoUrl ?? null,
       },
     };
   } catch (error) {
@@ -108,7 +131,7 @@ export async function removeMealPlanItem({
 
   const existing = await prisma.mealPlanItem.findFirst({
     where: { id: itemId, workspaceId: user.workspace.id },
-    select: { id: true, date: true },
+    select: { id: true, date: true, type: true },
   });
 
   if (!existing) {
@@ -119,7 +142,9 @@ export async function removeMealPlanItem({
     where: { id: itemId, workspaceId: user.workspace.id },
   });
 
-  await bumpShoppingWeekVersion(user.workspace.id, existing.date);
+  if (existing.type === "RECIPE") {
+    await bumpShoppingWeekVersion(user.workspace.id, existing.date);
+  }
 }
 
 export async function moveMealPlanItem({
@@ -133,7 +158,7 @@ export async function moveMealPlanItem({
 
   const existing = await prisma.mealPlanItem.findFirst({
     where: { id: itemId, workspaceId: user.workspace.id },
-    select: { id: true, date: true },
+    select: { id: true, date: true, type: true },
   });
 
   if (!existing) {
@@ -149,13 +174,15 @@ export async function moveMealPlanItem({
     throw new Error("Meal plan item not found");
   }
 
-  const previousWeekStart = startOfWeek(existing.date).getTime();
-  const nextWeekStart = startOfWeek(date).getTime();
-  if (previousWeekStart === nextWeekStart) {
-    await bumpShoppingWeekVersion(user.workspace.id, date);
-  } else {
-    await bumpShoppingWeekVersion(user.workspace.id, existing.date);
-    await bumpShoppingWeekVersion(user.workspace.id, date);
+  if (existing.type === "RECIPE") {
+    const previousWeekStart = startOfWeek(existing.date).getTime();
+    const nextWeekStart = startOfWeek(date).getTime();
+    if (previousWeekStart === nextWeekStart) {
+      await bumpShoppingWeekVersion(user.workspace.id, date);
+    } else {
+      await bumpShoppingWeekVersion(user.workspace.id, existing.date);
+      await bumpShoppingWeekVersion(user.workspace.id, date);
+    }
   }
 
   return { itemId, dateISO };
