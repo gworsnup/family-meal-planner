@@ -982,27 +982,30 @@ export default function PlanClient({
 
         <section className="flex min-h-[600px] flex-1 flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <header className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 p-1 text-xs font-semibold text-slate-600">
-              <button
-                type="button"
-                onClick={() => handleViewChange("month")}
-                className={`rounded-full px-3 py-1 transition ${
-                  view === "month"
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:bg-white"
-                }`}
-              >
-                Month
-              </button>
-              <button
-                type="button"
-                onClick={() => handleViewChange("week")}
-                className={`rounded-full px-3 py-1 transition ${
-                  view === "week" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-white"
-                }`}
-              >
-                Week
-              </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 p-1 text-xs font-semibold text-slate-600">
+                <button
+                  type="button"
+                  onClick={() => handleViewChange("month")}
+                  className={`rounded-full px-3 py-1 transition ${
+                    view === "month"
+                      ? "bg-slate-900 text-white"
+                      : "text-slate-600 hover:bg-white"
+                  }`}
+                >
+                  Month
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleViewChange("week")}
+                  className={`rounded-full px-3 py-1 transition ${
+                    view === "week" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-white"
+                  }`}
+                >
+                  Week
+                </button>
+              </div>
+              <WhatsAppShareButton label="Share via WhatsApp" className="h-8 px-3 py-1" />
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2 text-sm text-slate-600">
@@ -1031,7 +1034,6 @@ export default function PlanClient({
                   {getMonthLabel(focusedDate)}
                 </span>
               </div>
-              <WhatsAppShareButton label="Share via WhatsApp" />
             </div>
             {isPending ? (
               <span className="text-xs font-semibold text-slate-400">Saving…</span>
