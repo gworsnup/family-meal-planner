@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import SmartListJobNotifier from "@/app/_components/SmartListJobNotifier";
 
 export default async function WorkspaceLayout({
   children,
@@ -29,5 +31,17 @@ export default async function WorkspaceLayout({
     }
   }
 
-  return <>{children}</>;
+  const workspace = await prisma.workspace.findUnique({
+    where: { slug },
+    select: { id: true },
+  });
+
+  return (
+    <>
+      {children}
+      {workspace ? (
+        <SmartListJobNotifier workspaceId={workspace.id} workspaceSlug={slug} />
+      ) : null}
+    </>
+  );
 }

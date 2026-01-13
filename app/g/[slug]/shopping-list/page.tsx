@@ -6,30 +6,7 @@ import { formatDateISO, getTodayUTC, parseDateISO, startOfWeek } from "@/lib/pla
 import type { WeekList } from "@/lib/ingredientParsing";
 import type { SmartListData } from "@/lib/smartListTypes";
 import { SMART_LIST_CATEGORIES } from "@/lib/smartListConfig";
-
-function getOrdinalSuffix(value: number) {
-  const remainder = value % 100;
-  if (remainder >= 11 && remainder <= 13) return "th";
-  switch (value % 10) {
-    case 1:
-      return "st";
-    case 2:
-      return "nd";
-    case 3:
-      return "rd";
-    default:
-      return "th";
-  }
-}
-
-function formatWeekTitle(date: Date) {
-  const day = date.getUTCDate();
-  const month = new Intl.DateTimeFormat("en-GB", {
-    month: "short",
-    timeZone: "UTC",
-  }).format(date);
-  return `Shopping List w/c ${day}${getOrdinalSuffix(day)} ${month}`;
-}
+import { formatWeekTitle } from "@/lib/shoppingList";
 
 export default async function ShoppingListPage({
   params,
@@ -244,7 +221,7 @@ export default async function ShoppingListPage({
         current="shopping"
       />
       <ShopClient
-        workspaceSlug={slug}
+        workspaceId={workspace.id}
         workspaceName={workspace.name}
         weekLists={weekListsWithMeta}
       />
