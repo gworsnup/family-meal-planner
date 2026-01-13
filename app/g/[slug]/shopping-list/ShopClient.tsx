@@ -10,6 +10,7 @@ import {
 } from "@/lib/ingredientParsing";
 import type { SmartListData } from "@/lib/smartListTypes";
 import { generateSmartList } from "./actions";
+import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
 
 type ShopClientProps = {
   workspaceSlug: string;
@@ -377,6 +378,7 @@ export default function ShopClient({
                   ? "Generating..."
                   : "Generate Smart List"}
               </button>
+              <WhatsAppShareButton label="Share via WhatsApp" />
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
