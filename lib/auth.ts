@@ -11,6 +11,7 @@ export type CurrentUser = {
   id: string;
   email: string;
   isAdmin: boolean;
+  hasCreatedWorkspace: boolean;
   workspace: { id: string; slug: string; name: string } | null;
 };
 
@@ -34,15 +35,19 @@ export function sessionExpiryDate() {
   return new Date(Date.now() + SESSION_DURATION_DAYS * 24 * 60 * 60 * 1000);
 }
 
-export async function setSessionCookie(token: string, expiresAt: Date) {
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, token, {
+export function sessionCookieOptions(expiresAt: Date) {
+  return {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     expires: expiresAt,
     path: "/",
-  });
+  };
+}
+
+export async function setSessionCookie(token: string, expiresAt: Date) {
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE, token, sessionCookieOptions(expiresAt));
 }
 
 export async function clearSessionCookie() {
@@ -56,6 +61,22 @@ export async function hashPassword(password: string) {
 
 export async function verifyPassword(hash: string, password: string) {
   return bcrypt.compare(password, hash);
+}
+
+export async function createSession(userId: string) {
+  const token = generateToken();
+  const tokenHash = sha256(token);
+  const expiresAt = sessionExpiryDate();
+
+  await prisma.session.create({
+    data: {
+      tokenHash,
+      userId,
+      expiresAt,
+    },
+  });
+
+  return { token, expiresAt };
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
@@ -87,6 +108,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     id: session.user.id,
     email: session.user.email,
     isAdmin: session.user.isAdmin,
+    hasCreatedWorkspace: session.user.hasCreatedWorkspace,
     workspace: session.user.workspace
       ? {
           id: session.user.workspace.id,
