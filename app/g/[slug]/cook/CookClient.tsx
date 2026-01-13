@@ -364,8 +364,8 @@ export default function CookClient({
     importStatus === "failed"
       ? "border-red-200 bg-red-50 text-red-700"
       : importStatus === "success" || importStatus === "partial"
-        ? "border-slate-200 bg-slate-50 text-slate-700"
-        : "border-slate-200 bg-slate-50 text-slate-600";
+        ? "border-slate-200 bg-[#fcfcfc] text-slate-700"
+        : "border-slate-200 bg-[#fcfcfc] text-slate-600";
 
   return (
     <div className="space-y-6">
@@ -409,7 +409,7 @@ export default function CookClient({
                   type="button"
                   onClick={handleImport}
                   disabled={isImportActive}
-                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-[#fcfcfc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
                 >
                   {isImportPending ? "Starting…" : "Add from URL"}
                 </button>
@@ -644,7 +644,7 @@ export default function CookClient({
               {recipes.map((recipe) => (
                 <tr
                   key={recipe.id}
-                  className="cursor-pointer border-t border-slate-100 text-slate-700 transition hover:bg-slate-50"
+                  className="cursor-pointer border-t border-slate-100 text-slate-700 transition hover:bg-[#fcfcfc]"
                   onClick={() => openRecipe(recipe.id)}
                 >
                   <td className="px-4 py-3">{renderTableThumbnail(recipe)}</td>

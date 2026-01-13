@@ -73,7 +73,7 @@ export default function CookingViewOverlay({
               </section>
             </div>
 
-            <aside className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
+            <aside className="rounded-2xl border border-slate-200 bg-[#fcfcfc]/60 p-5">
               <h3 className="text-lg font-semibold text-slate-900">
                 Ingredients
               </h3>

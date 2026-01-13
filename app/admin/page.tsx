@@ -50,7 +50,7 @@ export default async function AdminPage() {
         <WorkspaceForm />
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="border-b border-slate-200 bg-[#fcfcfc] text-xs uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Slug</th>
@@ -110,7 +110,7 @@ export default async function AdminPage() {
         <UserForm workspaces={workspaces.map(({ id, name, slug }) => ({ id, name, slug }))} />
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="border-b border-slate-200 bg-[#fcfcfc] text-xs uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Workspace</th>
