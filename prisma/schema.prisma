@@ -135,6 +135,7 @@ model ShoppingListWeek {
 
   workspace  Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   smartLists ShoppingListSmart[]
+  smartListJobs SmartListJob[]
 
   @@unique([workspaceId, weekStart])
   @@index([workspaceId, weekStart])
