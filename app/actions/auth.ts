@@ -7,10 +7,9 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import {
   clearSessionCookie,
-  generateToken,
+  createSession,
   isSafeRedirect,
   normalizeEmail,
-  sessionExpiryDate,
   setSessionCookie,
   sha256,
   verifyPassword,
@@ -64,30 +63,19 @@ export async function loginAction(
     return { status: "error", message: "Invalid email or password." };
   }
 
-  const passwordOk = await verifyPassword(user.passwordHash, parsed.data.password);
+  if (!user.passwordHash) {
+    return { status: "error", message: "Invalid email or password." };
+  }
+
+  const passwordOk = await verifyPassword(
+    user.passwordHash,
+    parsed.data.password,
+  );
   if (!passwordOk) {
     return { status: "error", message: "Invalid email or password." };
   }
 
-  if (!user.isAdmin && !user.workspace) {
-    return {
-      status: "error",
-      message: "Account not assigned to a workspace. Ask your administrator.",
-    };
-  }
-
-  const token = generateToken();
-  const tokenHash = sha256(token);
-  const expiresAt = sessionExpiryDate();
-
-  await prisma.session.create({
-    data: {
-      tokenHash,
-      userId: user.id,
-      expiresAt,
-    },
-  });
-
+  const { token, expiresAt } = await createSession(user.id);
   await setSessionCookie(token, expiresAt);
 
   const next = isSafeRedirect(parsed.data.next) ? parsed.data.next : null;
@@ -104,10 +92,11 @@ export async function loginAction(
     redirect(`/g/${user.workspace.slug}/cook`);
   }
 
-  return {
-    status: "error",
-    message: "Account not assigned to a workspace. Ask your administrator.",
-  };
+  if (user.hasCreatedWorkspace) {
+    redirect("/onboarding/locked");
+  }
+
+  redirect("/onboarding/household");
 }
 
 export async function logoutAction() {

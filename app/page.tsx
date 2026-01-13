@@ -18,12 +18,18 @@ export default async function Home({
     if (user.workspace) {
       redirect(`/g/${user.workspace.slug}/cook`);
     }
+    if (user.hasCreatedWorkspace) {
+      redirect("/onboarding/locked");
+    }
+    redirect("/onboarding/household");
   }
 
   const next =
     typeof searchParams.next === "string" ? searchParams.next : undefined;
   const message =
     typeof searchParams.message === "string" ? searchParams.message : undefined;
+  const error =
+    typeof searchParams.error === "string" ? searchParams.error : undefined;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-white px-4">
@@ -42,7 +48,7 @@ export default async function Home({
           </p>
         </div>
 
-        <LoginForm next={next} message={message} />
+        <LoginForm next={next} message={error ?? message} />
       </main>
     </div>
   );
