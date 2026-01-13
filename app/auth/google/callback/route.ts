@@ -33,6 +33,10 @@ export async function GET(request: NextRequest) {
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
+    console.error("Google OAuth callback failed: missing client config.", {
+      hasClientId: Boolean(clientId),
+      hasClientSecret: Boolean(clientSecret),
+    });
     return redirectWithError(
       request,
       "Google sign-in is not configured. Contact support.",
@@ -41,6 +45,7 @@ export async function GET(request: NextRequest) {
 
   const oauthError = request.nextUrl.searchParams.get("error");
   if (oauthError) {
+    console.warn("Google OAuth callback error from provider.", { oauthError });
     return redirectWithError(request, "Google sign-in was cancelled.");
   }
 

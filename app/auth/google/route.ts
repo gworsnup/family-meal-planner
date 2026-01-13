@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
 
   if (!clientId) {
+    console.error("Google OAuth start failed: GOOGLE_CLIENT_ID is missing.");
     const url = request.nextUrl.clone();
     url.pathname = "/";
     url.searchParams.set("error", "Google sign-in is not configured.");
