@@ -16,6 +16,7 @@ import {
   useEffect,
   useMemo,
   type MouseEvent,
+  useId,
   useRef,
   useState,
   useTransition,
@@ -232,11 +233,11 @@ function TakeawayTile() {
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      className={`group flex cursor-grab items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50/80 px-3 py-3 text-sm text-slate-700 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 ${
+      className={`group flex cursor-grab items-center gap-2 rounded-2xl border border-amber-100 bg-amber-50/80 px-3 py-2 text-sm text-slate-700 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 ${
         isDragging ? "opacity-60" : ""
       }`}
     >
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-amber-500 shadow-sm">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-amber-500 shadow-sm">
         <TakeawayIcon className="h-6 w-6" />
       </div>
       <div className="min-w-0">
@@ -603,8 +604,10 @@ export default function PlanClient({
   const [ratingFilter, setRatingFilter] = useState<(typeof ratingOptions)[number]["value"]>(
     "any",
   );
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const calendarRef = useRef<HTMLDivElement | null>(null);
+  const filtersId = useId();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -897,34 +900,55 @@ export default function PlanClient({
               placeholder="Search recipes"
               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
             />
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-              <select
-                value={sourceFilter}
-                onChange={(event) =>
-                  setSourceFilter(event.target.value as (typeof sourceOptions)[number]["value"])
-                }
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-600 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((prev) => !prev)}
+              aria-expanded={filtersOpen}
+              aria-controls={filtersId}
+              className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              <span>Filters</span>
+              <svg
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+                className={`h-4 w-4 text-slate-400 transition ${filtersOpen ? "rotate-180" : ""}`}
               >
-                {sourceOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={ratingFilter}
-                onChange={(event) =>
-                  setRatingFilter(event.target.value as (typeof ratingOptions)[number]["value"])
-                }
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-600 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-              >
-                {ratingOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <path
+                  fill="currentColor"
+                  d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
+                />
+              </svg>
+            </button>
+            {filtersOpen ? (
+              <div id={filtersId} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                <select
+                  value={sourceFilter}
+                  onChange={(event) =>
+                    setSourceFilter(event.target.value as (typeof sourceOptions)[number]["value"])
+                  }
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-600 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                >
+                  {sourceOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={ratingFilter}
+                  onChange={(event) =>
+                    setRatingFilter(event.target.value as (typeof ratingOptions)[number]["value"])
+                  }
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-600 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                >
+                  {ratingOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             <p className="text-[11px] text-slate-400">
               {filteredRecipes.length} recipes · drag into calendar
             </p>
