@@ -25,6 +25,10 @@ export default async function AdminPage() {
       id: true,
       email: true,
       isAdmin: true,
+      passwordHash: true,
+      oauthAccounts: {
+        select: { provider: true },
+      },
       createdAt: true,
       workspace: {
         select: { id: true, name: true, slug: true },
@@ -110,6 +114,7 @@ export default async function AdminPage() {
               <tr>
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Workspace</th>
+                <th className="px-4 py-3">Auth</th>
                 <th className="px-4 py-3">Created</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -118,81 +123,93 @@ export default async function AdminPage() {
               {users.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-4 py-6 text-center text-slate-500"
                   >
                     No users yet.
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
-                  <tr key={user.id} className="border-b border-slate-100">
-                    <td className="px-4 py-3 text-slate-900">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium">{user.email}</span>
-                        {user.isAdmin ? (
-                          <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                            Admin
-                          </span>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {user.workspace
-                        ? `${user.workspace.name} (${user.workspace.slug})`
-                        : "Unassigned"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {formatDate(user.createdAt)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap items-center justify-end gap-2">
-                        {user.workspace ? (
-                          <a
-                            href={`/g/${user.workspace.slug}/cook`}
-                            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                users.map((user) => {
+                  const hasGoogle = user.oauthAccounts.some(
+                    (account) => account.provider === "google",
+                  );
+                  const authLabel = hasGoogle
+                    ? "Google"
+                    : user.passwordHash
+                      ? "Password"
+                      : "Unknown";
+
+                  return (
+                    <tr key={user.id} className="border-b border-slate-100">
+                      <td className="px-4 py-3 text-slate-900">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">{user.email}</span>
+                          {user.isAdmin ? (
+                            <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                              Admin
+                            </span>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {user.workspace
+                          ? `${user.workspace.name} (${user.workspace.slug})`
+                          : "Unassigned"}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">{authLabel}</td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {formatDate(user.createdAt)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          {user.workspace ? (
+                            <a
+                              href={`/g/${user.workspace.slug}/cook`}
+                              className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                            >
+                              View workspace
+                            </a>
+                          ) : null}
+                          <form
+                            action={updateUserWorkspaceAction}
+                            className="flex flex-wrap items-center gap-2"
                           >
-                            View workspace
-                          </a>
-                        ) : null}
-                        <form
-                          action={updateUserWorkspaceAction}
-                          className="flex flex-wrap items-center gap-2"
-                        >
-                          <input type="hidden" name="userId" value={user.id} />
-                          <select
-                            name="workspaceId"
-                            defaultValue={user.workspace?.id ?? ""}
-                            className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-700"
-                          >
-                            <option value="">Unassigned</option>
-                            {workspaces.map((workspace) => (
-                              <option key={workspace.id} value={workspace.id}>
-                                {workspace.name}
-                              </option>
-                            ))}
-                          </select>
-                          <button className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900">
-                            Save
-                          </button>
-                        </form>
-                        <form action={deleteUserAction}>
-                          <input type="hidden" name="userId" value={user.id} />
-                          <button
-                            disabled={user.isAdmin}
-                            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                              user.isAdmin
-                                ? "cursor-not-allowed border-slate-200 text-slate-400"
-                                : "border-rose-200 text-rose-600 hover:border-rose-300 hover:text-rose-700"
-                            }`}
-                          >
-                            Delete
-                          </button>
-                        </form>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                            <input type="hidden" name="userId" value={user.id} />
+                            <select
+                              name="workspaceId"
+                              defaultValue={user.workspace?.id ?? ""}
+                              className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-700"
+                            >
+                              <option value="">Unassigned</option>
+                              {workspaces.map((workspace) => (
+                                <option key={workspace.id} value={workspace.id}>
+                                  {workspace.name}
+                                </option>
+                              ))}
+                            </select>
+                            <button className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900">
+                              Save
+                            </button>
+                          </form>
+                          <form action={deleteUserAction}>
+                            <input type="hidden" name="userId" value={user.id} />
+                            <button
+                              disabled={user.isAdmin}
+                              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                                user.isAdmin
+                                  ? "cursor-not-allowed border-slate-200 text-slate-400"
+                                  : "border-rose-200 text-rose-600 hover:border-rose-300 hover:text-rose-700"
+                              }`}
+                            >
+                              Delete
+                            </button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
