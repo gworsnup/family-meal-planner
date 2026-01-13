@@ -96,6 +96,28 @@ const TAKEAWAY_TITLE = "Take Away Night";
 const TAKEAWAY_SUBTITLE = "No cooking, no ingredients";
 const TAKEAWAY_TAGLINE = "Order in 🍜";
 
+function normalizePlanItem(item: {
+  id: string;
+  dateISO: string;
+  recipeId: string | null;
+  type: "RECIPE" | "TAKEAWAY";
+  title: string;
+  photoUrl: string | null;
+  isPending?: boolean;
+}): PlanItem {
+  if (item.type === "TAKEAWAY") {
+    return {
+      ...item,
+      recipeId: null,
+    };
+  }
+  return {
+    ...item,
+    recipeId: item.recipeId ?? "",
+    type: "RECIPE",
+  };
+}
+
 function formatSource(sourceName?: string | null, sourceUrl?: string | null) {
   if (sourceName?.trim()) return sourceName;
   if (sourceUrl) {
@@ -728,7 +750,9 @@ export default function PlanClient({
         return;
       }
       setItems((prev) =>
-        prev.map((item) => (item.id === tempId ? { ...result.item } : item)),
+        prev.map((item) =>
+          item.id === tempId ? normalizePlanItem({ ...result.item }) : item,
+        ),
       );
     });
   };
@@ -755,7 +779,9 @@ export default function PlanClient({
         return;
       }
       setItems((prev) =>
-        prev.map((item) => (item.id === tempId ? { ...result.item } : item)),
+        prev.map((item) =>
+          item.id === tempId ? normalizePlanItem({ ...result.item }) : item,
+        ),
       );
       fireConfetti(confettiOrigin);
     });
