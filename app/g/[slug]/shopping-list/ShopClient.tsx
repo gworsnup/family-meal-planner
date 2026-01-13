@@ -9,11 +9,10 @@ import {
   type WeekList,
 } from "@/lib/ingredientParsing";
 import type { SmartListData } from "@/lib/smartListTypes";
-import { generateSmartList } from "./actions";
 import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
 
 type ShopClientProps = {
-  workspaceSlug: string;
+  workspaceId: string;
   workspaceName: string;
   weekLists: WeekList[];
 };
@@ -90,7 +89,7 @@ function getSmartCategoryEmoji(label: string) {
 }
 
 export default function ShopClient({
-  workspaceSlug,
+  workspaceId,
   workspaceName,
   weekLists,
 }: ShopClientProps) {
@@ -106,6 +105,7 @@ export default function ShopClient({
   >({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
 
   const weekParam = searchParams.get("week");
   const weekStarts = weekLists.map((week) => week.weekStart);
@@ -178,7 +178,14 @@ export default function ShopClient({
 
   useEffect(() => {
     setErrorMessage(null);
+    setNoticeMessage(null);
   }, [selectedWeek?.weekId]);
+
+  useEffect(() => {
+    if (!noticeMessage) return;
+    const timer = window.setTimeout(() => setNoticeMessage(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [noticeMessage]);
 
   const currentSmartList = selectedWeek?.weekId
     ? smartListByWeek[selectedWeek.weekId] ?? null
@@ -203,15 +210,22 @@ export default function ShopClient({
     setIsGenerating(true);
     setErrorMessage(null);
     try {
-      const result = await generateSmartList({
-        slug: workspaceSlug,
-        weekId: selectedWeek.weekId,
+      const response = await fetch("/api/smart-lists/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          workspaceId,
+          weekId: selectedWeek.weekId,
+          shoppingListId: selectedWeek.weekId,
+        }),
       });
-      setSmartListByWeek((prev) => ({
-        ...prev,
-        [selectedWeek.weekId as string]: result.smartList,
-      }));
-      setViewMode("smart");
+      const payload = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null;
+      if (!response.ok) {
+        throw new Error(payload?.error || "Couldn’t generate smart list.");
+      }
+      setNoticeMessage("Generating Smart List in the background…");
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Couldn’t generate smart list.",
@@ -389,15 +403,9 @@ export default function ShopClient({
                     Couldn’t generate smart list. Try again.
                   </div>
                 ) : null}
-                {isGenerating ? (
-                  <div className="rounded-xl border border-slate-200 bg-[#fcfcfc] px-3 py-3 text-xs text-slate-600">
-                    <div className="flex items-center gap-2">
-                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400/40 border-t-slate-600" />
-                      Generating smart list…
-                    </div>
-                    <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-200">
-                      <div className="h-full w-1/2 animate-pulse rounded-full bg-slate-400" />
-                    </div>
+                {noticeMessage ? (
+                  <div className="rounded-xl border border-slate-200 bg-[#fcfcfc] px-3 py-2 text-xs text-slate-600">
+                    {noticeMessage}
                   </div>
                 ) : null}
                 {viewMode === "aggregated" ? (
