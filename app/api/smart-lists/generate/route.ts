@@ -7,8 +7,8 @@ import { formatWeekTitle } from "@/lib/shoppingList";
 
 export const dynamic = "force-dynamic";
 
-function getBaseUrl() {
-  const headersList = headers();
+async function getBaseUrl() {
+  const headersList = await headers();
   const host =
     headersList.get("x-forwarded-host") ?? headersList.get("host") ?? "localhost:3000";
   const protocol = headersList.get("x-forwarded-proto") ?? "http";
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     select: { id: true, status: true },
   });
 
-  const origin = getBaseUrl();
+  const origin = await getBaseUrl();
   void fetch(`${origin}/api/smart-lists/run`, {
     method: "POST",
     headers: { "content-type": "application/json" },
