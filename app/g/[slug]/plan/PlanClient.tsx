@@ -27,6 +27,7 @@ import {
   getTodayUTC,
   getViewRange,
   parseDateISO,
+  startOfWeek,
   type PlanView,
 } from "@/lib/planDates";
 import { addMealPlanItem, moveMealPlanItem, removeMealPlanItem } from "./actions";
@@ -99,6 +100,7 @@ const TAKEAWAY_TITLE = "Take Away Night";
 const TAKEAWAY_SUBTITLE = "No cooking, no ingredients";
 const TAKEAWAY_TAGLINE = "Order in 🍜";
 type RectLike = ClientRect | DOMRect | null | undefined;
+type ConfettiOrigin = { x: number; y: number };
 
 function normalizePlanItem(item: {
   id: string;
@@ -162,6 +164,12 @@ function getMonthLabel(date: Date) {
 
 function addMonths(date: Date, amount: number) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + amount, date.getUTCDate()));
+}
+
+function getWeekKey(dateISO: string) {
+  const parsed = parseDateISO(dateISO);
+  if (!parsed) return null;
+  return formatDateISO(startOfWeek(parsed));
 }
 
 function RecipeRow({ recipe }: { recipe: RecipeItem }) {
@@ -608,12 +616,23 @@ export default function PlanClient({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const calendarRef = useRef<HTMLDivElement | null>(null);
+  const confettiWeeksRef = useRef<Set<string>>(new Set());
   const filtersId = useId();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   useEffect(() => {
     setItems(planItems);
+  }, [planItems]);
+
+  useEffect(() => {
+    planItems.forEach((item) => {
+      if (item.type !== "TAKEAWAY") return;
+      const key = getWeekKey(item.dateISO);
+      if (key) {
+        confettiWeeksRef.current.add(key);
+      }
+    });
   }, [planItems]);
 
   useEffect(() => {
@@ -771,7 +790,12 @@ export default function PlanClient({
     });
   };
 
-  const handleAddTakeaway = async (dateISO: string, confettiOrigin?: { x: number; y: number } | null) => {
+  const handleAddTakeaway = async (
+    dateISO: string,
+    confettiOrigin?: ConfettiOrigin | null,
+  ) => {
+    const weekKey = getWeekKey(dateISO);
+    const shouldFireConfetti = weekKey ? !confettiWeeksRef.current.has(weekKey) : false;
     const tempId = `temp-takeaway-${Date.now()}`;
     setItems((prev) => [
       ...prev,
@@ -797,7 +821,12 @@ export default function PlanClient({
           item.id === tempId ? normalizePlanItem({ ...result.item }) : item,
         ),
       );
-      fireConfetti(confettiOrigin);
+      if (weekKey) {
+        confettiWeeksRef.current.add(weekKey);
+      }
+      if (shouldFireConfetti) {
+        fireConfetti(confettiOrigin);
+      }
     });
   };
 
