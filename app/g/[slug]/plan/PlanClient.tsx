@@ -107,14 +107,23 @@ function normalizePlanItem(item: {
 }): PlanItem {
   if (item.type === "TAKEAWAY") {
     return {
-      ...item,
+      id: item.id,
+      dateISO: item.dateISO,
       recipeId: null,
+      type: "TAKEAWAY",
+      title: item.title,
+      photoUrl: item.photoUrl,
+      isPending: item.isPending,
     };
   }
   return {
-    ...item,
+    id: item.id,
+    dateISO: item.dateISO,
     recipeId: item.recipeId ?? "",
     type: "RECIPE",
+    title: item.title,
+    photoUrl: item.photoUrl,
+    isPending: item.isPending,
   };
 }
 
