@@ -145,17 +145,26 @@ export default async function PlanPage({
     updatedAt: recipe.updatedAt.toISOString(),
   }));
 
-  const serializedPlanItems = planItems.map((item) => ({
-    id: item.id,
-    dateISO: formatDateISO(item.date),
-    recipeId: item.recipeId ?? null,
-    type: item.type,
-    title:
-      item.type === "TAKEAWAY"
-        ? item.title ?? "Take Away Night"
-        : item.recipe?.title ?? item.title ?? "Recipe",
-    photoUrl: item.recipe?.photoUrl ?? null,
-  }));
+  const serializedPlanItems = planItems.map((item) => {
+    if (item.type === "TAKEAWAY") {
+      return {
+        id: item.id,
+        dateISO: formatDateISO(item.date),
+        recipeId: null,
+        type: "TAKEAWAY" as const,
+        title: item.title ?? "Take Away Night",
+        photoUrl: null,
+      };
+    }
+    return {
+      id: item.id,
+      dateISO: formatDateISO(item.date),
+      recipeId: item.recipeId ?? "",
+      type: "RECIPE" as const,
+      title: item.recipe?.title ?? item.title ?? "Recipe",
+      photoUrl: item.recipe?.photoUrl ?? null,
+    };
+  });
 
   let selectedRecipe: RecipeDetail | null = null;
   if (recipeId) {
