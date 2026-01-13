@@ -43,7 +43,7 @@ type RecipeItem = {
   updatedAt: string;
 };
 
-type PlanItem = {
+type BasePlanItem = {
   id: string;
   dateISO: string;
   recipeId: string | null;
@@ -53,15 +53,17 @@ type PlanItem = {
   isPending?: boolean;
 };
 
-type RecipePlanItem = PlanItem & {
+type RecipePlanItem = BasePlanItem & {
   type: "RECIPE";
   recipeId: string;
 };
 
-type TakeawayPlanItem = PlanItem & {
+type TakeawayPlanItem = BasePlanItem & {
   type: "TAKEAWAY";
   recipeId: null;
 };
+
+type PlanItem = RecipePlanItem | TakeawayPlanItem;
 
 type PlanClientProps = {
   slug: string;
