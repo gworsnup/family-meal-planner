@@ -511,7 +511,7 @@ function DayCell({
         </span>
       </div>
       <div className="flex flex-col gap-2">
-        {items.map((item) => (
+        {items.map((item) =>
           item.type === "TAKEAWAY" ? (
             view === "week" ? (
               <WeekTakeawayCard key={item.id} item={item} onRemove={onRemove} />
@@ -535,7 +535,7 @@ function DayCell({
               onCookingView={onCookingView}
             />
           ),
-        ))}
+        )}
         {items.length === 0 ? (
           <p className="text-[11px] text-slate-300">Drop here</p>
         ) : null}
