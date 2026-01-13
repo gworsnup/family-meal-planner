@@ -224,7 +224,7 @@ export default function ShopClient({
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 lg:flex-row">
       <section className="flex w-full flex-col lg:w-[30%]">
-        <div className="flex h-[70vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:h-[calc(100vh-180px)]">
+        <div className="flex h-[70vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white lg:h-[calc(100vh-180px)]">
           <div className="border-b border-slate-200 px-4 py-3">
             <h2 className="text-sm font-semibold text-slate-900">
               Weekly lists
@@ -301,7 +301,7 @@ export default function ShopClient({
       </section>
 
       <section className="flex w-full flex-col lg:w-[70%]">
-        <div className="flex h-[70vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:h-[calc(100vh-180px)]">
+        <div className="flex h-[70vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white lg:h-[calc(100vh-180px)]">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-4 py-3">
             <div>
               <h2 className="text-sm font-semibold text-slate-900">
