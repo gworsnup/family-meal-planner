@@ -33,7 +33,10 @@ export async function GET(request: NextRequest) {
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    return redirectWithError(request, "Google sign-in is not configured.");
+    return redirectWithError(
+      request,
+      "Google sign-in is not configured. Contact support.",
+    );
   }
 
   const oauthError = request.nextUrl.searchParams.get("error");

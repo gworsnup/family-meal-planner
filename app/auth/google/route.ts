@@ -13,9 +13,8 @@ function base64UrlEncode(buffer: Buffer) {
 
 export async function GET(request: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
-  if (!clientId || !clientSecret) {
+  if (!clientId) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     url.searchParams.set("error", "Google sign-in is not configured.");
