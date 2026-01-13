@@ -235,7 +235,7 @@ export default async function ShoppingListPage({
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#fcfcfc]">
       <WorkspaceHeader
         slug={slug}
         workspaceName={workspace.name}

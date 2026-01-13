@@ -224,7 +224,7 @@ export default function ShopClient({
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 lg:flex-row">
       <section className="flex w-full flex-col lg:w-[30%]">
-        <div className="flex h-[70vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:h-[calc(100vh-180px)]">
+        <div className="flex h-[70vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white lg:h-[calc(100vh-180px)]">
           <div className="border-b border-slate-200 px-4 py-3">
             <h2 className="text-sm font-semibold text-slate-900">
               Weekly lists
@@ -248,7 +248,7 @@ export default function ShopClient({
                       className={`rounded-xl border p-3 transition ${
                         isSelected
                           ? "border-slate-300 bg-slate-100 text-slate-900"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-[#fcfcfc]"
                       }`}
                     >
                       <button
@@ -273,7 +273,7 @@ export default function ShopClient({
                               key={`${recipe.id}-${index}`}
                               onMouseEnter={() => setHoverRecipeId(recipe.id)}
                               onMouseLeave={() => setHoverRecipeId(null)}
-                              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 transition hover:border-slate-300 hover:bg-[#fcfcfc]"
                             >
                               {recipe.photoUrl ? (
                                 <img
@@ -301,7 +301,7 @@ export default function ShopClient({
       </section>
 
       <section className="flex w-full flex-col lg:w-[70%]">
-        <div className="flex h-[70vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:h-[calc(100vh-180px)]">
+        <div className="flex h-[70vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white lg:h-[calc(100vh-180px)]">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-4 py-3">
             <div>
               <h2 className="text-sm font-semibold text-slate-900">
@@ -390,7 +390,7 @@ export default function ShopClient({
                   </div>
                 ) : null}
                 {isGenerating ? (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600">
+                  <div className="rounded-xl border border-slate-200 bg-[#fcfcfc] px-3 py-3 text-xs text-slate-600">
                     <div className="flex items-center gap-2">
                       <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400/40 border-t-slate-600" />
                       Generating smart list…
