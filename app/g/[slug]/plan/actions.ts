@@ -67,13 +67,17 @@ export async function addMealPlanItem({
     throw new Error("Recipe not allowed for takeaway items");
   }
 
-  const recipe =
-    type === "RECIPE"
-      ? await prisma.recipe.findFirst({
-          where: { id: recipeId, workspaceId: user.workspace.id },
-          select: { id: true, title: true, photoUrl: true },
-        })
-      : null;
+  let recipe: { id: string; title: string; photoUrl: string | null } | null = null;
+  if (type === "RECIPE") {
+    const resolvedRecipeId = recipeId;
+    if (!resolvedRecipeId) {
+      throw new Error("Recipe is required");
+    }
+    recipe = await prisma.recipe.findFirst({
+      where: { id: resolvedRecipeId, workspaceId: user.workspace.id },
+      select: { id: true, title: true, photoUrl: true },
+    });
+  }
 
   if (type === "RECIPE" && !recipe) {
     throw new Error("Recipe not found");
