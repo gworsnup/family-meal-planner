@@ -18,12 +18,10 @@ export default async function WorkspaceLayout({
 
   if (!user.isAdmin) {
     if (!user.workspace) {
-      redirect(
-        "/?message=" +
-          encodeURIComponent(
-            "Account not assigned to a workspace. Ask your administrator.",
-          ),
-      );
+      if (user.hasCreatedWorkspace) {
+        redirect("/onboarding/locked");
+      }
+      redirect("/onboarding/household");
     }
 
     if (user.workspace.slug !== slug) {
