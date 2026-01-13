@@ -248,7 +248,7 @@ export default function ShopClient({
                       className={`rounded-xl border p-3 transition ${
                         isSelected
                           ? "border-slate-300 bg-slate-100 text-slate-900"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-[#fcfcfc]"
                       }`}
                     >
                       <button
@@ -273,7 +273,7 @@ export default function ShopClient({
                               key={`${recipe.id}-${index}`}
                               onMouseEnter={() => setHoverRecipeId(recipe.id)}
                               onMouseLeave={() => setHoverRecipeId(null)}
-                              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 transition hover:border-slate-300 hover:bg-[#fcfcfc]"
                             >
                               {recipe.photoUrl ? (
                                 <img
@@ -390,7 +390,7 @@ export default function ShopClient({
                   </div>
                 ) : null}
                 {isGenerating ? (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600">
+                  <div className="rounded-xl border border-slate-200 bg-[#fcfcfc] px-3 py-3 text-xs text-slate-600">
                     <div className="flex items-center gap-2">
                       <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400/40 border-t-slate-600" />
                       Generating smart list…
