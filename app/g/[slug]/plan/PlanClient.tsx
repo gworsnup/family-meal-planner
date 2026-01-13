@@ -28,6 +28,7 @@ import {
   type PlanView,
 } from "@/lib/planDates";
 import { addMealPlanItem, moveMealPlanItem, removeMealPlanItem } from "./actions";
+import { fireConfetti } from "@/lib/confetti";
 import CookingViewOverlay from "../cook/CookingViewOverlay";
 import RecipeOverlay from "../cook/RecipeOverlay";
 import type { RecipeDetail } from "../cook/types";
@@ -45,10 +46,21 @@ type RecipeItem = {
 type PlanItem = {
   id: string;
   dateISO: string;
-  recipeId: string;
+  recipeId: string | null;
+  type: "RECIPE" | "TAKEAWAY";
   title: string;
   photoUrl: string | null;
   isPending?: boolean;
+};
+
+type RecipePlanItem = PlanItem & {
+  type: "RECIPE";
+  recipeId: string;
+};
+
+type TakeawayPlanItem = PlanItem & {
+  type: "TAKEAWAY";
+  recipeId: null;
 };
 
 type PlanClientProps = {
@@ -78,6 +90,9 @@ const ratingOptions = [
 ] as const;
 
 const weekdayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const TAKEAWAY_TITLE = "Take Away Night";
+const TAKEAWAY_SUBTITLE = "No cooking, no ingredients";
+const TAKEAWAY_TAGLINE = "Order in 🍜";
 
 function formatSource(sourceName?: string | null, sourceUrl?: string | null) {
   if (sourceName?.trim()) return sourceName;
@@ -115,7 +130,7 @@ function addMonths(date: Date, amount: number) {
 function RecipeRow({ recipe }: { recipe: RecipeItem }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `recipe-${recipe.id}`,
-    data: { type: "recipe", recipeId: recipe.id },
+    data: { type: "paletteItem", kind: "RECIPE", recipeId: recipe.id },
   });
 
   return (
@@ -150,20 +165,73 @@ function RecipeRow({ recipe }: { recipe: RecipeItem }) {
   );
 }
 
+function TakeawayIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M3 8h18" />
+      <path d="M6 8V6a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v2" />
+      <path d="M5 8l1.2 11.5A2 2 0 0 0 8.2 21h7.6a2 2 0 0 0 2-1.5L19 8" />
+      <path d="M9 11v6" />
+      <path d="M15 11v6" />
+    </svg>
+  );
+}
+
+function TakeawayTile() {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: "takeaway-tile",
+    data: { type: "paletteItem", kind: "TAKEAWAY" },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={`group flex cursor-grab items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50/80 px-3 py-3 text-sm text-slate-700 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 ${
+        isDragging ? "opacity-60" : ""
+      }`}
+    >
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-amber-500 shadow-sm">
+        <TakeawayIcon className="h-6 w-6" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-900">{TAKEAWAY_TITLE}</p>
+        <p className="text-xs text-slate-500">{TAKEAWAY_SUBTITLE}</p>
+      </div>
+    </div>
+  );
+}
+
 function MonthEventChip({
   item,
   onRemove,
   onViewRecipe,
   onCookingView,
 }: {
-  item: PlanItem;
+  item: RecipePlanItem;
   onRemove: (itemId: string) => void;
   onViewRecipe: (recipeId: string) => void;
   onCookingView: (recipeId: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `plan-${item.id}`,
-    data: { type: "planItem", itemId: item.id, dateISO: item.dateISO, recipeId: item.recipeId },
+    data: {
+      type: "planItem",
+      itemId: item.id,
+      dateISO: item.dateISO,
+      itemType: item.type,
+      recipeId: item.recipeId,
+    },
   });
 
   const handleViewRecipe = (event: MouseEvent<HTMLButtonElement>) => {
@@ -232,20 +300,67 @@ function MonthEventChip({
   );
 }
 
+function MonthTakeawayChip({
+  item,
+  onRemove,
+}: {
+  item: TakeawayPlanItem;
+  onRemove: (itemId: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `plan-${item.id}`,
+    data: { type: "planItem", itemId: item.id, dateISO: item.dateISO, itemType: item.type },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={`group relative flex w-full items-center gap-2 rounded-lg border border-amber-100 bg-amber-50 px-2 py-2 text-xs text-slate-700 shadow-sm ${
+        item.isPending || isDragging ? "opacity-60" : ""
+      }`}
+    >
+      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-white text-amber-500">
+        <TakeawayIcon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0">
+        <span className="block text-xs font-semibold text-slate-800">{item.title}</span>
+        <span className="text-[10px] text-slate-500">{TAKEAWAY_TAGLINE}</span>
+      </div>
+      <button
+        type="button"
+        onClick={() => onRemove(item.id)}
+        onPointerDown={(event) => event.stopPropagation()}
+        className="ml-auto hidden text-[10px] font-semibold text-slate-400 hover:text-slate-900 group-hover:block"
+        aria-label="Remove from day"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 function WeekEventCard({
   item,
   onRemove,
   onViewRecipe,
   onCookingView,
 }: {
-  item: PlanItem;
+  item: RecipePlanItem;
   onRemove: (itemId: string) => void;
   onViewRecipe: (recipeId: string) => void;
   onCookingView: (recipeId: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `plan-${item.id}`,
-    data: { type: "planItem", itemId: item.id, dateISO: item.dateISO, recipeId: item.recipeId },
+    data: {
+      type: "planItem",
+      itemId: item.id,
+      dateISO: item.dateISO,
+      itemType: item.type,
+      recipeId: item.recipeId,
+    },
   });
 
   const handleViewRecipe = (event: MouseEvent<HTMLButtonElement>) => {
@@ -314,6 +429,45 @@ function WeekEventCard({
   );
 }
 
+function WeekTakeawayCard({
+  item,
+  onRemove,
+}: {
+  item: TakeawayPlanItem;
+  onRemove: (itemId: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `plan-${item.id}`,
+    data: { type: "planItem", itemId: item.id, dateISO: item.dateISO, itemType: item.type },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={`group relative flex w-full flex-col gap-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-3 text-xs text-slate-700 shadow-sm ${
+        item.isPending || isDragging ? "opacity-60" : ""
+      }`}
+    >
+      <div className="flex items-center gap-2 rounded-lg bg-white px-2 py-2 text-amber-500 shadow-sm">
+        <TakeawayIcon className="h-5 w-5" />
+        <span className="text-xs font-semibold text-slate-800">{item.title}</span>
+      </div>
+      <span className="text-xs text-slate-500">{TAKEAWAY_TAGLINE}</span>
+      <button
+        type="button"
+        onClick={() => onRemove(item.id)}
+        onPointerDown={(event) => event.stopPropagation()}
+        className="ml-auto hidden text-[10px] font-semibold text-slate-400 hover:text-slate-900 group-hover:block"
+        aria-label="Remove from day"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 function DayCell({
   dateISO,
   dayNumber,
@@ -358,7 +512,13 @@ function DayCell({
       </div>
       <div className="flex flex-col gap-2">
         {items.map((item) => (
-          view === "week" ? (
+          item.type === "TAKEAWAY" ? (
+            view === "week" ? (
+              <WeekTakeawayCard key={item.id} item={item} onRemove={onRemove} />
+            ) : (
+              <MonthTakeawayChip key={item.id} item={item} onRemove={onRemove} />
+            )
+          ) : view === "week" ? (
             <WeekEventCard
               key={item.id}
               item={item}
@@ -374,10 +534,10 @@ function DayCell({
               onViewRecipe={onViewRecipe}
               onCookingView={onCookingView}
             />
-          )
+          ),
         ))}
         {items.length === 0 ? (
-          <p className="text-[11px] text-slate-300">Drop recipe here</p>
+          <p className="text-[11px] text-slate-300">Drop here</p>
         ) : null}
       </div>
     </div>
@@ -400,6 +560,7 @@ export default function PlanClient({
   const [items, setItems] = useState<PlanItem[]>(planItems);
   const [activeRecipeId, setActiveRecipeId] = useState<string | null>(null);
   const [activePlanItemId, setActivePlanItemId] = useState<string | null>(null);
+  const [isDraggingTakeaway, setIsDraggingTakeaway] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [sourceFilter, setSourceFilter] = useState<(typeof sourceOptions)[number]["value"]>(
     "all",
@@ -408,6 +569,7 @@ export default function PlanClient({
     "any",
   );
   const searchRef = useRef<HTMLInputElement | null>(null);
+  const calendarRef = useRef<HTMLDivElement | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -504,6 +666,19 @@ export default function PlanClient({
     [updateParams, view],
   );
 
+  const getConfettiOrigin = useCallback(
+    (rect?: DOMRect | null) => {
+      if (typeof window === "undefined") return null;
+      const fallback = calendarRef.current?.getBoundingClientRect() ?? null;
+      const target = rect ?? fallback;
+      if (!target) return null;
+      const x = (target.left + target.width / 2) / window.innerWidth;
+      const y = (target.top + target.height / 2) / window.innerHeight;
+      return { x, y };
+    },
+    [],
+  );
+
   const handleToday = () => {
     setFocusedDate(getTodayUTC());
   };
@@ -522,7 +697,7 @@ export default function PlanClient({
     updateParams({ view: nextView, date: focusedDateISO });
   };
 
-  const handleAddItem = async (dateISO: string, recipeId: string) => {
+  const handleAddRecipe = async (dateISO: string, recipeId: string) => {
     if (items.some((item) => item.dateISO === dateISO && item.recipeId === recipeId)) {
       return;
     }
@@ -537,6 +712,7 @@ export default function PlanClient({
         id: tempId,
         dateISO,
         recipeId,
+        type: "RECIPE",
         title: recipe.title,
         photoUrl: recipe.photoUrl,
         isPending: true,
@@ -544,7 +720,7 @@ export default function PlanClient({
     ]);
 
     startTransition(async () => {
-      const result = await addMealPlanItem({ slug, dateISO, recipeId });
+      const result = await addMealPlanItem({ slug, dateISO, recipeId, type: "RECIPE" });
       if (!result?.item) {
         setItems((prev) => prev.filter((item) => item.id !== tempId));
         return;
@@ -552,6 +728,34 @@ export default function PlanClient({
       setItems((prev) =>
         prev.map((item) => (item.id === tempId ? { ...result.item } : item)),
       );
+    });
+  };
+
+  const handleAddTakeaway = async (dateISO: string, confettiOrigin?: { x: number; y: number } | null) => {
+    const tempId = `temp-takeaway-${Date.now()}`;
+    setItems((prev) => [
+      ...prev,
+      {
+        id: tempId,
+        dateISO,
+        recipeId: null,
+        type: "TAKEAWAY",
+        title: TAKEAWAY_TITLE,
+        photoUrl: null,
+        isPending: true,
+      },
+    ]);
+
+    startTransition(async () => {
+      const result = await addMealPlanItem({ slug, dateISO, type: "TAKEAWAY" });
+      if (!result?.item) {
+        setItems((prev) => prev.filter((item) => item.id !== tempId));
+        return;
+      }
+      setItems((prev) =>
+        prev.map((item) => (item.id === tempId ? { ...result.item } : item)),
+      );
+      fireConfetti(confettiOrigin);
     });
   };
 
@@ -572,6 +776,7 @@ export default function PlanClient({
   const activePlanItem = activePlanItemId
     ? items.find((item) => item.id === activePlanItemId) ?? null
     : null;
+  const isActiveTakeaway = isDraggingTakeaway || activePlanItem?.type === "TAKEAWAY";
   const currentRecipeId = searchParams.get("recipeId") ?? selectedRecipe?.id ?? null;
   const currentCookRecipeId =
     searchParams.get("cookRecipeId") ?? selectedCookingRecipe?.id ?? null;
@@ -582,22 +787,34 @@ export default function PlanClient({
       sensors={sensors}
       onDragStart={(event) => {
         const data = event.active.data.current;
-        if (data?.type === "recipe") {
+        if (data?.type === "paletteItem" && data.kind === "RECIPE") {
           setActiveRecipeId(data.recipeId);
           setActivePlanItemId(null);
+          setIsDraggingTakeaway(false);
+        }
+        if (data?.type === "paletteItem" && data.kind === "TAKEAWAY") {
+          setActiveRecipeId(null);
+          setActivePlanItemId(null);
+          setIsDraggingTakeaway(true);
         }
         if (data?.type === "planItem") {
           setActivePlanItemId(data.itemId);
           setActiveRecipeId(null);
+          setIsDraggingTakeaway(false);
         }
       }}
       onDragEnd={(event) => {
         const data = event.active.data.current;
         const dropTarget = event.over?.id;
+        const confettiOrigin = getConfettiOrigin(event.over?.rect);
         setActiveRecipeId(null);
         setActivePlanItemId(null);
-        if (data?.type === "recipe" && typeof dropTarget === "string") {
-          void handleAddItem(dropTarget, data.recipeId as string);
+        setIsDraggingTakeaway(false);
+        if (data?.type === "paletteItem" && data.kind === "RECIPE" && typeof dropTarget === "string") {
+          void handleAddRecipe(dropTarget, data.recipeId as string);
+        }
+        if (data?.type === "paletteItem" && data.kind === "TAKEAWAY" && typeof dropTarget === "string") {
+          void handleAddTakeaway(dropTarget, confettiOrigin);
         }
         if (data?.type === "planItem" && typeof dropTarget === "string") {
           const nextDateISO = dropTarget;
@@ -625,6 +842,7 @@ export default function PlanClient({
       onDragCancel={() => {
         setActiveRecipeId(null);
         setActivePlanItemId(null);
+        setIsDraggingTakeaway(false);
       }}
     >
       <main className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-6 py-6 lg:flex-row">
@@ -684,6 +902,18 @@ export default function PlanClient({
                 </div>
               ) : null}
             </div>
+          </div>
+          <div className="border-t border-slate-100 pt-3">
+            <div className="mb-2 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-700">Quick add</p>
+                <p className="text-[11px] text-slate-400">Extras that skip cooking.</p>
+              </div>
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                Extras
+              </span>
+            </div>
+            <TakeawayTile />
           </div>
         </section>
 
@@ -751,6 +981,7 @@ export default function PlanClient({
           </div>
 
           <div
+            ref={calendarRef}
             className="grid grid-cols-7 gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200"
             style={{
               gridTemplateRows:
@@ -818,7 +1049,19 @@ export default function PlanClient({
         )}
 
       <DragOverlay>
-        {activeRecipe || activePlanItem ? (
+        {isActiveTakeaway ? (
+          <div className="flex items-center gap-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-slate-700 shadow-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-amber-500 shadow-sm">
+              <TakeawayIcon className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="whitespace-normal break-words text-sm font-semibold text-slate-900">
+                {TAKEAWAY_TITLE}
+              </p>
+              <p className="text-xs text-slate-500">{TAKEAWAY_TAGLINE}</p>
+            </div>
+          </div>
+        ) : activeRecipe || activePlanItem ? (
           <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-lg">
             {(activeRecipe?.photoUrl ?? activePlanItem?.photoUrl) ? (
               <img

@@ -103,17 +103,25 @@ model Recipe {
 model MealPlanItem {
   id          String   @id @default(cuid())
   workspaceId String
-  recipeId    String
+  recipeId    String?
   date        DateTime
-  note        String?  @db.Text
+  type        PlanItemType @default(RECIPE)
+  title       String?
+  notes       String?  @db.Text
+  sortOrder   Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  recipe    Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipe    Recipe?   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, date])
   @@unique([workspaceId, date, recipeId])
+}
+
+enum PlanItemType {
+  RECIPE
+  TAKEAWAY
 }
 
 model ShoppingListWeek {

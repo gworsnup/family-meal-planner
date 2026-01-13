@@ -148,9 +148,13 @@ export default async function PlanPage({
   const serializedPlanItems = planItems.map((item) => ({
     id: item.id,
     dateISO: formatDateISO(item.date),
-    recipeId: item.recipeId,
-    title: item.recipe.title,
-    photoUrl: item.recipe.photoUrl,
+    recipeId: item.recipeId ?? null,
+    type: item.type,
+    title:
+      item.type === "TAKEAWAY"
+        ? item.title ?? "Take Away Night"
+        : item.recipe?.title ?? item.title ?? "Recipe",
+    photoUrl: item.recipe?.photoUrl ?? null,
   }));
 
   let selectedRecipe: RecipeDetail | null = null;

@@ -340,6 +340,7 @@ export async function generateSmartList({
   const planItems = await prisma.mealPlanItem.findMany({
     where: {
       workspaceId: user.workspace.id,
+      type: "RECIPE",
       date: {
         gte: weekStart,
         lte: weekEnd,
@@ -364,14 +365,23 @@ export async function generateSmartList({
     },
   });
 
+  const recipePlanItems = planItems.filter((item) => item.type === "RECIPE" && item.recipe);
+  if (recipePlanItems.length !== planItems.length) {
+    console.warn("[SmartList] skipping non-recipe plan items", {
+      slug,
+      weekId,
+      skipped: planItems.length - recipePlanItems.length,
+    });
+  }
+
   const weekList: WeekList = {
     weekStart: formatDateISO(weekStart),
     title: "Shopping List",
-    recipes: planItems.map((item) => ({
-      id: item.recipe.id,
-      title: item.recipe.title,
+    recipes: recipePlanItems.map((item) => ({
+      id: item.recipe!.id,
+      title: item.recipe!.title,
       photoUrl: null,
-      ingredientLines: item.recipe.ingredientLines,
+      ingredientLines: item.recipe!.ingredientLines,
     })),
   };
 
