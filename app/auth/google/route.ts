@@ -12,7 +12,14 @@ function base64UrlEncode(buffer: Buffer) {
 }
 
 export async function GET(request: NextRequest) {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientId =
+    process.env.GOOGLE_CLIENT_ID ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+  if (!process.env.GOOGLE_CLIENT_ID && process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+    console.warn(
+      "Google OAuth start is using NEXT_PUBLIC_GOOGLE_CLIENT_ID. Consider setting GOOGLE_CLIENT_ID.",
+    );
+  }
 
   if (!clientId) {
     console.error("Google OAuth start failed: GOOGLE_CLIENT_ID is missing.");
