@@ -175,7 +175,7 @@ function RecipeRow({ recipe }: { recipe: RecipeItem }) {
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      className={`group flex cursor-grab items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 ${
+      className={`group flex cursor-grab items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-[#fafafa] ${
         isDragging ? "opacity-50" : ""
       }`}
     >
@@ -286,7 +286,7 @@ function MonthEventChip({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      className={`group relative flex w-full flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs text-slate-700 shadow-sm ${
+      className={`group relative flex w-full flex-col gap-2 rounded-lg border border-slate-200 bg-[#fafafa] px-2 py-2 text-xs text-slate-700 shadow-sm ${
         item.isPending || isDragging ? "opacity-60" : ""
       }`}
     >
@@ -535,7 +535,7 @@ function DayCell({
     <div
       ref={setNodeRef}
       className={`flex min-h-[120px] flex-col gap-2 bg-white px-3 py-2 text-xs text-slate-500 transition ${
-        isOver ? "bg-slate-50 ring-2 ring-slate-300" : ""
+        isOver ? "bg-[#fafafa] ring-2 ring-slate-300" : ""
       }`}
     >
       <div className="flex items-center justify-between">
@@ -888,7 +888,7 @@ export default function PlanClient({
       }}
     >
       <main className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-6 py-6 lg:flex-row">
-        <section className="flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:h-[calc(100vh-200px)] lg:min-w-[260px] lg:max-w-[320px] lg:flex-[0_0_20%]">
+        <section className="flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 lg:h-[calc(100vh-200px)] lg:min-w-[260px] lg:max-w-[320px] lg:flex-[0_0_20%]">
           <div>
             <h1 className="text-lg font-semibold text-slate-900">{workspaceName}</h1>
             <p className="text-xs text-slate-500">Plan meals for the week ahead.</p>
@@ -906,7 +906,7 @@ export default function PlanClient({
               onClick={() => setFiltersOpen((prev) => !prev)}
               aria-expanded={filtersOpen}
               aria-controls={filtersId}
-              className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+              className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-[#fafafa]"
             >
               <span>Filters</span>
               <svg
@@ -980,10 +980,10 @@ export default function PlanClient({
           </div>
         </section>
 
-        <section className="flex min-h-[600px] flex-1 flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="flex min-h-[600px] flex-1 flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4">
           <header className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 p-1 text-xs font-semibold text-slate-600">
+              <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-[#fafafa] p-1 text-xs font-semibold text-slate-600">
                 <button
                   type="button"
                   onClick={() => handleViewChange("month")}
