@@ -4,6 +4,7 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  type ClientRect,
   useDraggable,
   useDroppable,
   useSensor,
@@ -95,6 +96,7 @@ const weekdayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const TAKEAWAY_TITLE = "Take Away Night";
 const TAKEAWAY_SUBTITLE = "No cooking, no ingredients";
 const TAKEAWAY_TAGLINE = "Order in 🍜";
+type RectLike = ClientRect | DOMRect | null | undefined;
 
 function normalizePlanItem(item: {
   id: string;
@@ -699,18 +701,17 @@ export default function PlanClient({
     [updateParams, view],
   );
 
-  const getConfettiOrigin = useCallback(
-    (rect?: DOMRect | null) => {
-      if (typeof window === "undefined") return null;
-      const fallback = calendarRef.current?.getBoundingClientRect() ?? null;
-      const target = rect ?? fallback;
-      if (!target) return null;
-      const x = (target.left + target.width / 2) / window.innerWidth;
-      const y = (target.top + target.height / 2) / window.innerHeight;
-      return { x, y };
-    },
-    [],
-  );
+  const getConfettiOrigin = useCallback((rect: RectLike) => {
+    if (typeof window === "undefined") return null;
+    const fallback = calendarRef.current?.getBoundingClientRect() ?? null;
+    const target = rect ?? fallback;
+    if (!target) return null;
+    const left = "x" in target ? target.x : target.left;
+    const top = "y" in target ? target.y : target.top;
+    const x = (left + target.width / 2) / window.innerWidth;
+    const y = (top + target.height / 2) / window.innerHeight;
+    return { x, y };
+  }, []);
 
   const handleToday = () => {
     setFocusedDate(getTodayUTC());
