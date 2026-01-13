@@ -34,6 +34,7 @@ import { fireConfetti } from "@/lib/confetti";
 import CookingViewOverlay from "../cook/CookingViewOverlay";
 import RecipeOverlay from "../cook/RecipeOverlay";
 import type { RecipeDetail } from "../cook/types";
+import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
 
 type RecipeItem = {
   id: string;
@@ -1003,31 +1004,34 @@ export default function PlanClient({
                 Week
               </button>
             </div>
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <button
-                type="button"
-                onClick={handlePrev}
-                className="rounded-full border border-slate-200 px-2 py-1 text-slate-600 hover:border-slate-300 hover:text-slate-900"
-              >
-                ←
-              </button>
-              <button
-                type="button"
-                onClick={handleToday}
-                className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-slate-300"
-              >
-                Today
-              </button>
-              <button
-                type="button"
-                onClick={handleNext}
-                className="rounded-full border border-slate-200 px-2 py-1 text-slate-600 hover:border-slate-300 hover:text-slate-900"
-              >
-                →
-              </button>
-              <span className="ml-2 text-base font-semibold text-slate-900">
-                {getMonthLabel(focusedDate)}
-              </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  className="rounded-full border border-slate-200 px-2 py-1 text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToday}
+                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-slate-300"
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="rounded-full border border-slate-200 px-2 py-1 text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                >
+                  →
+                </button>
+                <span className="ml-2 text-base font-semibold text-slate-900">
+                  {getMonthLabel(focusedDate)}
+                </span>
+              </div>
+              <WhatsAppShareButton label="Share via WhatsApp" />
             </div>
             {isPending ? (
               <span className="text-xs font-semibold text-slate-400">Saving…</span>
