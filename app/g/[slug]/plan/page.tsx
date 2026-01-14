@@ -166,6 +166,24 @@ export default async function PlanPage({
     };
   });
 
+  const templates = await prisma.mealTemplate.findMany({
+    where: { workspaceId: workspace.id },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      scope: true,
+      _count: { select: { items: true } },
+    },
+  });
+
+  const serializedTemplates = templates.map((template) => ({
+    id: template.id,
+    name: template.name,
+    scope: template.scope,
+    itemCount: template._count.items,
+  }));
+
   let selectedRecipe: RecipeDetail | null = null;
   if (recipeId) {
     selectedRecipe = await fetchRecipeDetail(recipeId, workspace.id);
@@ -190,6 +208,7 @@ export default async function PlanPage({
         workspaceName={workspace.name}
         recipes={serializedRecipes}
         planItems={serializedPlanItems}
+        templates={serializedTemplates}
         view={view}
         focusedDateISO={focusedDateISO}
         selectedRecipe={selectedRecipe}
