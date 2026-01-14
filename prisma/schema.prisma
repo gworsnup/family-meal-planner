@@ -72,6 +72,8 @@ model Recipe {
   sourceUrl   String?
   description String? @db.Text
   photoUrl    String?
+  imageSourceUrl String?
+  imageStoredAt DateTime?
 
   prepTimeMinutes  Int?
   cookTimeMinutes  Int?

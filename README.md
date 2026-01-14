@@ -34,3 +34,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Vercel Blob (TikTok thumbnails)
+
+TikTok recipe imports persist thumbnails to Vercel Blob to avoid expiring CDN URLs. Ensure `BLOB_READ_WRITE_TOKEN` is available in your environment (Vercel injects this automatically when the Blob integration is enabled). For local development, use `vercel env pull` or add the token to `.env.local`.
