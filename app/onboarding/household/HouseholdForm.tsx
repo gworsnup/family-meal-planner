@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 
+import { logoutAction } from "@/app/actions/auth";
+
 import { createHouseholdAction } from "./actions";
 
 type ActionState =
@@ -43,6 +45,15 @@ export default function HouseholdForm() {
         className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 disabled:cursor-not-allowed disabled:opacity-70"
       >
         {pending ? "Creating..." : "Create household"}
+      </button>
+      <button
+        type="submit"
+        formAction={logoutAction}
+        formNoValidate
+        disabled={pending}
+        className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        Cancel
       </button>
     </form>
   );
