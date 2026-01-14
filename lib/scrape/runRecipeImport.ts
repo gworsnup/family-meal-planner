@@ -1,6 +1,10 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
+import {
+  isTikTokImageUrl,
+  persistTiktokImageToBlob,
+} from "@/lib/images/persistTiktokImageToBlob";
 import { scrapeUrl } from "./scrapeUrl";
 
 export async function runRecipeImport(importId: string) {
@@ -51,6 +55,37 @@ export async function runRecipeImport(importId: string) {
     const cleanedTitle =
       typeof scraped.title === "string" ? scraped.title : null;
 
+    let finalPhotoUrl = cleanedPhotoUrl ?? record.recipe.photoUrl;
+    let imageSourceUrl: string | null = null;
+    let imageStoredAt: Date | null = null;
+
+    if (cleanedPhotoUrl && isTikTokImageUrl(cleanedPhotoUrl)) {
+      imageSourceUrl = cleanedPhotoUrl;
+      try {
+        const result = await persistTiktokImageToBlob({
+          imageUrl: cleanedPhotoUrl,
+          recipeId: record.recipeId,
+          slug: record.workspace.slug,
+        });
+        if (result.didPersist) {
+          finalPhotoUrl = result.finalUrl;
+          imageStoredAt = new Date();
+        }
+      } catch (error) {
+        const hostname = (() => {
+          try {
+            return new URL(cleanedPhotoUrl).hostname;
+          } catch {
+            return "unknown-host";
+          }
+        })();
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.warn(
+          `[RecipeImage] Failed to persist TikTok image for recipe ${record.recipeId} (${hostname}). ${message}`,
+        );
+      }
+    }
+
     const hasTitle = Boolean(cleanedTitle?.trim());
     const hasIngredients = cleanedIngredients.length > 0;
     const hasDirections = Boolean(cleanedDirections?.trim());
@@ -71,7 +106,9 @@ export async function runRecipeImport(importId: string) {
           sourceName: cleanedSourceName ?? record.recipe.sourceName,
           sourceUrl: cleanedSourceUrl ?? record.sourceUrl,
           description: cleanedDescription ?? record.recipe.description,
-          photoUrl: cleanedPhotoUrl ?? record.recipe.photoUrl,
+          photoUrl: finalPhotoUrl,
+          ...(imageSourceUrl ? { imageSourceUrl } : {}),
+          ...(imageStoredAt ? { imageStoredAt } : {}),
           prepTimeMinutes: scraped.prepTimeMinutes ?? record.recipe.prepTimeMinutes,
           cookTimeMinutes: scraped.cookTimeMinutes ?? record.recipe.cookTimeMinutes,
           totalTimeMinutes: scraped.totalTimeMinutes ?? record.recipe.totalTimeMinutes,
