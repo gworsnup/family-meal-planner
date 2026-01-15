@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { requireWorkspaceUser } from "@/lib/auth";
+import { normalizeTagName } from "@/lib/normalizeTagName";
 import { revalidatePath } from "next/cache";
 import { UpdateRecipeInput } from "./types";
 
@@ -12,10 +13,6 @@ type TagSummary = {
   id: string;
   name: string;
 };
-
-function normalizeTagName(value: string) {
-  return value.trim().replace(/\s+/g, " ").toLowerCase();
-}
 
 function formatTagName(value: string) {
   return value.trim().replace(/\s+/g, " ");
@@ -197,6 +194,21 @@ export async function createTag(slug: string, name: string): Promise<TagSummary>
   revalidatePath(`/g/${slug}/plan`);
 
   return tag;
+}
+
+export async function deleteTag(slug: string, tagId: string) {
+  const user = await requireWorkspaceUser(slug);
+
+  const deleted = await prisma.tag.deleteMany({
+    where: { id: tagId, workspaceId: user.workspace.id },
+  });
+
+  if (deleted.count === 0) {
+    throw new Error("Tag not found");
+  }
+
+  revalidatePath(`/g/${slug}/cook`);
+  revalidatePath(`/g/${slug}/plan`);
 }
 
 export async function toggleRecipeTag(
