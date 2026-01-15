@@ -1,12 +1,33 @@
+import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import WorkspaceHeader from "../_components/WorkspaceHeader";
 import ShopClient from "./ShopClient";
-import { formatDateISO, getTodayUTC, parseDateISO, startOfWeek } from "@/lib/planDates";
+import {
+  formatDateISO,
+  getTodayUTC,
+  parseDateISO,
+  startOfWeek,
+} from "@/lib/planDates";
 import type { WeekList } from "@/lib/ingredientParsing";
 import type { SmartListData } from "@/lib/smartListTypes";
 import { SMART_LIST_CATEGORIES } from "@/lib/smartListConfig";
 import { formatWeekTitle } from "@/lib/shoppingList";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+
+  return {
+    title: "Shopping Lists",
+    alternates: {
+      canonical: `/g/${slug}/shopping-list`,
+    },
+  };
+}
 
 export default async function ShoppingListPage({
   params,

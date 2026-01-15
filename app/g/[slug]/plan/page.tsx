@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import WorkspaceHeader from "../_components/WorkspaceHeader";
@@ -26,6 +27,21 @@ function parseView(value?: string): PlanView {
 function parseFocusedDate(value?: string) {
   if (!value) return getTodayUTC();
   return parseDateISO(value) ?? getTodayUTC();
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+
+  return {
+    title: "Plan",
+    alternates: {
+      canonical: `/g/${slug}/plan`,
+    },
+  };
 }
 
 async function fetchRecipeDetail(recipeId: string, workspaceId: string) {
