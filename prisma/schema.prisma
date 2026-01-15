@@ -18,6 +18,7 @@ model Workspace {
   recipeImports RecipeImport[]
   tags          Tag[]
   mealPlanItems MealPlanItem[]
+  mealTemplates MealTemplate[]
   shoppingListWeeks ShoppingListWeek[]
   shoppingListSmarts ShoppingListSmart[]
   smartListJobs SmartListJob[]
@@ -99,6 +100,7 @@ model Recipe {
   recipeTags      RecipeTag[]
   import          RecipeImport?
   mealPlanItems   MealPlanItem[]
+  mealTemplateItems MealTemplateItem[]
 
   @@index([workspaceId])
 }
@@ -125,6 +127,46 @@ model MealPlanItem {
 enum PlanItemType {
   RECIPE
   TAKEAWAY
+}
+
+enum MealTemplateScope {
+  WEEK
+  MONTH
+}
+
+enum MealTemplateItemKind {
+  RECIPE
+  TAKEAWAY
+}
+
+model MealTemplate {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  scope       MealTemplateScope
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  items     MealTemplateItem[]
+
+  @@index([workspaceId])
+}
+
+model MealTemplateItem {
+  id         String   @id @default(cuid())
+  templateId String
+  kind       MealTemplateItemKind
+  recipeId   String?
+  dayIndex   Int
+  mealSlot   String?
+  createdAt  DateTime @default(now())
+
+  template MealTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  recipe   Recipe?      @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+
+  @@index([templateId])
+  @@unique([templateId, dayIndex, mealSlot])
 }
 
 model ShoppingListWeek {
