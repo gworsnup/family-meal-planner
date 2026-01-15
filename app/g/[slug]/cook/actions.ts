@@ -2,10 +2,40 @@
 
 import { prisma } from "@/lib/db";
 import { requireWorkspaceUser } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 import { UpdateRecipeInput } from "./types";
 
 const MAX_RATING = 5;
 const MIN_RATING = 0;
+
+type TagSummary = {
+  id: string;
+  name: string;
+};
+
+function normalizeTagName(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function formatTagName(value: string) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+async function getRecipeTags(recipeId: string) {
+  const recipeTags = await prisma.recipeTag.findMany({
+    where: { recipeId },
+    orderBy: { tag: { name: "asc" } },
+    select: {
+      tag: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+  return recipeTags.map((recipeTag) => recipeTag.tag);
+}
 
 export async function setRecipeRating(
   slug: string,
@@ -122,4 +152,139 @@ export async function updateRecipe(
       });
     }
   });
+}
+
+export async function getWorkspaceTags(slug: string): Promise<TagSummary[]> {
+  const user = await requireWorkspaceUser(slug);
+  return prisma.tag.findMany({
+    where: { workspaceId: user.workspace.id },
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+}
+
+export async function createTag(slug: string, name: string): Promise<TagSummary> {
+  const user = await requireWorkspaceUser(slug);
+  const normalized = normalizeTagName(name);
+  if (!normalized) {
+    throw new Error("Tag name is required");
+  }
+  const formattedName = formatTagName(name);
+
+  const tag = await prisma.tag.upsert({
+    where: {
+      workspaceId_nameNormalized: {
+        workspaceId: user.workspace.id,
+        nameNormalized: normalized,
+      },
+    },
+    create: {
+      workspaceId: user.workspace.id,
+      name: formattedName,
+      nameNormalized: normalized,
+    },
+    update: {},
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  revalidatePath(`/g/${slug}/cook`);
+  revalidatePath(`/g/${slug}/plan`);
+
+  return tag;
+}
+
+export async function toggleRecipeTag(
+  slug: string,
+  recipeId: string,
+  tagId: string,
+  enabled: boolean,
+): Promise<TagSummary[]> {
+  const user = await requireWorkspaceUser(slug);
+
+  const [recipe, tag] = await Promise.all([
+    prisma.recipe.findFirst({
+      where: { id: recipeId, workspaceId: user.workspace.id },
+      select: { id: true },
+    }),
+    prisma.tag.findFirst({
+      where: { id: tagId, workspaceId: user.workspace.id },
+      select: { id: true },
+    }),
+  ]);
+
+  if (!recipe || !tag) {
+    throw new Error("Tag or recipe not found");
+  }
+
+  if (enabled) {
+    await prisma.recipeTag.upsert({
+      where: { recipeId_tagId: { recipeId, tagId } },
+      create: { recipeId, tagId },
+      update: {},
+    });
+  } else {
+    await prisma.recipeTag.deleteMany({ where: { recipeId, tagId } });
+  }
+
+  revalidatePath(`/g/${slug}/cook`);
+  revalidatePath(`/g/${slug}/plan`);
+
+  return getRecipeTags(recipeId);
+}
+
+export async function addOrCreateTagToRecipe(
+  slug: string,
+  recipeId: string,
+  tagName: string,
+): Promise<{ tag: TagSummary; recipeTags: TagSummary[] }> {
+  const user = await requireWorkspaceUser(slug);
+  const normalized = normalizeTagName(tagName);
+  if (!normalized) {
+    throw new Error("Tag name is required");
+  }
+  const formattedName = formatTagName(tagName);
+
+  const recipe = await prisma.recipe.findFirst({
+    where: { id: recipeId, workspaceId: user.workspace.id },
+    select: { id: true },
+  });
+  if (!recipe) {
+    throw new Error("Recipe not found");
+  }
+
+  const tag = await prisma.tag.upsert({
+    where: {
+      workspaceId_nameNormalized: {
+        workspaceId: user.workspace.id,
+        nameNormalized: normalized,
+      },
+    },
+    create: {
+      workspaceId: user.workspace.id,
+      name: formattedName,
+      nameNormalized: normalized,
+    },
+    update: {},
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  await prisma.recipeTag.upsert({
+    where: { recipeId_tagId: { recipeId, tagId: tag.id } },
+    create: { recipeId, tagId: tag.id },
+    update: {},
+  });
+
+  revalidatePath(`/g/${slug}/cook`);
+  revalidatePath(`/g/${slug}/plan`);
+
+  return { tag, recipeTags: await getRecipeTags(recipeId) };
 }

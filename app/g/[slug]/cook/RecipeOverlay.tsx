@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import RatingStars from "./RatingStars";
-import { deleteRecipe, updateRecipe } from "./actions";
+import {
+  addOrCreateTagToRecipe,
+  deleteRecipe,
+  getWorkspaceTags,
+  toggleRecipeTag,
+  updateRecipe,
+} from "./actions";
 import type { RecipeDetail, UpdateRecipeInput } from "./types";
 
 type RecipeOverlayProps = {
@@ -44,6 +50,14 @@ function getIngredientsText(recipe: RecipeDetail) {
     .join("\n");
 }
 
+function normalizeTagName(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function formatTagName(value: string) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
 export default function RecipeOverlay({
   slug,
   recipe,
@@ -54,6 +68,7 @@ export default function RecipeOverlay({
 }: RecipeOverlayProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [isTagPending, startTagTransition] = useTransition();
 
   const initialForm = useMemo<UpdateRecipeInput>(
     () => ({
@@ -77,12 +92,41 @@ export default function RecipeOverlay({
 
   const [formState, setFormState] = useState<UpdateRecipeInput>(initialForm);
   const [showPhotoInput, setShowPhotoInput] = useState(false);
+  const [workspaceTags, setWorkspaceTags] = useState<RecipeDetail["tags"]>([]);
+  const [recipeTags, setRecipeTags] = useState<RecipeDetail["tags"]>(recipe.tags);
+  const [tagSearch, setTagSearch] = useState("");
+  const [isTagPopoverOpen, setIsTagPopoverOpen] = useState(false);
+  const [tagMessage, setTagMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setFormState(initialForm);
     setIsEditing(false);
     setShowPhotoInput(false);
+    setRecipeTags(recipe.tags);
+    setIsTagPopoverOpen(false);
+    setTagSearch("");
   }, [initialForm]);
+
+  useEffect(() => {
+    let isMounted = true;
+    startTagTransition(async () => {
+      try {
+        const tags = await getWorkspaceTags(slug);
+        if (isMounted) setWorkspaceTags(tags);
+      } catch (error) {
+        console.error(error);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [slug, startTagTransition]);
+
+  useEffect(() => {
+    if (!tagMessage) return;
+    const timeout = window.setTimeout(() => setTagMessage(null), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [tagMessage]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -117,13 +161,95 @@ export default function RecipeOverlay({
     });
   };
 
+  const showTagMessage = (message: string) => {
+    setTagMessage(message);
+  };
+
+  const handleToggleTag = (tagId: string) => {
+    const previousTags = recipeTags;
+    const isApplied = recipeTags.some((tag) => tag.id === tagId);
+    const nextTags = isApplied
+      ? recipeTags.filter((tag) => tag.id !== tagId)
+      : (() => {
+          const tagToAdd = workspaceTags.find((tag) => tag.id === tagId);
+          if (!tagToAdd) return recipeTags;
+          return [...recipeTags, tagToAdd];
+        })();
+
+    setRecipeTags(nextTags);
+    startTagTransition(async () => {
+      try {
+        const updatedTags = await toggleRecipeTag(
+          slug,
+          recipe.id,
+          tagId,
+          !isApplied,
+        );
+        setRecipeTags(updatedTags);
+      } catch (error) {
+        console.error(error);
+        setRecipeTags(previousTags);
+        showTagMessage("Couldn't update tags. Please try again.");
+      }
+    });
+  };
+
+  const handleCreateTag = (value: string) => {
+    const formattedName = formatTagName(value);
+    if (!formattedName) return;
+    const tempTag = { id: `temp-${Date.now()}`, name: formattedName };
+    const previousRecipeTags = recipeTags;
+    const previousWorkspaceTags = workspaceTags;
+
+    setRecipeTags((prev) => [...prev, tempTag]);
+    setWorkspaceTags((prev) => {
+      if (prev.some((tag) => normalizeTagName(tag.name) === normalizeTagName(formattedName))) {
+        return prev;
+      }
+      return [...prev, tempTag].sort((a, b) => a.name.localeCompare(b.name));
+    });
+    setTagSearch("");
+
+    startTagTransition(async () => {
+      try {
+        const result = await addOrCreateTagToRecipe(slug, recipe.id, formattedName);
+        setRecipeTags(result.recipeTags);
+        setWorkspaceTags((prev) => {
+          const withoutTemp = prev.filter((tag) => tag.id !== tempTag.id);
+          if (withoutTemp.some((tag) => tag.id === result.tag.id)) {
+            return withoutTemp;
+          }
+          return [...withoutTemp, result.tag].sort((a, b) => a.name.localeCompare(b.name));
+        });
+      } catch (error) {
+        console.error(error);
+        setRecipeTags(previousRecipeTags);
+        setWorkspaceTags(previousWorkspaceTags);
+        showTagMessage("Couldn't create tag. Please try again.");
+      }
+    });
+  };
+
+  const normalizedSearch = normalizeTagName(tagSearch);
+  const filteredTags = useMemo(() => {
+    if (!normalizedSearch) return workspaceTags;
+    return workspaceTags.filter((tag) =>
+      normalizeTagName(tag.name).includes(normalizedSearch),
+    );
+  }, [normalizedSearch, workspaceTags]);
+  const exactMatch = normalizedSearch
+    ? workspaceTags.find(
+        (tag) => normalizeTagName(tag.name) === normalizedSearch,
+      )
+    : null;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
       onClick={onClose}
     >
       <div
-        className="flex h-[min(92vh,900px)] w-[min(1000px,96vw)] flex-col overflow-hidden rounded-2xl bg-white"
+        className="relative flex h-[min(92vh,900px)] w-[min(1000px,96vw)] flex-col overflow-hidden rounded-2xl bg-white"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
@@ -452,9 +578,102 @@ export default function RecipeOverlay({
                 )}
               </div>
 
-              <label className="flex items-center gap-2 text-sm text-slate-600">
-                {isEditing ? (
-                  <>
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Tags
+                  </span>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsTagPopoverOpen((prev) => !prev)}
+                      disabled={isTagPending}
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                    >
+                      Add tag
+                    </button>
+                    {isTagPopoverOpen && (
+                      <div className="absolute right-0 z-10 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
+                        <input
+                          type="text"
+                          value={tagSearch}
+                          onChange={(event) => setTagSearch(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" && normalizedSearch && !exactMatch) {
+                              event.preventDefault();
+                              handleCreateTag(tagSearch);
+                              setIsTagPopoverOpen(false);
+                            }
+                          }}
+                          placeholder="Search tags…"
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                        />
+                        <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-slate-100">
+                          {filteredTags.length > 0 ? (
+                            filteredTags.map((tag) => {
+                              const isApplied = recipeTags.some(
+                                (item) => item.id === tag.id,
+                              );
+                              return (
+                                <button
+                                  key={tag.id}
+                                  type="button"
+                                  onClick={() => handleToggleTag(tag.id)}
+                                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                                >
+                                  <span>{tag.name}</span>
+                                  {isApplied && (
+                                    <span className="text-xs font-semibold text-slate-500">
+                                      ✓
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-slate-400">
+                              No tags yet.
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-2 border-t border-slate-100 pt-2">
+                          {normalizedSearch && !exactMatch ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleCreateTag(tagSearch);
+                                setIsTagPopoverOpen(false);
+                              }}
+                              className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                            >
+                              Create “{formatTagName(tagSearch)}”
+                            </button>
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-slate-400">
+                              Start typing to create a tag.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {recipeTags.length > 0 ? (
+                    recipeTags.map((tag) => (
+                      <span
+                        key={tag.id}
+                        className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600"
+                      >
+                        {tag.name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-slate-400">No tags yet.</span>
+                  )}
+                </div>
+                {isEditing && (
+                  <label className="flex items-center gap-2 text-sm text-slate-600">
                     <input
                       type="checkbox"
                       checked={formState.isPrivate}
@@ -467,13 +686,9 @@ export default function RecipeOverlay({
                       className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900/30"
                     />
                     Private recipe
-                  </>
-                ) : (
-                  <div>
-                    Privacy: {recipe.isPrivate ? "Private" : "Shared"}
-                  </div>
+                  </label>
                 )}
-              </label>
+              </div>
 
               <div className="text-xs text-slate-400">
                 Updated {formatDate(recipe.updatedAt)} · Created {formatDate(recipe.createdAt)}
@@ -532,6 +747,11 @@ export default function RecipeOverlay({
             </div>
           </div>
         </div>
+        {tagMessage && (
+          <div className="pointer-events-none absolute bottom-4 right-4 rounded-lg bg-slate-900 px-4 py-2 text-sm text-white shadow-lg">
+            {tagMessage}
+          </div>
+        )}
       </div>
     </div>
   );

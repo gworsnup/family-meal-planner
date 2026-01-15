@@ -295,11 +295,15 @@ model Tag {
   id          String   @id @default(cuid())
   workspaceId String
   name        String
+  nameNormalized String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   recipeTags RecipeTag[]
 
-  @@unique([workspaceId, name])
+  @@unique([workspaceId, nameNormalized])
+  @@index([workspaceId])
 }
 
 model RecipeTag {
