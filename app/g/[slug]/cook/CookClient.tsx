@@ -6,10 +6,8 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   useTransition,
-  type CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
 import RatingStars from "./RatingStars";
@@ -179,10 +177,6 @@ export default function CookClient({
   const [importRecipeId, setImportRecipeId] = useState<string | null>(null);
   const [importSourceUrl, setImportSourceUrl] = useState<string | null>(null);
   const [inspirationOpen, setInspirationOpen] = useState(false);
-  const inspirationTriggerRef = useRef<HTMLButtonElement>(null);
-  const inspirationPopoverRef = useRef<HTMLDivElement>(null);
-  const [inspirationPopoverStyles, setInspirationPopoverStyles] =
-    useState<CSSProperties>({});
 
   const isSocialImportUrl = (url: string | null) => {
     if (!url) return false;
@@ -222,71 +216,15 @@ export default function CookClient({
   useEffect(() => {
     if (!inspirationOpen) return;
 
-    const handlePointerDown = (event: MouseEvent) => {
-      const target = event.target as Node | null;
-      if (target && inspirationTriggerRef.current?.contains(target)) return;
-      if (target && inspirationPopoverRef.current?.contains(target)) return;
-      setInspirationOpen(false);
-    };
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
       setInspirationOpen(false);
     };
 
-    window.addEventListener("mousedown", handlePointerDown);
     window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [inspirationOpen]);
-
-  useEffect(() => {
-    if (!inspirationOpen) return;
-
-    const updatePosition = () => {
-      const trigger = inspirationTriggerRef.current;
-      if (!trigger) return;
-      const rect = trigger.getBoundingClientRect();
-      const popover = inspirationPopoverRef.current;
-      const popoverWidth = popover?.offsetWidth ?? 320;
-      const popoverHeight = popover?.offsetHeight ?? 0;
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const horizontalPadding = 12;
-      const verticalPadding = 12;
-
-      let left = Math.min(
-        Math.max(horizontalPadding, rect.left),
-        viewportWidth - popoverWidth - horizontalPadding,
-      );
-      let top = rect.bottom + 8;
-
-      if (popoverHeight && top + popoverHeight > viewportHeight - verticalPadding) {
-        top = rect.top - popoverHeight - 8;
-      }
-
-      top = Math.max(verticalPadding, top);
-      left = Math.max(horizontalPadding, left);
-
-      setInspirationPopoverStyles({
-        top,
-        left,
-        width: popoverWidth,
-      });
-    };
-
-    updatePosition();
-    const frame = window.requestAnimationFrame(updatePosition);
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
     };
   }, [inspirationOpen]);
 
@@ -557,24 +495,40 @@ export default function CookClient({
                   disabled={isImportActive}
                   className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                 >
+                  <span className="mr-2 inline-flex h-4 w-4 items-center justify-center">
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      className="h-4 w-4 fill-current"
+                    >
+                      <path d="M12 2l1.4 4.2L18 7.6l-4.2 1.4L12 13.2l-1.4-4.2L6.4 7.6l4.2-1.4L12 2zm7 10l.9 2.7 2.7.9-2.7.9L19 19l-.9-2.7-2.7-.9 2.7-.9L19 12zm-14 1l.9 2.7 2.7.9-2.7.9L5 20l-.9-2.7-2.7-.9 2.7-.9L5 13z" />
+                    </svg>
+                  </span>
                   {isImportPending ? "Starting…" : "Add from URL"}
                 </button>
               </div>
-              <button
-                type="button"
-                ref={inspirationTriggerRef}
-                onClick={() => setInspirationOpen((open) => !open)}
-                aria-expanded={inspirationOpen}
-                className="w-fit text-xs font-semibold text-slate-600 transition hover:text-slate-900"
-              >
-                Need Inspiration?
-              </button>
-              <Link
-                href={`/g/${slug}/cook/new`}
-                className="text-xs font-semibold text-slate-600 transition hover:text-slate-900"
-              >
-                Add recipe manually
-              </Link>
+              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
+                <button
+                  type="button"
+                  onClick={() => setInspirationOpen((open) => !open)}
+                  aria-expanded={inspirationOpen}
+                  className="transition hover:text-slate-900"
+                >
+                  <span aria-hidden="true" className="mr-1">
+                    ✨
+                  </span>
+                  Need Inspiration?
+                </button>
+                <span aria-hidden="true" className="text-slate-300">
+                  ·
+                </span>
+                <Link
+                  href={`/g/${slug}/cook/new`}
+                  className="transition hover:text-slate-900"
+                >
+                  Add recipe manually
+                </Link>
+              </div>
             </div>
 
             {importStatusLabel && (
@@ -937,50 +891,62 @@ export default function CookClient({
         typeof document !== "undefined" &&
         createPortal(
           <div
-            ref={inspirationPopoverRef}
-            style={inspirationPopoverStyles}
-            className="fixed z-50 mt-2 w-80 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-700 shadow-lg"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+            onClick={() => setInspirationOpen(false)}
           >
-            <p className="text-xs font-semibold text-slate-700">
-              Add recipes from any URL, including{" "}
-              <span className="inline-flex items-center gap-1">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 text-[9px] font-bold text-white">
-                  TT
+            <div
+              className="relative w-full max-w-2xl rounded-2xl border border-slate-200 bg-white px-6 py-5 text-sm text-slate-700 shadow-xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setInspirationOpen(false)}
+                className="absolute right-4 top-4 text-base text-slate-400 transition hover:text-slate-600"
+                aria-label="Close inspiration overlay"
+              >
+                ✕
+              </button>
+              <p className="text-base font-semibold text-slate-700 whitespace-nowrap">
+                Add recipes from any URL, including{" "}
+                <span className="inline-flex items-center gap-1">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 text-[9px] font-bold text-white">
+                    TT
+                  </span>
+                  TikTok
+                </span>{" "}
+                or{" "}
+                <span className="inline-flex items-center gap-1">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 via-pink-500 to-purple-600 text-[9px] font-bold text-white">
+                    IG
+                  </span>
+                  Instagram
                 </span>
-                TikTok
-              </span>{" "}
-              or{" "}
-              <span className="inline-flex items-center gap-1">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 via-pink-500 to-purple-600 text-[9px] font-bold text-white">
-                  IG
-                </span>
-                Instagram
-              </span>
-              .
-            </p>
-            <p className="mt-2 text-[11px] text-slate-500">
-              Just copy/paste the recipe URL and hit &quot;Add from URL&quot;!
-            </p>
-            <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              Need inspiration?
-            </p>
-            <div className="mt-2 flex flex-wrap gap-x-1.5 gap-y-1 text-xs font-semibold text-slate-600">
-              {inspirationLinks.map((link, index) => (
-                <span key={link.href} className="flex items-center gap-1">
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => setInspirationOpen(false)}
-                    className="transition hover:text-slate-900"
-                  >
-                    {link.label}
-                  </a>
-                  {index < inspirationLinks.length - 1 && (
-                    <span className="text-slate-300">·</span>
-                  )}
-                </span>
-              ))}
+                .
+              </p>
+              <p className="mt-2 text-sm text-slate-500">
+                Just copy/paste the recipe URL and hit &quot;Add from URL&quot;!
+              </p>
+              <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
+                Need inspiration?
+              </p>
+              <div className="mt-2 flex flex-wrap gap-x-1.5 gap-y-1 text-sm font-semibold text-slate-600">
+                {inspirationLinks.map((link, index) => (
+                  <span key={link.href} className="flex items-center gap-1">
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => setInspirationOpen(false)}
+                      className="transition hover:text-slate-900"
+                    >
+                      {link.label}
+                    </a>
+                    {index < inspirationLinks.length - 1 && (
+                      <span className="text-slate-300">·</span>
+                    )}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>,
           document.body,
