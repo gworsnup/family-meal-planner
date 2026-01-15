@@ -51,7 +51,7 @@ export function ModeSegmentedControl({ value, onChange }: ModeSegmentedControlPr
             aria-checked={isSelected}
             tabIndex={isSelected ? 0 : -1}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 flex h-8 w-1/2 items-center justify-center rounded-full text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 focus-visible:ring-offset-2 ${
+            className={`relative z-10 flex w-1/2 items-center justify-center rounded-full px-3 py-1 text-xs font-semibold leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 focus-visible:ring-offset-2 ${
               isSelected
                 ? "text-white"
                 : "text-slate-600 hover:bg-white"
