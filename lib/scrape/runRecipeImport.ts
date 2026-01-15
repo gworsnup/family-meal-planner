@@ -174,6 +174,7 @@ export async function runRecipeImport(importId: string) {
         data: {
           status,
           error: statusError,
+          importMethod: scraped.importMethod ?? "fetch",
           raw: scraped.raw ?? {},
         },
       });
