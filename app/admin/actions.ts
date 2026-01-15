@@ -7,6 +7,7 @@ import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { hashPassword, normalizeEmail, requireAdmin } from "@/lib/auth";
+import { seedDefaultTagsForWorkspace } from "@/lib/seedDefaultTagsForWorkspace";
 
 type ActionState =
   | { status: "idle" }
@@ -49,9 +50,17 @@ export async function createWorkspaceAction(
   let slug = generateWorkspaceSlug();
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      await prisma.workspace.create({
+      const workspace = await prisma.workspace.create({
         data: { name, slug },
       });
+      try {
+        await seedDefaultTagsForWorkspace(workspace.id);
+      } catch (error) {
+        console.error("Failed to seed default tags", {
+          error,
+          workspaceId: workspace.id,
+        });
+      }
       revalidatePath("/admin");
       return { status: "success" };
     } catch (error) {

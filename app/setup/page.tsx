@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { prisma } from "@/lib/db";
+import { seedDefaultTagsForWorkspace } from "@/lib/seedDefaultTagsForWorkspace";
 
 import { SetupForm } from "./SetupForm";
 
@@ -42,6 +43,17 @@ async function setupWorkspace(_prevState: SetupState, formData: FormData): Promi
     update: { name },
     create: { slug, name },
   });
+
+  if (!existing) {
+    try {
+      await seedDefaultTagsForWorkspace(workspace.id);
+    } catch (error) {
+      console.error("Failed to seed default tags", {
+        error,
+        workspaceId: workspace.id,
+      });
+    }
+  }
 
   return { status: "success", workspaceSlug: workspace.slug };
 }

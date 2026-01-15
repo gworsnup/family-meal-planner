@@ -5,12 +5,14 @@ import RatingStars from "./RatingStars";
 import RecipeTagsMultiSelect from "./RecipeTagsMultiSelect";
 import {
   addOrCreateTagToRecipe,
+  deleteTag,
   deleteRecipe,
   getWorkspaceTags,
   toggleRecipeTag,
   updateRecipe,
 } from "./actions";
 import type { RecipeDetail, UpdateRecipeInput } from "./types";
+import { normalizeTagName } from "@/lib/normalizeTagName";
 
 type RecipeOverlayProps = {
   slug: string;
@@ -49,10 +51,6 @@ function getIngredientsText(recipe: RecipeDetail) {
     .sort((a, b) => a.position - b.position)
     .map((line) => line.ingredient)
     .join("\n");
-}
-
-function normalizeTagName(value: string) {
-  return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 function formatTagName(value: string) {
@@ -226,6 +224,25 @@ export default function RecipeOverlay({
         setRecipeTags(previousRecipeTags);
         setWorkspaceTags(previousWorkspaceTags);
         showTagMessage("Couldn't create tag. Please try again.");
+      }
+    });
+  };
+
+  const handleDeleteTag = (tagId: string) => {
+    const previousWorkspaceTags = workspaceTags;
+    const previousRecipeTags = recipeTags;
+
+    setWorkspaceTags((prev) => prev.filter((tag) => tag.id !== tagId));
+    setRecipeTags((prev) => prev.filter((tag) => tag.id !== tagId));
+
+    startTagTransition(async () => {
+      try {
+        await deleteTag(slug, tagId);
+      } catch (error) {
+        console.error(error);
+        setWorkspaceTags(previousWorkspaceTags);
+        setRecipeTags(previousRecipeTags);
+        showTagMessage("Couldn't delete tag. Please try again.");
       }
     });
   };
@@ -574,6 +591,7 @@ export default function RecipeOverlay({
                   onOpenChange={setIsTagPopoverOpen}
                   onToggle={handleToggleTag}
                   onCreateTag={handleCreateTag}
+                  onDeleteTag={handleDeleteTag}
                 />
                 {isEditing && (
                   <label className="flex items-center gap-2 text-sm text-slate-600">

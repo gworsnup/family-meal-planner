@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import { seedDefaultTagsForWorkspace } from "@/lib/seedDefaultTagsForWorkspace";
 
 type ActionState =
   | { status: "idle" }
@@ -81,6 +82,15 @@ export async function createHouseholdAction(
 
         return createdWorkspace;
       });
+
+      try {
+        await seedDefaultTagsForWorkspace(workspace.id);
+      } catch (error) {
+        console.error("Failed to seed default tags", {
+          error,
+          workspaceId: workspace.id,
+        });
+      }
 
       redirect(`/g/${workspace.slug}/cook`);
     } catch (error) {

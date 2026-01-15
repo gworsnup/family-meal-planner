@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
+import { normalizeTagName } from "@/lib/normalizeTagName";
 
 export type TagOption = {
   id: string;
@@ -16,11 +17,8 @@ type RecipeTagsMultiSelectProps = {
   onOpenChange: (open: boolean) => void;
   onToggle: (tagId: string) => void;
   onCreateTag: (name: string) => void;
+  onDeleteTag: (tagId: string) => void;
 };
-
-function normalizeTagName(value: string) {
-  return value.trim().replace(/\s+/g, " ").toLowerCase();
-}
 
 function formatTagName(value: string) {
   return value.trim().replace(/\s+/g, " ");
@@ -34,6 +32,7 @@ export default function RecipeTagsMultiSelect({
   onOpenChange,
   onToggle,
   onCreateTag,
+  onDeleteTag,
 }: RecipeTagsMultiSelectProps) {
   const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -193,25 +192,51 @@ export default function RecipeTagsMultiSelect({
                   filteredTags.map((tag) => {
                     const isApplied = selectedTags.some((item) => item.id === tag.id);
                     return (
-                      <button
+                      <div
                         key={tag.id}
-                        type="button"
-                        onClick={() => onToggle(tag.id)}
-                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 ${
+                        className={`flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-50 ${
                           isApplied ? "bg-slate-50" : ""
                         }`}
                       >
-                        <span>{tag.name}</span>
-                        <span
-                          className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] ${
-                            isApplied
-                              ? "border-black bg-black text-white"
-                              : "border-slate-300 text-transparent"
-                          }`}
+                        <button
+                          type="button"
+                          onClick={() => onToggle(tag.id)}
+                          className="flex flex-1 items-center justify-between rounded-lg px-1 py-1 text-left"
                         >
-                          ✓
-                        </span>
-                      </button>
+                          <span>{tag.name}</span>
+                          <span
+                            className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] ${
+                              isApplied
+                                ? "border-black bg-black text-white"
+                                : "border-slate-300 text-transparent"
+                            }`}
+                          >
+                            ✓
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onDeleteTag(tag.id);
+                          }}
+                          aria-label={`Delete ${tag.name}`}
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 20 20"
+                            className="h-3.5 w-3.5"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M4.22 4.22a.75.75 0 0 1 1.06 0L10 8.94l4.72-4.72a.75.75 0 1 1 1.06 1.06L11.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 0 1-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 0 1 0-1.06Z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     );
                   })
                 ) : (
