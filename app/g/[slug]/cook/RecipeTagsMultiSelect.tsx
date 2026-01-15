@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 
 export type TagOption = {
   id: string;
@@ -36,7 +37,10 @@ export default function RecipeTagsMultiSelect({
 }: RecipeTagsMultiSelectProps) {
   const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [popoverStyles, setPopoverStyles] = useState<CSSProperties>({});
 
   useEffect(() => {
     if (!isOpen) return;
@@ -49,6 +53,7 @@ export default function RecipeTagsMultiSelect({
     const handlePointerDown = (event: MouseEvent) => {
       const target = event.target as Node | null;
       if (target && containerRef.current?.contains(target)) return;
+      if (target && popoverRef.current?.contains(target)) return;
       onOpenChange(false);
     };
 
@@ -65,6 +70,53 @@ export default function RecipeTagsMultiSelect({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onOpenChange]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const updatePosition = () => {
+      const trigger = triggerRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const popover = popoverRef.current;
+      const popoverWidth = popover?.offsetWidth ?? 288;
+      const popoverHeight = popover?.offsetHeight ?? 0;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const horizontalPadding = 12;
+      const verticalPadding = 12;
+
+      let left = Math.min(
+        Math.max(horizontalPadding, rect.left),
+        viewportWidth - popoverWidth - horizontalPadding,
+      );
+      let top = rect.bottom + 8;
+
+      if (popoverHeight && top + popoverHeight > viewportHeight - verticalPadding) {
+        top = rect.top - popoverHeight - 8;
+      }
+
+      top = Math.max(verticalPadding, top);
+      left = Math.max(horizontalPadding, left);
+
+      setPopoverStyles({
+        top,
+        left,
+        width: popoverWidth,
+      });
+    };
+
+    updatePosition();
+    const frame = window.requestAnimationFrame(updatePosition);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isOpen]);
 
   const normalizedSearch = normalizeTagName(search);
   const filteredTags = useMemo(() => {
@@ -86,6 +138,7 @@ export default function RecipeTagsMultiSelect({
           onClick={() => onOpenChange(!isOpen)}
           disabled={isPending}
           aria-expanded={isOpen}
+          ref={triggerRef}
           className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
           <span className="flex items-center gap-1">
@@ -112,75 +165,82 @@ export default function RecipeTagsMultiSelect({
             />
           </svg>
         </button>
-        {isOpen && (
-          <div className="absolute left-0 z-20 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-            <input
-              ref={inputRef}
-              type="text"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && normalizedSearch && !exactMatch) {
-                  event.preventDefault();
-                  onCreateTag(search);
-                  setSearch("");
-                }
-              }}
-              placeholder="Search tags…"
-              className="mb-2 w-full rounded-md border border-slate-200 px-2 py-1 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-            />
-            <div className="max-h-56 overflow-y-auto">
-              {filteredTags.length > 0 ? (
-                filteredTags.map((tag) => {
-                  const isApplied = selectedTags.some((item) => item.id === tag.id);
-                  return (
-                    <button
-                      key={tag.id}
-                      type="button"
-                      onClick={() => onToggle(tag.id)}
-                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 ${
-                        isApplied ? "bg-slate-50" : ""
-                      }`}
-                    >
-                      <span>{tag.name}</span>
-                      <span
-                        className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] ${
-                          isApplied
-                            ? "border-black bg-black text-white"
-                            : "border-slate-300 text-transparent"
-                        }`}
-                      >
-                        ✓
-                      </span>
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="rounded-lg px-3 py-2 text-sm text-slate-400">
-                  No tags yet.
-                </div>
-              )}
-            </div>
-            <div className="mt-2 border-t border-slate-100 pt-2">
-              {normalizedSearch && !exactMatch ? (
-                <button
-                  type="button"
-                  onClick={() => {
+        {isOpen &&
+          typeof document !== "undefined" &&
+          createPortal(
+            <div
+              ref={popoverRef}
+              style={popoverStyles}
+              className="fixed z-[60] mt-2 w-72 rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
+            >
+              <input
+                ref={inputRef}
+                type="text"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && normalizedSearch && !exactMatch) {
+                    event.preventDefault();
                     onCreateTag(search);
                     setSearch("");
-                  }}
-                  className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  Create “{formatTagName(search)}”
-                </button>
-              ) : (
-                <div className="px-3 py-2 text-sm text-slate-400">
-                  Start typing to create a tag.
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                  }
+                }}
+                placeholder="Search tags…"
+                className="mb-2 w-full rounded-md border border-slate-200 px-2 py-1 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+              />
+              <div className="max-h-56 overflow-y-auto">
+                {filteredTags.length > 0 ? (
+                  filteredTags.map((tag) => {
+                    const isApplied = selectedTags.some((item) => item.id === tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => onToggle(tag.id)}
+                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 ${
+                          isApplied ? "bg-slate-50" : ""
+                        }`}
+                      >
+                        <span>{tag.name}</span>
+                        <span
+                          className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] ${
+                            isApplied
+                              ? "border-black bg-black text-white"
+                              : "border-slate-300 text-transparent"
+                          }`}
+                        >
+                          ✓
+                        </span>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="rounded-lg px-3 py-2 text-sm text-slate-400">
+                    No tags yet.
+                  </div>
+                )}
+              </div>
+              <div className="mt-2 border-t border-slate-100 pt-2">
+                {normalizedSearch && !exactMatch ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onCreateTag(search);
+                      setSearch("");
+                    }}
+                    className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Create “{formatTagName(search)}”
+                  </button>
+                ) : (
+                  <div className="px-3 py-2 text-sm text-slate-400">
+                    Start typing to create a tag.
+                  </div>
+                )}
+              </div>
+            </div>,
+            document.body,
+          )}
       </div>
       {selectedTags.length > 0 ? (
         selectedTags.map((tag) => (
