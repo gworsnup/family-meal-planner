@@ -105,7 +105,6 @@ export default function ShopClient({
   >({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
 
   const weekParam = searchParams.get("week");
   const weekStarts = weekLists.map((week) => week.weekStart);
@@ -178,14 +177,7 @@ export default function ShopClient({
 
   useEffect(() => {
     setErrorMessage(null);
-    setNoticeMessage(null);
   }, [selectedWeek?.weekId]);
-
-  useEffect(() => {
-    if (!noticeMessage) return;
-    const timer = window.setTimeout(() => setNoticeMessage(null), 4000);
-    return () => window.clearTimeout(timer);
-  }, [noticeMessage]);
 
   const currentSmartList = selectedWeek?.weekId
     ? smartListByWeek[selectedWeek.weekId] ?? null
@@ -225,7 +217,6 @@ export default function ShopClient({
       if (!response.ok) {
         throw new Error(payload?.error || "Couldn’t generate smart list.");
       }
-      setNoticeMessage("Generating Smart List in the background…");
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Couldn’t generate smart list.",
@@ -401,11 +392,6 @@ export default function ShopClient({
                 {errorMessage ? (
                   <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
                     Couldn’t generate smart list. Try again.
-                  </div>
-                ) : null}
-                {noticeMessage ? (
-                  <div className="rounded-xl border border-slate-200 bg-[#fcfcfc] px-3 py-2 text-xs text-slate-600">
-                    {noticeMessage}
                   </div>
                 ) : null}
                 {viewMode === "aggregated" ? (

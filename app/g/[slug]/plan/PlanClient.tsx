@@ -1353,7 +1353,7 @@ export default function PlanClient({
             <h1 className="text-lg font-semibold text-slate-900">{workspaceName}</h1>
             <p className="text-xs text-slate-500">Plan meals for the week ahead.</p>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-[#fafafa] p-1 text-xs font-semibold text-slate-600">
+          <div className="flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-[#fafafa] p-1 text-xs font-semibold text-slate-600">
             <button
               type="button"
               onClick={() => setLeftTab("recipes")}
