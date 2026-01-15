@@ -557,24 +557,38 @@ export default function CookClient({
                   disabled={isImportActive}
                   className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                 >
+                  <span className="mr-2 inline-flex h-4 w-4 items-center justify-center">
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      className="h-4 w-4 fill-current"
+                    >
+                      <path d="M12 2l1.4 4.2L18 7.6l-4.2 1.4L12 13.2l-1.4-4.2L6.4 7.6l4.2-1.4L12 2zm7 10l.9 2.7 2.7.9-2.7.9L19 19l-.9-2.7-2.7-.9 2.7-.9L19 12zm-14 1l.9 2.7 2.7.9-2.7.9L5 20l-.9-2.7-2.7-.9 2.7-.9L5 13z" />
+                    </svg>
+                  </span>
                   {isImportPending ? "Starting…" : "Add from URL"}
                 </button>
               </div>
-              <button
-                type="button"
-                ref={inspirationTriggerRef}
-                onClick={() => setInspirationOpen((open) => !open)}
-                aria-expanded={inspirationOpen}
-                className="w-fit text-xs font-semibold text-slate-600 transition hover:text-slate-900"
-              >
-                Need Inspiration?
-              </button>
-              <Link
-                href={`/g/${slug}/cook/new`}
-                className="text-xs font-semibold text-slate-600 transition hover:text-slate-900"
-              >
-                Add recipe manually
-              </Link>
+              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
+                <button
+                  type="button"
+                  ref={inspirationTriggerRef}
+                  onClick={() => setInspirationOpen((open) => !open)}
+                  aria-expanded={inspirationOpen}
+                  className="transition hover:text-slate-900"
+                >
+                  Need Inspiration?
+                </button>
+                <span aria-hidden="true" className="text-slate-300">
+                  ·
+                </span>
+                <Link
+                  href={`/g/${slug}/cook/new`}
+                  className="transition hover:text-slate-900"
+                >
+                  Add recipe manually
+                </Link>
+              </div>
             </div>
 
             {importStatusLabel && (
@@ -939,9 +953,9 @@ export default function CookClient({
           <div
             ref={inspirationPopoverRef}
             style={inspirationPopoverStyles}
-            className="fixed z-50 mt-2 w-80 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-700 shadow-lg"
+            className="fixed z-50 mt-2 w-96 rounded-xl border border-slate-200 bg-white px-5 py-4 text-xs text-slate-700 shadow-lg"
           >
-            <p className="text-xs font-semibold text-slate-700">
+            <p className="text-xs font-semibold text-slate-700 whitespace-nowrap">
               Add recipes from any URL, including{" "}
               <span className="inline-flex items-center gap-1">
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 text-[9px] font-bold text-white">
