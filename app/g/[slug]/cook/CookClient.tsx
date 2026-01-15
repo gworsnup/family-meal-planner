@@ -605,59 +605,61 @@ export default function CookClient({
         <div className="w-full lg:max-w-2xl">
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
             <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`flex w-full flex-1 flex-col gap-2 text-sm text-slate-600 transition-shadow ${
-                    inspirationOpen ? "rounded-lg ring-2 ring-slate-300/60" : ""
-                  }`}
-                >
-                  <label className="sr-only" htmlFor="recipeUrl">
-                    Recipe URL
-                  </label>
-                  <input
-                    id="recipeUrl"
-                    type="url"
-                    ref={urlInputRef}
-                    value={importUrl}
-                    onChange={(event) => {
-                      setImportUrl(event.target.value);
-                      if (importStatus === "failed") {
-                        setImportStatus("idle");
-                        setImportMessage(null);
-                      }
-                    }}
-                    placeholder="Paste recipe URL (TikTok, Instagram, any site)…"
-                    disabled={isImportActive}
-                    aria-describedby="recipe-url-helper"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 disabled:bg-slate-100 disabled:text-slate-400"
-                  />
-                  <span
-                    id="recipe-url-helper"
-                    className="mt-2 text-xs text-slate-500"
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`flex w-full flex-1 flex-col text-sm text-slate-600 transition-shadow ${
+                      inspirationOpen ? "rounded-lg ring-2 ring-slate-300/60" : ""
+                    }`}
                   >
-                    Tip: Any public recipe link works — just paste it.
-                  </span>
+                    <label className="sr-only" htmlFor="recipeUrl">
+                      Recipe URL
+                    </label>
+                    <input
+                      id="recipeUrl"
+                      type="url"
+                      ref={urlInputRef}
+                      value={importUrl}
+                      onChange={(event) => {
+                        setImportUrl(event.target.value);
+                        if (importStatus === "failed") {
+                          setImportStatus("idle");
+                          setImportMessage(null);
+                        }
+                      }}
+                      placeholder="Paste recipe URL (TikTok, Instagram, any site)…"
+                      disabled={isImportActive}
+                      aria-describedby="recipe-url-helper"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 disabled:bg-slate-100 disabled:text-slate-400"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    ref={addButtonRef}
+                    onClick={handleImport}
+                    disabled={isImportActive}
+                    className={`rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 ${
+                      isPulsing ? "animate-soft-pulse" : ""
+                    }`}
+                  >
+                    <span className="mr-2 inline-flex h-4 w-4 items-center justify-center">
+                      <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        className="h-4 w-4 fill-current"
+                      >
+                        <path d="M12 2l1.4 4.2L18 7.6l-4.2 1.4L12 13.2l-1.4-4.2L6.4 7.6l4.2-1.4L12 2zm7 10l.9 2.7 2.7.9-2.7.9L19 19l-.9-2.7-2.7-.9 2.7-.9L19 12zm-14 1l.9 2.7 2.7.9-2.7.9L5 20l-.9-2.7-2.7-.9 2.7-.9L5 13z" />
+                      </svg>
+                    </span>
+                    {isImportPending ? "Starting…" : "Add from URL"}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  ref={addButtonRef}
-                  onClick={handleImport}
-                  disabled={isImportActive}
-                  className={`rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 ${
-                    isPulsing ? "animate-soft-pulse" : ""
-                  }`}
+                <span
+                  id="recipe-url-helper"
+                  className="text-xs text-slate-500"
                 >
-                  <span className="mr-2 inline-flex h-4 w-4 items-center justify-center">
-                    <svg
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                      className="h-4 w-4 fill-current"
-                    >
-                      <path d="M12 2l1.4 4.2L18 7.6l-4.2 1.4L12 13.2l-1.4-4.2L6.4 7.6l4.2-1.4L12 2zm7 10l.9 2.7 2.7.9-2.7.9L19 19l-.9-2.7-2.7-.9 2.7-.9L19 12zm-14 1l.9 2.7 2.7.9-2.7.9L5 20l-.9-2.7-2.7-.9 2.7-.9L5 13z" />
-                    </svg>
-                  </span>
-                  {isImportPending ? "Starting…" : "Add from URL"}
-                </button>
+                  Tip: Any public recipe link works — just paste it.
+                </span>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
               <button
