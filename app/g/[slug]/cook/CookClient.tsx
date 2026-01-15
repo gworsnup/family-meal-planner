@@ -111,13 +111,13 @@ function renderTagPills(tags: RecipeItem["tags"]) {
       {visible.map((tag) => (
         <span
           key={tag.id}
-          className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600"
+          className="rounded-full bg-black px-2.5 py-0.5 text-[11px] font-medium text-white"
         >
           {tag.name}
         </span>
       ))}
       {remaining > 0 && (
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+        <span className="rounded-full bg-black px-2.5 py-0.5 text-[11px] font-medium text-white/80">
           +{remaining}
         </span>
       )}
