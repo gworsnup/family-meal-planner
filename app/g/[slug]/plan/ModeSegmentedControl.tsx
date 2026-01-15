@@ -33,11 +33,11 @@ export function ModeSegmentedControl({ value, onChange }: ModeSegmentedControlPr
       role="radiogroup"
       aria-label="Plan mode"
       onKeyDown={handleKeyDown}
-      className="relative flex h-9 w-full items-center rounded-full border border-border bg-muted p-1"
+      className="relative flex w-full items-center rounded-full border border-slate-200 bg-[#fafafa] p-1 text-xs font-semibold text-slate-600"
     >
       <div
         aria-hidden="true"
-        className={`pointer-events-none absolute inset-y-1 left-1 z-0 w-1/2 rounded-full border border-border bg-background shadow-sm transition-transform duration-150 ease-out ${
+        className={`pointer-events-none absolute inset-y-1 left-1 z-0 w-1/2 rounded-full bg-slate-900 transition-transform duration-150 ease-out ${
           value === "recipes" ? "translate-x-0" : "translate-x-full"
         }`}
       />
@@ -51,10 +51,10 @@ export function ModeSegmentedControl({ value, onChange }: ModeSegmentedControlPr
             aria-checked={isSelected}
             tabIndex={isSelected ? 0 : -1}
             onClick={() => onChange(option.value)}
-            className={`relative z-10 flex h-full w-1/2 items-center justify-center rounded-full text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 focus-visible:ring-offset-2 ${
+            className={`relative z-10 flex h-8 w-1/2 items-center justify-center rounded-full text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 focus-visible:ring-offset-2 ${
               isSelected
-                ? "text-slate-900"
-                : "text-muted-foreground hover:text-slate-700"
+                ? "text-white"
+                : "text-slate-600 hover:bg-white"
             }`}
           >
             {option.label}
