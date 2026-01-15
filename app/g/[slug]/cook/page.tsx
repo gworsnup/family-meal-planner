@@ -147,27 +147,23 @@ export default async function CookPage({
     const andFilters: Prisma.RecipeWhereInput[] = Array.isArray(where.AND)
       ? [...where.AND]
       : [];
-      ...andFilters,
+    andFilters.push({
+      OR: [{ sourceUrl: { equals: null } }, { sourceUrl: { equals: "" } }],
+    });
+    andFilters.push({ import: { is: null } });
+    where.AND = andFilters;
       const andFilters: Prisma.RecipeWhereInput[] = Array.isArray(where.AND)
         ? [...where.AND]
         : [];
-        ...andFilters,
-      const andFilters: Prisma.RecipeWhereInput[] = Array.isArray(where.AND)
-        ? [...where.AND]
-        : [];
-      const orFilters: Prisma.RecipeWhereInput[] = [];
-      orFilters.push({
-        sourceName: { equals: source, mode: "insensitive" },
+      andFilters.push({
+        OR: [{ sourceUrl: { equals: null } }, { sourceUrl: { equals: "" } }],
       });
-      orFilters.push({
+      andFilters.push({ import: { is: null } });
+      where.AND = andFilters;
         sourceUrl: { contains: source, mode: "insensitive" },
       });
-        ...andFilters,
-          OR: orFilters,
-  } = {
-    workspaceId: workspace.id,
-  };
-
+      andFilters.push({ OR: orFilters });
+      where.AND = andFilters;
   if (q.trim()) {
     where.title = { contains: q.trim(), mode: "insensitive" };
   }
