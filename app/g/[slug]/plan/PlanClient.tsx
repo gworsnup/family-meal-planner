@@ -1353,7 +1353,7 @@ export default function PlanClient({
             <h1 className="text-lg font-semibold text-slate-900">{workspaceName}</h1>
             <p className="text-xs text-slate-500">Plan meals for the week ahead.</p>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-[#fafafa] p-1 text-xs font-semibold text-slate-600">
+          <div className="flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-[#fafafa] p-1 text-xs font-semibold text-slate-600">
             <button
               type="button"
               onClick={() => setLeftTab("recipes")}
@@ -1387,25 +1387,19 @@ export default function PlanClient({
                   placeholder="Search recipes"
                   className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 />
-                <button
-                  type="button"
-                  onClick={() => setFiltersOpen((prev) => !prev)}
-                  aria-expanded={filtersOpen}
-                  aria-controls={filtersId}
-                  className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-[#fafafa]"
-                >
-                  <span>Filters</span>
-                  <svg
-                    viewBox="0 0 20 20"
-                    aria-hidden="true"
-                    className={`h-4 w-4 text-slate-400 transition ${filtersOpen ? "rotate-180" : ""}`}
+                <p className="text-[11px] text-slate-400">
+                  <button
+                    type="button"
+                    onClick={() => setFiltersOpen((prev) => !prev)}
+                    aria-expanded={filtersOpen}
+                    aria-controls={filtersId}
+                    aria-label={filtersOpen ? "Filters, click to hide" : "Filters, click to expand"}
+                    className="font-semibold text-slate-900"
                   >
-                    <path
-                      fill="currentColor"
-                      d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
-                    />
-                  </svg>
-                </button>
+                    Filters
+                  </button>{" "}
+                  · {filteredRecipes.length} recipes · drag into calendar
+                </p>
                 {filtersOpen ? (
                   <div id={filtersId} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
                     <select
@@ -1440,9 +1434,6 @@ export default function PlanClient({
                     </select>
                   </div>
                 ) : null}
-                <p className="text-[11px] text-slate-400">
-                  {filteredRecipes.length} recipes · drag into calendar
-                </p>
               </div>
               <div className="flex-1 overflow-y-auto pr-1">
                 <div className="space-y-2">

@@ -17,6 +17,10 @@ const workspaceSchema = z.object({
   name: z.string().min(1, "Workspace name is required."),
 });
 
+const workspaceUpdateSchema = workspaceSchema.extend({
+  workspaceId: z.string().min(1, "Workspace not found."),
+});
+
 const userSchema = z.object({
   email: z.string().email("Enter a valid email address."),
   password: z.string().min(8, "Password must be at least 8 characters."),
@@ -83,6 +87,32 @@ export async function deleteWorkspaceAction(formData: FormData) {
 
   await prisma.workspace.delete({
     where: { id: workspaceId },
+  });
+
+  revalidatePath("/admin");
+}
+
+export async function updateWorkspaceNameAction(formData: FormData) {
+  await requireAdmin();
+  const parsed = workspaceUpdateSchema.safeParse({
+    workspaceId: formData.get("workspaceId"),
+    name: formData.get("name"),
+  });
+
+  if (!parsed.success) {
+    const message =
+      parsed.error.issues[0]?.message ?? "Workspace name is required.";
+    throw new Error(message);
+  }
+
+  const name = parsed.data.name.trim();
+  if (!name) {
+    throw new Error("Workspace name is required.");
+  }
+
+  await prisma.workspace.update({
+    where: { id: parsed.data.workspaceId },
+    data: { name },
   });
 
   revalidatePath("/admin");
