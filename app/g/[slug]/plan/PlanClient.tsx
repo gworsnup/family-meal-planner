@@ -1353,7 +1353,7 @@ export default function PlanClient({
             <h1 className="text-lg font-semibold text-slate-900">{workspaceName}</h1>
             <p className="text-xs text-slate-500">Plan meals for the week ahead.</p>
           </div>
-          <div className="flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-[#fafafa] p-1 text-xs font-semibold text-slate-600">
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-[#fafafa] p-1 text-xs font-semibold text-slate-600">
             <button
               type="button"
               onClick={() => setLeftTab("recipes")}
@@ -1496,7 +1496,18 @@ export default function PlanClient({
               <div className="border-t border-slate-100 pt-3">
                 <div className="mb-2 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold text-slate-700">Smart Templates</p>
+                    <p className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                      <span className="flex h-4 w-4 items-center justify-center text-slate-700">
+                        <svg
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                          className="h-3.5 w-3.5 fill-current"
+                        >
+                          <path d="M12 2l1.4 4.2L18 7.6l-4.2 1.4L12 13.2l-1.4-4.2L6.4 7.6l4.2-1.4L12 2zm7 10l.9 2.7 2.7.9-2.7.9L19 19l-.9-2.7-2.7-.9 2.7-.9L19 12zm-14 1l.9 2.7 2.7.9-2.7.9L5 20l-.9-2.7-2.7-.9 2.7-.9L5 13z" />
+                        </svg>
+                      </span>
+                      Smart Templates
+                    </p>
                     <p className="text-[11px] text-slate-400">
                       Drop smart templates here to auto-generate meals.
                     </p>
