@@ -62,25 +62,17 @@ function CategorySection({
 }
 
 const SMART_CATEGORY_EMOJI: Record<string, string> = {
-  produce: "🥦",
-  fruit: "🍎",
-  fruits: "🍎",
-  vegetables: "🥕",
-  veggie: "🥕",
-  veggies: "🥕",
-  dairy: "🧀",
-  meat: "🥩",
-  seafood: "🐟",
-  bakery: "🥖",
-  pantry: "🥫",
+  "fresh produce (fruit, veg, fresh herbs)": "🥕🥦🍎",
+  "meat & seafood": "🥩🐟🍤",
+  "dairy, eggs, cheese & fridge": "🥛🥚🧀",
+  "dry herbs & spices": "🌿🧂🌶️",
+  "condiments & sauces": "🍅🫙🥫",
+  "pasta & grains": "🍝🌾🍚",
+  "oils & vinegars": "🫒🍶🍾",
+  "flours, bakery & sugars": "🍞🌾🍬",
+  "pantry (biscuits, tins, other)": "🥫🍪📦",
   frozen: "🧊",
-  beverages: "🥤",
-  snacks: "🍿",
-  spices: "🧂",
-  grains: "🌾",
-  pasta: "🍝",
-  condiments: "🍯",
-  canned: "🥫",
+  other: "📦🔧✨",
 };
 
 function getSmartCategoryEmoji(label: string) {
