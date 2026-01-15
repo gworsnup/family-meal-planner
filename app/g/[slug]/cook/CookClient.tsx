@@ -895,7 +895,7 @@ export default function CookClient({
             onClick={() => setInspirationOpen(false)}
           >
             <div
-              className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white px-6 py-5 text-sm text-slate-700 shadow-xl"
+              className="relative w-full max-w-2xl rounded-2xl border border-slate-200 bg-white px-6 py-5 text-sm text-slate-700 shadow-xl"
               onClick={(event) => event.stopPropagation()}
             >
               <button
