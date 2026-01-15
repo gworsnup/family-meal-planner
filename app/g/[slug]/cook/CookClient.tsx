@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+  type CSSProperties,
+} from "react";
+import { createPortal } from "react-dom";
 import RatingStars from "./RatingStars";
 import CookingViewOverlay from "./CookingViewOverlay";
 import RecipeOverlay from "./RecipeOverlay";
@@ -66,6 +75,19 @@ const sortOptions: Array<{ label: string; value: `${SortField}:${SortDirection}`
   { label: "Total time (long → short)", value: "totalTimeMinutes:desc" },
   { label: "Source (A–Z)", value: "sourceName:asc" },
   { label: "Source (Z–A)", value: "sourceName:desc" },
+];
+
+const inspirationLinks = [
+  {
+    label: "BBC Good Food",
+    href: "https://www.bbcgoodfood.com/recipes/collection/easy-dinner-recipes",
+  },
+  { label: "Love & Lemons", href: "https://www.loveandlemons.com/recipes/" },
+  { label: "Delicious", href: "https://www.deliciousmagazine.co.uk/recipes/" },
+  { label: "Sainsburys", href: "https://www.sainsburys.co.uk/gol-ui/recipes" },
+  { label: "Waitrose", href: "https://www.waitrose.com/ecom/recipes/all-recipes" },
+  { label: "Damn Delicious", href: "https://damndelicious.net/recipe-index/" },
+  { label: "Jamie Oliver", href: "https://www.jamieoliver.com/recipes/all/" },
 ];
 
 function formatSource(sourceName?: string | null, sourceUrl?: string | null) {
@@ -156,6 +178,11 @@ export default function CookClient({
   const [importId, setImportId] = useState<string | null>(null);
   const [importRecipeId, setImportRecipeId] = useState<string | null>(null);
   const [importSourceUrl, setImportSourceUrl] = useState<string | null>(null);
+  const [inspirationOpen, setInspirationOpen] = useState(false);
+  const inspirationTriggerRef = useRef<HTMLButtonElement>(null);
+  const inspirationPopoverRef = useRef<HTMLDivElement>(null);
+  const [inspirationPopoverStyles, setInspirationPopoverStyles] =
+    useState<CSSProperties>({});
 
   const isSocialImportUrl = (url: string | null) => {
     if (!url) return false;
@@ -191,6 +218,77 @@ export default function CookClient({
   const isCookingView = currentParams.get("cookView") === "1";
 
   const [searchText, setSearchText] = useState(currentParams.get("q") ?? q);
+
+  useEffect(() => {
+    if (!inspirationOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (target && inspirationTriggerRef.current?.contains(target)) return;
+      if (target && inspirationPopoverRef.current?.contains(target)) return;
+      setInspirationOpen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setInspirationOpen(false);
+    };
+
+    window.addEventListener("mousedown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [inspirationOpen]);
+
+  useEffect(() => {
+    if (!inspirationOpen) return;
+
+    const updatePosition = () => {
+      const trigger = inspirationTriggerRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const popover = inspirationPopoverRef.current;
+      const popoverWidth = popover?.offsetWidth ?? 320;
+      const popoverHeight = popover?.offsetHeight ?? 0;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const horizontalPadding = 12;
+      const verticalPadding = 12;
+
+      let left = Math.min(
+        Math.max(horizontalPadding, rect.left),
+        viewportWidth - popoverWidth - horizontalPadding,
+      );
+      let top = rect.bottom + 8;
+
+      if (popoverHeight && top + popoverHeight > viewportHeight - verticalPadding) {
+        top = rect.top - popoverHeight - 8;
+      }
+
+      top = Math.max(verticalPadding, top);
+      left = Math.max(horizontalPadding, left);
+
+      setInspirationPopoverStyles({
+        top,
+        left,
+        width: popoverWidth,
+      });
+    };
+
+    updatePosition();
+    const frame = window.requestAnimationFrame(updatePosition);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [inspirationOpen]);
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -462,6 +560,15 @@ export default function CookClient({
                   {isImportPending ? "Starting…" : "Add from URL"}
                 </button>
               </div>
+              <button
+                type="button"
+                ref={inspirationTriggerRef}
+                onClick={() => setInspirationOpen((open) => !open)}
+                aria-expanded={inspirationOpen}
+                className="w-fit text-xs font-semibold text-slate-600 transition hover:text-slate-900"
+              >
+                Need Inspiration?
+              </button>
               <Link
                 href={`/g/${slug}/cook/new`}
                 className="text-xs font-semibold text-slate-600 transition hover:text-slate-900"
@@ -824,6 +931,59 @@ export default function CookClient({
             recipe={selectedCookingRecipe}
             onClose={() => updateParams({ cookRecipeId: null, cookView: null })}
           />
+        )}
+
+      {inspirationOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={inspirationPopoverRef}
+            style={inspirationPopoverStyles}
+            className="fixed z-50 mt-2 w-80 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-700 shadow-lg"
+          >
+            <p className="text-xs font-semibold text-slate-700">
+              Add recipes from any URL, including{" "}
+              <span className="inline-flex items-center gap-1">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 text-[9px] font-bold text-white">
+                  TT
+                </span>
+                TikTok
+              </span>{" "}
+              or{" "}
+              <span className="inline-flex items-center gap-1">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 via-pink-500 to-purple-600 text-[9px] font-bold text-white">
+                  IG
+                </span>
+                Instagram
+              </span>
+              .
+            </p>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Just copy/paste the recipe URL and hit &quot;Add from URL&quot;!
+            </p>
+            <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              Need inspiration?
+            </p>
+            <div className="mt-2 flex flex-wrap gap-x-1.5 gap-y-1 text-xs font-semibold text-slate-600">
+              {inspirationLinks.map((link, index) => (
+                <span key={link.href} className="flex items-center gap-1">
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setInspirationOpen(false)}
+                    className="transition hover:text-slate-900"
+                  >
+                    {link.label}
+                  </a>
+                  {index < inspirationLinks.length - 1 && (
+                    <span className="text-slate-300">·</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          </div>,
+          document.body,
         )}
     </div>
   );
