@@ -523,7 +523,7 @@ function WeekEventCard({
           type="button"
           onClick={handleViewRecipe}
           onPointerDown={(event) => event.stopPropagation()}
-          className="w-full rounded-full bg-[#0b1220] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#111a2e]"
+          className="w-full rounded-full bg-[#0b1220] px-4 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-[#111a2e] whitespace-nowrap"
         >
           View recipe
         </button>
@@ -531,7 +531,7 @@ function WeekEventCard({
           type="button"
           onClick={handleCookingView}
           onPointerDown={(event) => event.stopPropagation()}
-          className="w-full rounded-full bg-[#0b1220] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#111a2e]"
+          className="w-full rounded-full bg-[#0b1220] px-4 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-[#111a2e] whitespace-nowrap"
         >
           Cooking view
         </button>
@@ -1491,6 +1491,22 @@ export default function PlanClient({
                       No templates yet. Save a week or month from your plan to reuse it here.
                     </div>
                   ) : null}
+                </div>
+              </div>
+              <div className="border-t border-slate-100 pt-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-700">Smart Templates</p>
+                    <p className="text-[11px] text-slate-400">
+                      Drop smart templates here to auto-generate meals.
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
+                    Smart
+                  </span>
+                </div>
+                <div className="rounded-xl border border-dashed border-slate-200 bg-[#fafafa] p-4 text-center text-xs text-slate-400">
+                  Smart templates will appear here soon.
                 </div>
               </div>
             </>

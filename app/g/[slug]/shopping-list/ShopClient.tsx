@@ -416,10 +416,19 @@ export default function ShopClient({
                       <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
                         {category.items.map((item) => {
                           const isChecked = checkedItems.has(item.id);
+                          const isHighlighted =
+                            hoverRecipeId &&
+                            item.provenance.some(
+                              (source) => source.sourceRecipeId === hoverRecipeId,
+                            );
                           return (
                             <li
                               key={item.id}
-                              className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:border-slate-300"
+                              className={`flex items-start gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 transition ${
+                                isHighlighted
+                                  ? "border-slate-300 bg-[#fcfcfc]"
+                                  : "bg-white hover:border-slate-300"
+                              }`}
                             >
                               <input
                                 type="checkbox"
