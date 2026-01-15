@@ -403,7 +403,7 @@ export default function CookClient({
 
         <div className="w-full lg:max-w-2xl">
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-3">
               <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
                 <label className="flex w-full flex-1 flex-col gap-2 text-sm text-slate-600">
                   <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -428,16 +428,16 @@ export default function CookClient({
                   type="button"
                   onClick={handleImport}
                   disabled={isImportActive}
-                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-[#fcfcfc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                 >
                   {isImportPending ? "Starting…" : "Add from URL"}
                 </button>
               </div>
               <Link
                 href={`/g/${slug}/cook/new`}
-                className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30"
+                className="text-xs font-semibold text-slate-600 transition hover:text-slate-900"
               >
-                Add recipe
+                Add recipe manually
               </Link>
             </div>
 
