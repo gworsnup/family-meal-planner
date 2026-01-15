@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import RatingStars from "./RatingStars";
+import RecipeTagsMultiSelect from "./RecipeTagsMultiSelect";
 import {
   addOrCreateTagToRecipe,
   deleteRecipe,
@@ -94,7 +95,6 @@ export default function RecipeOverlay({
   const [showPhotoInput, setShowPhotoInput] = useState(false);
   const [workspaceTags, setWorkspaceTags] = useState<RecipeDetail["tags"]>([]);
   const [recipeTags, setRecipeTags] = useState<RecipeDetail["tags"]>(recipe.tags);
-  const [tagSearch, setTagSearch] = useState("");
   const [isTagPopoverOpen, setIsTagPopoverOpen] = useState(false);
   const [tagMessage, setTagMessage] = useState<string | null>(null);
 
@@ -104,7 +104,6 @@ export default function RecipeOverlay({
     setShowPhotoInput(false);
     setRecipeTags(recipe.tags);
     setIsTagPopoverOpen(false);
-    setTagSearch("");
   }, [initialForm]);
 
   useEffect(() => {
@@ -130,13 +129,16 @@ export default function RecipeOverlay({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
+      if (event.key !== "Escape") return;
+      if (isTagPopoverOpen) {
+        setIsTagPopoverOpen(false);
+        return;
       }
+      onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [isTagPopoverOpen, onClose]);
 
   const handleSave = () => {
     startTransition(async () => {
@@ -208,8 +210,6 @@ export default function RecipeOverlay({
       }
       return [...prev, tempTag].sort((a, b) => a.name.localeCompare(b.name));
     });
-    setTagSearch("");
-
     startTagTransition(async () => {
       try {
         const result = await addOrCreateTagToRecipe(slug, recipe.id, formattedName);
@@ -229,19 +229,6 @@ export default function RecipeOverlay({
       }
     });
   };
-
-  const normalizedSearch = normalizeTagName(tagSearch);
-  const filteredTags = useMemo(() => {
-    if (!normalizedSearch) return workspaceTags;
-    return workspaceTags.filter((tag) =>
-      normalizeTagName(tag.name).includes(normalizedSearch),
-    );
-  }, [normalizedSearch, workspaceTags]);
-  const exactMatch = normalizedSearch
-    ? workspaceTags.find(
-        (tag) => normalizeTagName(tag.name) === normalizedSearch,
-      )
-    : null;
 
   return (
     <div
@@ -579,99 +566,15 @@ export default function RecipeOverlay({
               </div>
 
               <div className="grid gap-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                    Tags
-                  </span>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setIsTagPopoverOpen((prev) => !prev)}
-                      disabled={isTagPending}
-                      className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
-                    >
-                      Add tag
-                    </button>
-                    {isTagPopoverOpen && (
-                      <div className="absolute right-0 z-10 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
-                        <input
-                          type="text"
-                          value={tagSearch}
-                          onChange={(event) => setTagSearch(event.target.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" && normalizedSearch && !exactMatch) {
-                              event.preventDefault();
-                              handleCreateTag(tagSearch);
-                              setIsTagPopoverOpen(false);
-                            }
-                          }}
-                          placeholder="Search tags…"
-                          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-                        />
-                        <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-slate-100">
-                          {filteredTags.length > 0 ? (
-                            filteredTags.map((tag) => {
-                              const isApplied = recipeTags.some(
-                                (item) => item.id === tag.id,
-                              );
-                              return (
-                                <button
-                                  key={tag.id}
-                                  type="button"
-                                  onClick={() => handleToggleTag(tag.id)}
-                                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                                >
-                                  <span>{tag.name}</span>
-                                  {isApplied && (
-                                    <span className="text-xs font-semibold text-slate-500">
-                                      ✓
-                                    </span>
-                                  )}
-                                </button>
-                              );
-                            })
-                          ) : (
-                            <div className="px-3 py-2 text-sm text-slate-400">
-                              No tags yet.
-                            </div>
-                          )}
-                        </div>
-                        <div className="mt-2 border-t border-slate-100 pt-2">
-                          {normalizedSearch && !exactMatch ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                handleCreateTag(tagSearch);
-                                setIsTagPopoverOpen(false);
-                              }}
-                              className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                            >
-                              Create “{formatTagName(tagSearch)}”
-                            </button>
-                          ) : (
-                            <div className="px-3 py-2 text-sm text-slate-400">
-                              Start typing to create a tag.
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {recipeTags.length > 0 ? (
-                    recipeTags.map((tag) => (
-                      <span
-                        key={tag.id}
-                        className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600"
-                      >
-                        {tag.name}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-sm text-slate-400">No tags yet.</span>
-                  )}
-                </div>
+                <RecipeTagsMultiSelect
+                  selectedTags={recipeTags}
+                  workspaceTags={workspaceTags}
+                  isOpen={isTagPopoverOpen}
+                  isPending={isTagPending}
+                  onOpenChange={setIsTagPopoverOpen}
+                  onToggle={handleToggleTag}
+                  onCreateTag={handleCreateTag}
+                />
                 {isEditing && (
                   <label className="flex items-center gap-2 text-sm text-slate-600">
                     <input
