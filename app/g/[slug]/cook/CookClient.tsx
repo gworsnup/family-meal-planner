@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
 } from "react";
@@ -75,17 +76,26 @@ const sortOptions: Array<{ label: string; value: `${SortField}:${SortDirection}`
   { label: "Source (Z–A)", value: "sourceName:desc" },
 ];
 
-const inspirationLinks = [
+const inspirationSites = [
   {
-    label: "BBC Good Food",
-    href: "https://www.bbcgoodfood.com/recipes/collection/easy-dinner-recipes",
+    name: "BBC Good Food",
+    url: "https://www.bbcgoodfood.com",
+    sample: "https://www.bbcgoodfood.com/recipes/easy-chicken-curry",
   },
-  { label: "Love & Lemons", href: "https://www.loveandlemons.com/recipes/" },
-  { label: "Delicious", href: "https://www.deliciousmagazine.co.uk/recipes/" },
-  { label: "Sainsburys", href: "https://www.sainsburys.co.uk/gol-ui/recipes" },
-  { label: "Waitrose", href: "https://www.waitrose.com/ecom/recipes/all-recipes" },
-  { label: "Damn Delicious", href: "https://damndelicious.net/recipe-index/" },
-  { label: "Jamie Oliver", href: "https://www.jamieoliver.com/recipes/all/" },
+  {
+    name: "Jamie Oliver",
+    url: "https://www.jamieoliver.com/recipes",
+    sample: "https://www.jamieoliver.com/recipes/chicken-recipes/crispy-garlicky-chicken",
+  },
+  {
+    name: "Love & Lemons",
+    url: "https://www.loveandlemons.com/recipes/",
+    sample: "https://www.loveandlemons.com/vegetarian-lasagna/",
+  },
+  { name: "Sainsbury’s", url: "https://www.sainsburys.co.uk/gol-ui/recipes" },
+  { name: "Waitrose", url: "https://www.waitrose.com/ecom/recipes/all-recipes" },
+  { name: "Damn Delicious", url: "https://damndelicious.net/recipe-index/" },
+  { name: "Delicious", url: "https://www.deliciousmagazine.co.uk/recipes/" },
 ];
 
 function formatSource(sourceName?: string | null, sourceUrl?: string | null) {
@@ -177,6 +187,13 @@ export default function CookClient({
   const [importRecipeId, setImportRecipeId] = useState<string | null>(null);
   const [importSourceUrl, setImportSourceUrl] = useState<string | null>(null);
   const [inspirationOpen, setInspirationOpen] = useState(false);
+  const [isPulsing, setIsPulsing] = useState(false);
+  const urlInputRef = useRef<HTMLInputElement>(null);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
+  const inspirationDialogRef = useRef<HTMLDivElement>(null);
+  const inspirationTitleRef = useRef<HTMLHeadingElement>(null);
+  const closeTimeoutRef = useRef<number | null>(null);
+  const pulseTimeoutRef = useRef<number | null>(null);
 
   const isSocialImportUrl = (url: string | null) => {
     if (!url) return false;
@@ -213,20 +230,103 @@ export default function CookClient({
 
   const [searchText, setSearchText] = useState(currentParams.get("q") ?? q);
 
+  const handleInspirationClose = useCallback(
+    (options?: { selectInput?: boolean }) => {
+      setInspirationOpen(false);
+      if (closeTimeoutRef.current) {
+        window.clearTimeout(closeTimeoutRef.current);
+      }
+      closeTimeoutRef.current = window.setTimeout(() => {
+        const input = urlInputRef.current;
+        if (input) {
+          input.focus();
+          if (options?.selectInput) {
+            input.select();
+          }
+        }
+        setIsPulsing(true);
+        if (pulseTimeoutRef.current) {
+          window.clearTimeout(pulseTimeoutRef.current);
+        }
+        pulseTimeoutRef.current = window.setTimeout(() => {
+          setIsPulsing(false);
+        }, 700);
+      }, 120);
+    },
+    [],
+  );
+
+  const handleInspirationOpen = useCallback(() => {
+    setInspirationOpen(true);
+  }, []);
+
   useEffect(() => {
     if (!inspirationOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      setInspirationOpen(false);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        handleInspirationClose();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const dialog = inspirationDialogRef.current;
+      if (!dialog) return;
+
+      const focusableElements = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => !element.hasAttribute("disabled"));
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusableElements[0];
+      const last = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey) {
+        if (activeElement === first || activeElement === dialog) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
+  }, [handleInspirationClose, inspirationOpen]);
+
+  useEffect(() => {
+    if (!inspirationOpen) return;
+    const timer = window.setTimeout(() => {
+      inspirationTitleRef.current?.focus();
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [inspirationOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        window.clearTimeout(closeTimeoutRef.current);
+      }
+      if (pulseTimeoutRef.current) {
+        window.clearTimeout(pulseTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -383,6 +483,21 @@ export default function CookClient({
     });
   };
 
+  const handleInspirationSiteClick = useCallback(
+    (site: (typeof inspirationSites)[number]) => {
+      window.open(site.url, "_blank", "noopener,noreferrer");
+      if (site.sample) {
+        setImportUrl(site.sample);
+        if (importStatus === "failed") {
+          setImportStatus("idle");
+          setImportMessage(null);
+        }
+      }
+      handleInspirationClose({ selectInput: Boolean(site.sample) });
+    },
+    [handleInspirationClose, importStatus],
+  );
+
   useEffect(() => {
     if (!importId) return;
     let isActive = true;
@@ -470,12 +585,17 @@ export default function CookClient({
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
             <div className="flex flex-col gap-3">
               <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
-                <label className="flex w-full flex-1 flex-col gap-2 text-sm text-slate-600">
+                <label
+                  className={`flex w-full flex-1 flex-col gap-2 text-sm text-slate-600 transition-shadow ${
+                    inspirationOpen ? "rounded-lg ring-2 ring-slate-300/60" : ""
+                  }`}
+                >
                   <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                     Recipe URL
                   </span>
                   <input
                     type="url"
+                    ref={urlInputRef}
                     value={importUrl}
                     onChange={(event) => {
                       setImportUrl(event.target.value);
@@ -488,12 +608,18 @@ export default function CookClient({
                     disabled={isImportActive}
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 disabled:bg-slate-100 disabled:text-slate-400"
                   />
+                  <span className="text-xs text-slate-500">
+                    Tip: You only need the link — no account required.
+                  </span>
                 </label>
                 <button
                   type="button"
+                  ref={addButtonRef}
                   onClick={handleImport}
                   disabled={isImportActive}
-                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                  className={`rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 ${
+                    isPulsing ? "animate-soft-pulse" : ""
+                  }`}
                 >
                   <span className="mr-2 inline-flex h-4 w-4 items-center justify-center">
                     <svg
@@ -510,14 +636,15 @@ export default function CookClient({
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
                 <button
                   type="button"
-                  onClick={() => setInspirationOpen((open) => !open)}
+                  onClick={handleInspirationOpen}
                   aria-expanded={inspirationOpen}
-                  className="transition hover:text-slate-900"
+                  aria-haspopup="dialog"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50/60 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
                 >
-                  <span aria-hidden="true" className="mr-1">
+                  <span aria-hidden="true">
                     ✨
                   </span>
-                  Need Inspiration?
+                  Find recipe ideas
                 </button>
                 <span aria-hidden="true" className="text-slate-300">
                   ·
@@ -892,60 +1019,99 @@ export default function CookClient({
         createPortal(
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
-            onClick={() => setInspirationOpen(false)}
+            onClick={() => handleInspirationClose()}
           >
             <div
+              ref={inspirationDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="inspiration-title"
+              aria-describedby="inspiration-description"
               className="relative w-full max-w-2xl rounded-2xl border border-slate-200 bg-white px-6 py-5 text-sm text-slate-700 shadow-xl"
               onClick={(event) => event.stopPropagation()}
             >
               <button
                 type="button"
-                onClick={() => setInspirationOpen(false)}
+                onClick={() => handleInspirationClose()}
                 className="absolute right-4 top-4 text-base text-slate-400 transition hover:text-slate-600"
                 aria-label="Close inspiration overlay"
               >
                 ✕
               </button>
-              <p className="text-base font-semibold text-slate-700 whitespace-nowrap">
-                Add recipes from any URL, including{" "}
-                <span className="inline-flex items-center gap-1">
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 text-[9px] font-bold text-white">
-                    TT
-                  </span>
-                  TikTok
-                </span>{" "}
-                or{" "}
-                <span className="inline-flex items-center gap-1">
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 via-pink-500 to-purple-600 text-[9px] font-bold text-white">
-                    IG
-                  </span>
-                  Instagram
-                </span>
-                .
-              </p>
-              <p className="mt-2 text-sm text-slate-500">
-                Just copy/paste the recipe URL and hit &quot;Add from URL&quot;!
-              </p>
-              <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Need inspiration?
-              </p>
-              <div className="mt-2 flex flex-wrap gap-x-1.5 gap-y-1 text-sm font-semibold text-slate-600">
-                {inspirationLinks.map((link, index) => (
-                  <span key={link.href} className="flex items-center gap-1">
-                    <a
-                      href={link.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={() => setInspirationOpen(false)}
-                      className="transition hover:text-slate-900"
-                    >
-                      {link.label}
-                    </a>
-                    {index < inspirationLinks.length - 1 && (
-                      <span className="text-slate-300">·</span>
-                    )}
-                  </span>
-                ))}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h2
+                    id="inspiration-title"
+                    ref={inspirationTitleRef}
+                    tabIndex={-1}
+                    className="text-lg font-semibold text-slate-900"
+                  >
+                    Find recipes online. Save them here.
+                  </h2>
+                  <p id="inspiration-description" className="text-sm text-slate-600">
+                    FamilyTable lets you collect recipes from anywhere on the web — all
+                    in one place.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    How it works
+                  </p>
+                  <ol className="space-y-2 text-sm text-slate-600">
+                    <li className="flex gap-2">
+                      <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-200 text-xs font-semibold text-slate-500">
+                        1
+                      </span>
+                      <div>
+                        <p className="font-semibold text-slate-700">Browse</p>
+                        <p>Visit your favourite recipe sites or social apps.</p>
+                      </div>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-200 text-xs font-semibold text-slate-500">
+                        2
+                      </span>
+                      <div>
+                        <p className="font-semibold text-slate-700">Copy</p>
+                        <p>
+                          Copy the recipe link (TikTok &amp; Instagram work too).
+                        </p>
+                      </div>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-200 text-xs font-semibold text-slate-500">
+                        3
+                      </span>
+                      <div>
+                        <p className="font-semibold text-slate-700">Paste</p>
+                        <p>Paste it into the box above and click Add from URL.</p>
+                      </div>
+                    </li>
+                  </ol>
+                  <p className="text-sm text-slate-600">
+                    We’ll save it so you can plan meals and generate shopping lists
+                    later.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Try these popular sites
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {inspirationSites.map((site) => (
+                      <button
+                        key={site.name}
+                        type="button"
+                        onClick={() => handleInspirationSiteClick(site)}
+                        className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 active:scale-95"
+                      >
+                        {site.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>,
