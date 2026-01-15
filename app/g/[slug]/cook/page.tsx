@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import WorkspaceHeader from "../_components/WorkspaceHeader";
 import CookClient from "./CookClient";
@@ -142,16 +142,28 @@ export default async function CookPage({
   const dir = parseDir(getParam(resolvedSearchParams.dir), sort);
   const source = getParam(resolvedSearchParams.source) ?? "";
 
-  const where: {
-    workspaceId: string;
-    title?: { contains: string; mode: "insensitive" };
-    rating?: { gte: number };
-    AND?: Array<{
-      photoUrl?: { not: string | null };
-      sourceUrl?: { equals: string | null } | null;
-      OR?: Array<{ sourceUrl: { equals: string | null } | null }>;
-      import?: { is: null };
-    }>;
+  const where: Prisma.RecipeWhereInput = {};
+  where.workspaceId = workspace.id;
+    const andFilters: Prisma.RecipeWhereInput[] = Array.isArray(where.AND)
+      ? [...where.AND]
+      : [];
+      ...andFilters,
+      const andFilters: Prisma.RecipeWhereInput[] = Array.isArray(where.AND)
+        ? [...where.AND]
+        : [];
+        ...andFilters,
+      const andFilters: Prisma.RecipeWhereInput[] = Array.isArray(where.AND)
+        ? [...where.AND]
+        : [];
+      const orFilters: Prisma.RecipeWhereInput[] = [];
+      orFilters.push({
+        sourceName: { equals: source, mode: "insensitive" },
+      });
+      orFilters.push({
+        sourceUrl: { contains: source, mode: "insensitive" },
+      });
+        ...andFilters,
+          OR: orFilters,
   } = {
     workspaceId: workspace.id,
   };
