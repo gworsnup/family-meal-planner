@@ -895,18 +895,18 @@ export default function CookClient({
             onClick={() => setInspirationOpen(false)}
           >
             <div
-              className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white px-6 py-5 text-xs text-slate-700 shadow-xl"
+              className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white px-6 py-5 text-sm text-slate-700 shadow-xl"
               onClick={(event) => event.stopPropagation()}
             >
               <button
                 type="button"
                 onClick={() => setInspirationOpen(false)}
-                className="absolute right-4 top-4 text-sm text-slate-400 transition hover:text-slate-600"
+                className="absolute right-4 top-4 text-base text-slate-400 transition hover:text-slate-600"
                 aria-label="Close inspiration overlay"
               >
                 ✕
               </button>
-              <p className="text-xs font-semibold text-slate-700 whitespace-nowrap">
+              <p className="text-base font-semibold text-slate-700 whitespace-nowrap">
                 Add recipes from any URL, including{" "}
                 <span className="inline-flex items-center gap-1">
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 text-[9px] font-bold text-white">
@@ -923,13 +923,13 @@ export default function CookClient({
                 </span>
                 .
               </p>
-              <p className="mt-2 text-[11px] text-slate-500">
+              <p className="mt-2 text-sm text-slate-500">
                 Just copy/paste the recipe URL and hit &quot;Add from URL&quot;!
               </p>
-              <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
                 Need inspiration?
               </p>
-              <div className="mt-2 flex flex-wrap gap-x-1.5 gap-y-1 text-xs font-semibold text-slate-600">
+              <div className="mt-2 flex flex-wrap gap-x-1.5 gap-y-1 text-sm font-semibold text-slate-600">
                 {inspirationLinks.map((link, index) => (
                   <span key={link.href} className="flex items-center gap-1">
                     <a
