@@ -119,6 +119,17 @@ async function fetchRecipeDetail(recipeId: string, workspaceId: string) {
       isPrivate: true,
       createdAt: true,
       updatedAt: true,
+      recipeTags: {
+        orderBy: { tag: { name: "asc" } },
+        select: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
       ingredientLines: {
         orderBy: { position: "asc" },
         select: {
@@ -134,6 +145,7 @@ async function fetchRecipeDetail(recipeId: string, workspaceId: string) {
 
   return {
     ...recipe,
+    tags: recipe.recipeTags.map((recipeTag) => recipeTag.tag),
     createdAt: recipe.createdAt.toISOString(),
     updatedAt: recipe.updatedAt.toISOString(),
   };
@@ -254,11 +266,23 @@ export default async function CookPage({
       cookTimeMinutes: true,
       updatedAt: true,
       isPrivate: true,
+      recipeTags: {
+        orderBy: { tag: { name: "asc" } },
+        select: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
     },
   });
 
   const listRecipes = recipes.map((recipe) => ({
     ...recipe,
+    tags: recipe.recipeTags.map((recipeTag) => recipeTag.tag),
     updatedAt: recipe.updatedAt.toISOString(),
   }));
 

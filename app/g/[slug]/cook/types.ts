@@ -32,6 +32,10 @@ export type RecipeDetail = {
   isPrivate: boolean;
   createdAt: string;
   updatedAt: string;
+  tags: Array<{
+    id: string;
+    name: string;
+  }>;
   ingredientLines: Array<{
     id: string;
     ingredient: string;

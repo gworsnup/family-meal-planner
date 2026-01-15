@@ -22,6 +22,10 @@ type RecipeItem = {
   cookTimeMinutes: number | null;
   updatedAt: string;
   isPrivate: boolean;
+  tags: Array<{
+    id: string;
+    name: string;
+  }>;
 };
 
 type ViewMode = "table" | "grid";
@@ -94,6 +98,31 @@ function formatUpdated(date: Date) {
     day: "numeric",
     year: "numeric",
   }).format(date);
+}
+
+const TAG_DISPLAY_LIMIT = 3;
+
+function renderTagPills(tags: RecipeItem["tags"]) {
+  if (!tags.length) return null;
+  const visible = tags.slice(0, TAG_DISPLAY_LIMIT);
+  const remaining = tags.length - visible.length;
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {visible.map((tag) => (
+        <span
+          key={tag.id}
+          className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600"
+        >
+          {tag.name}
+        </span>
+      ))}
+      {remaining > 0 && (
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+          +{remaining}
+        </span>
+      )}
+    </div>
+  );
 }
 
 function getDefaultDir(sort: SortField) {
@@ -689,13 +718,16 @@ export default function CookClient({
                 >
                   <td className="px-4 py-3">{renderTableThumbnail(recipe)}</td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 font-semibold text-slate-900">
-                      {recipe.title}
-                      {recipe.isPrivate && (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-                          Private
-                        </span>
-                      )}
+                    <div className="font-semibold text-slate-900">
+                      <div className="flex items-center gap-2">
+                        <span>{recipe.title}</span>
+                        {recipe.isPrivate && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                            Private
+                          </span>
+                        )}
+                      </div>
+                      {renderTagPills(recipe.tags)}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-slate-600">
@@ -753,6 +785,7 @@ export default function CookClient({
                 <p className="text-sm text-slate-500">
                   {formatSource(recipe.sourceName, recipe.sourceUrl)}
                 </p>
+                {renderTagPills(recipe.tags)}
                 <div className="text-xs text-slate-500">
                   Total time: {formatMinutes(getTotalMinutes(recipe))}
                 </div>
