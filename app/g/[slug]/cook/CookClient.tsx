@@ -1070,9 +1070,9 @@ export default function CookClient({
                   <Image
                     src="/f-t-logo.png"
                     alt="FamilyTable"
-                    width={140}
-                    height={40}
-                    className="mx-auto h-8 w-auto"
+                    width={220}
+                    height={64}
+                    className="mx-auto h-12 w-auto"
                   />
                   <h2
                     id="inspiration-title"
@@ -1086,7 +1086,7 @@ export default function CookClient({
                     id="inspiration-description"
                     className="text-sm text-slate-600"
                   >
-                    FamilyTable lets you collect recipes from anywhere on the web — all
+                    FamilyTable lets you collect recipes from anywhere on the web - all
                     in one place.
                   </p>
                 </div>
@@ -1132,7 +1132,7 @@ export default function CookClient({
                   </p>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 pt-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                     Try these popular sites
                   </p>
