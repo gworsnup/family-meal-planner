@@ -105,7 +105,6 @@ export default function ShopClient({
   >({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const weekParam = searchParams.get("week");
   const weekStarts = weekLists.map((week) => week.weekStart);
@@ -180,11 +179,6 @@ export default function ShopClient({
     setErrorMessage(null);
   }, [selectedWeek?.weekId]);
 
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timeout = window.setTimeout(() => setToastMessage(null), 6000);
-    return () => window.clearTimeout(timeout);
-  }, [toastMessage]);
 
   const currentSmartList = selectedWeek?.weekId
     ? smartListByWeek[selectedWeek.weekId] ?? null
@@ -208,9 +202,6 @@ export default function ShopClient({
     if (!selectedWeek?.weekId || isGenerating || smartListReady) return;
     setIsGenerating(true);
     setErrorMessage(null);
-    setToastMessage(
-      "Smart List generation can sometimes take a few minutes. Feel free to browse away from this page. We will notify you when generation is complete.",
-    );
     try {
       const response = await fetch("/api/smart-lists/generate", {
         method: "POST",
@@ -501,16 +492,6 @@ export default function ShopClient({
         </div>
       </section>
 
-      {toastMessage ? (
-        <div className="fixed bottom-6 right-6 z-40 flex max-w-sm items-start gap-3 rounded-xl bg-black px-4 py-3 text-xs font-semibold text-white shadow-lg">
-          <span className="flex h-5 w-5 items-center justify-center text-white">
-            <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
-              <path d="M12 2a7 7 0 00-7 7v3.2l-1.6 2.7A1 1 0 004.3 17h15.4a1 1 0 00.9-1.5L19 12.2V9a7 7 0 00-7-7zm0 20a2.5 2.5 0 002.4-1.8h-4.8A2.5 2.5 0 0012 22z" />
-            </svg>
-          </span>
-          <p>{toastMessage}</p>
-        </div>
-      ) : null}
     </div>
   );
 }
