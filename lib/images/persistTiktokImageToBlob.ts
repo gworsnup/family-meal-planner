@@ -19,6 +19,14 @@ function isTikTokImageHostname(hostname: string) {
   return /(^|\.)p16-.*\.tiktokcdn-.*\.com$/i.test(normalized);
 }
 
+function isInstagramImageHostname(hostname: string) {
+  const normalized = hostname.toLowerCase();
+  if (normalized.endsWith("cdninstagram.com")) return true;
+  if (normalized.endsWith("fbcdn.net")) return true;
+  if (normalized.endsWith("instagram.com")) return true;
+  return false;
+}
+
 export function isTikTokImageUrl(imageUrl: string) {
   try {
     const hostname = new URL(imageUrl).hostname;
@@ -28,32 +36,41 @@ export function isTikTokImageUrl(imageUrl: string) {
   }
 }
 
+export function isInstagramImageUrl(imageUrl: string) {
+  try {
+    const hostname = new URL(imageUrl).hostname;
+    return isInstagramImageHostname(hostname);
+  } catch {
+    return false;
+  }
+}
+
 type PersistResult = {
   didPersist: boolean;
   finalUrl: string;
-  isTikTok: boolean;
+  source: "tiktok" | "instagram" | null;
   blobPath?: string;
 };
 
-export async function persistTiktokImageToBlob({
-  imageUrl,
-  recipeId,
-  slug,
-}: {
+type PersistRequest = {
   imageUrl: string;
   recipeId: string;
   slug: string;
-}): Promise<PersistResult> {
-  if (!isTikTokImageUrl(imageUrl)) {
-    return { didPersist: false, finalUrl: imageUrl, isTikTok: false };
-  }
+  source: "tiktok" | "instagram";
+};
 
+async function persistSocialImageToBlob({
+  imageUrl,
+  recipeId,
+  slug,
+  source,
+}: PersistRequest): Promise<PersistResult> {
   const hostname = new URL(imageUrl).hostname.toLowerCase();
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     console.warn(
-      `[RecipeImage] Missing BLOB_READ_WRITE_TOKEN; skipping TikTok image persistence for recipe ${recipeId} (${hostname}).`,
+      `[RecipeImage] Missing BLOB_READ_WRITE_TOKEN; skipping ${source} image persistence for recipe ${recipeId} (${hostname}).`,
     );
-    return { didPersist: false, finalUrl: imageUrl, isTikTok: true };
+    return { didPersist: false, finalUrl: imageUrl, source };
   }
 
   const controller = new AbortController();
@@ -71,7 +88,7 @@ export async function persistTiktokImageToBlob({
 
   if (!response.ok) {
     throw new Error(
-      `[RecipeImage] Failed to fetch TikTok image (HTTP ${response.status}) for recipe ${recipeId} (${hostname}).`,
+      `[RecipeImage] Failed to fetch ${source} image (HTTP ${response.status}) for recipe ${recipeId} (${hostname}).`,
     );
   }
 
@@ -83,7 +100,7 @@ export async function persistTiktokImageToBlob({
 
   if (!contentType || !SUPPORTED_CONTENT_TYPES.has(contentType)) {
     throw new Error(
-      `[RecipeImage] Unsupported TikTok image content type (${contentType ?? "unknown"}) for recipe ${recipeId} (${hostname}).`,
+      `[RecipeImage] Unsupported ${source} image content type (${contentType ?? "unknown"}) for recipe ${recipeId} (${hostname}).`,
     );
   }
 
@@ -92,18 +109,18 @@ export async function persistTiktokImageToBlob({
     const contentLength = Number.parseInt(contentLengthHeader, 10);
     if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES) {
       console.warn(
-        `[RecipeImage] TikTok image too large (${contentLength} bytes); skipping persistence for recipe ${recipeId} (${hostname}).`,
+        `[RecipeImage] ${source} image too large (${contentLength} bytes); skipping persistence for recipe ${recipeId} (${hostname}).`,
       );
-      return { didPersist: false, finalUrl: imageUrl, isTikTok: true };
+      return { didPersist: false, finalUrl: imageUrl, source };
     }
   }
 
   const arrayBuffer = await response.arrayBuffer();
   if (arrayBuffer.byteLength > MAX_IMAGE_BYTES) {
     console.warn(
-      `[RecipeImage] TikTok image too large (${arrayBuffer.byteLength} bytes); skipping persistence for recipe ${recipeId} (${hostname}).`,
+      `[RecipeImage] ${source} image too large (${arrayBuffer.byteLength} bytes); skipping persistence for recipe ${recipeId} (${hostname}).`,
     );
-    return { didPersist: false, finalUrl: imageUrl, isTikTok: true };
+    return { didPersist: false, finalUrl: imageUrl, source };
   }
 
   const extension = SUPPORTED_CONTENT_TYPES.get(contentType) ?? "jpg";
@@ -114,8 +131,50 @@ export async function persistTiktokImageToBlob({
   });
 
   console.log(
-    `[RecipeImage] Persisted TikTok image for recipe ${recipeId} (${hostname}) to ${blobPath}.`,
+    `[RecipeImage] Persisted ${source} image for recipe ${recipeId} (${hostname}) to ${blobPath}.`,
   );
 
-  return { didPersist: true, finalUrl: blob.url, isTikTok: true, blobPath };
+  return { didPersist: true, finalUrl: blob.url, source, blobPath };
+}
+
+export async function persistTiktokImageToBlob({
+  imageUrl,
+  recipeId,
+  slug,
+}: {
+  imageUrl: string;
+  recipeId: string;
+  slug: string;
+}): Promise<PersistResult> {
+  if (!isTikTokImageUrl(imageUrl)) {
+    return { didPersist: false, finalUrl: imageUrl, source: null };
+  }
+
+  return persistSocialImageToBlob({
+    imageUrl,
+    recipeId,
+    slug,
+    source: "tiktok",
+  });
+}
+
+export async function persistInstagramImageToBlob({
+  imageUrl,
+  recipeId,
+  slug,
+}: {
+  imageUrl: string;
+  recipeId: string;
+  slug: string;
+}): Promise<PersistResult> {
+  if (!isInstagramImageUrl(imageUrl)) {
+    return { didPersist: false, finalUrl: imageUrl, source: null };
+  }
+
+  return persistSocialImageToBlob({
+    imageUrl,
+    recipeId,
+    slug,
+    source: "instagram",
+  });
 }

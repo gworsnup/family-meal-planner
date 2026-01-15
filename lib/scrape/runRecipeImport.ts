@@ -2,7 +2,9 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 import {
+  isInstagramImageUrl,
   isTikTokImageUrl,
+  persistInstagramImageToBlob,
   persistTiktokImageToBlob,
 } from "@/lib/images/persistTiktokImageToBlob";
 import { scrapeUrl } from "./scrapeUrl";
@@ -59,7 +61,12 @@ export async function runRecipeImport(importId: string) {
     let imageSourceUrl: string | null = null;
     let imageStoredAt: Date | null = null;
 
-    if (cleanedPhotoUrl && isTikTokImageUrl(cleanedPhotoUrl)) {
+    const sourceUrlForImage = cleanedSourceUrl ?? record.sourceUrl;
+    const isTikTokSource = sourceUrlForImage?.includes("tiktok.com") ?? false;
+    const isInstagramSource =
+      sourceUrlForImage?.includes("instagram.com") ?? false;
+
+    if (cleanedPhotoUrl && isTikTokSource && isTikTokImageUrl(cleanedPhotoUrl)) {
       imageSourceUrl = cleanedPhotoUrl;
       try {
         const result = await persistTiktokImageToBlob({
@@ -82,6 +89,37 @@ export async function runRecipeImport(importId: string) {
         const message = error instanceof Error ? error.message : "Unknown error";
         console.warn(
           `[RecipeImage] Failed to persist TikTok image for recipe ${record.recipeId} (${hostname}). ${message}`,
+        );
+      }
+    }
+
+    if (
+      cleanedPhotoUrl &&
+      isInstagramSource &&
+      isInstagramImageUrl(cleanedPhotoUrl)
+    ) {
+      imageSourceUrl = cleanedPhotoUrl;
+      try {
+        const result = await persistInstagramImageToBlob({
+          imageUrl: cleanedPhotoUrl,
+          recipeId: record.recipeId,
+          slug: record.workspace.slug,
+        });
+        if (result.didPersist) {
+          finalPhotoUrl = result.finalUrl;
+          imageStoredAt = new Date();
+        }
+      } catch (error) {
+        const hostname = (() => {
+          try {
+            return new URL(cleanedPhotoUrl).hostname;
+          } catch {
+            return "unknown-host";
+          }
+        })();
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.warn(
+          `[RecipeImage] Failed to persist Instagram image for recipe ${record.recipeId} (${hostname}). ${message}`,
         );
       }
     }
