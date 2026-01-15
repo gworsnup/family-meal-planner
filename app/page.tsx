@@ -54,7 +54,7 @@ export default async function Home({
             A shared meal planner for your household.
           </p>
           <p className="mt-2 text-xs text-slate-500">
-            Save recipes from TikTok, Instagram, and any site — then plan your
+            Save recipes from TikTok, Instagram, and any site - then plan your
             week in minutes.
           </p>
           <p className="mt-4 text-sm text-slate-500">
