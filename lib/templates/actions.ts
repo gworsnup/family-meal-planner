@@ -1,5 +1,6 @@
 "use server";
 
+import { MealTemplateItemKind } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireWorkspaceUser } from "@/lib/auth";
 import {
@@ -147,7 +148,7 @@ export async function createMealTemplateFromSelection({
     dayCounts.set(dayIndex, (dayCounts.get(dayIndex) ?? 0) + 1);
     return {
       dayIndex,
-      kind: item.type === "TAKEAWAY" ? "TAKEAWAY" : "RECIPE",
+      kind: item.type === "TAKEAWAY" ? MealTemplateItemKind.TAKEAWAY : MealTemplateItemKind.RECIPE,
       recipeId: item.type === "RECIPE" ? item.recipeId : null,
     };
   });
