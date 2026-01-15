@@ -42,6 +42,9 @@ export default async function AdminLayout({
               className="h-10 w-auto"
               priority
             />
+            <span className="text-sm font-semibold text-slate-700">
+              FamilyTable
+            </span>
             <span className="text-sm font-semibold text-slate-600">
               Admin portal
             </span>

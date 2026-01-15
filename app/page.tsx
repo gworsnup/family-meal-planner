@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 
 import LoginForm from "@/app/_components/LoginForm";
 import { getCurrentUser } from "@/lib/auth";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+};
 
 export default async function Home({
   searchParams,
@@ -43,7 +50,14 @@ export default async function Home({
             priority
             className="h-[calc(var(--spacing)*20)] w-auto"
           />
-          <p className="mt-3 text-sm text-slate-500">
+          <p className="mt-3 text-sm font-semibold text-slate-700">
+            A shared meal planner for your household.
+          </p>
+          <p className="mt-2 text-xs text-slate-500">
+            Save recipes from TikTok, Instagram, and any site — then plan your
+            week in minutes.
+          </p>
+          <p className="mt-4 text-sm text-slate-500">
             Sign in to plan meals with your household.
           </p>
         </div>

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import WorkspaceHeader from "../_components/WorkspaceHeader";
@@ -24,6 +25,50 @@ type SourceOption = {
 function getParam(value: string | string[] | undefined) {
   if (Array.isArray(value)) return value[0];
   return value;
+}
+
+async function fetchRecipeTitle(recipeId: string, slug: string) {
+  const recipe = await prisma.recipe.findFirst({
+    where: {
+      id: recipeId,
+      workspace: {
+        slug,
+      },
+    },
+    select: {
+      title: true,
+    },
+  });
+
+  return recipe?.title?.trim() ?? null;
+}
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<SearchParams>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const resolvedSearchParams = await searchParams;
+  const recipeId = getParam(resolvedSearchParams.recipeId);
+
+  let title = "Recipes";
+
+  if (recipeId) {
+    const recipeTitle = await fetchRecipeTitle(recipeId, slug);
+    if (recipeTitle) {
+      title = recipeTitle;
+    }
+  }
+
+  return {
+    title,
+    alternates: {
+      canonical: recipeId ? `/g/${slug}/cook?recipeId=${recipeId}` : `/g/${slug}/cook`,
+    },
+  };
 }
 
 function parseView(value?: string) {
