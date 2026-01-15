@@ -47,6 +47,7 @@ import CookingViewOverlay from "../cook/CookingViewOverlay";
 import RecipeOverlay from "../cook/RecipeOverlay";
 import type { RecipeDetail } from "../cook/types";
 import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
+import { ModeSegmentedControl } from "./ModeSegmentedControl";
 
 type RecipeItem = {
   id: string;
@@ -1353,30 +1354,7 @@ export default function PlanClient({
             <h1 className="text-lg font-semibold text-slate-900">{workspaceName}</h1>
             <p className="text-xs text-slate-500">Plan meals for the week ahead.</p>
           </div>
-          <div className="flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-[#fafafa] p-1 text-xs font-semibold text-slate-600">
-            <button
-              type="button"
-              onClick={() => setLeftTab("recipes")}
-              className={`rounded-full px-3 py-1 transition ${
-                leftTab === "recipes"
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:bg-white"
-              }`}
-            >
-              Recipes
-            </button>
-            <button
-              type="button"
-              onClick={() => setLeftTab("templates")}
-              className={`rounded-full px-3 py-1 transition ${
-                leftTab === "templates"
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:bg-white"
-              }`}
-            >
-              Templates
-            </button>
-          </div>
+          <ModeSegmentedControl value={leftTab} onChange={setLeftTab} />
           {leftTab === "recipes" ? (
             <>
               <div className="space-y-2">
