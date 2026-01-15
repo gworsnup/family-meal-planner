@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import {
   deleteUserAction,
   deleteWorkspaceAction,
+  updateWorkspaceNameAction,
   updateUserWorkspaceAction,
 } from "./actions";
 import WorkspaceForm from "./WorkspaceForm";
@@ -72,7 +73,25 @@ export default async function AdminPage() {
                 workspaces.map((workspace) => (
                   <tr key={workspace.id} className="border-b border-slate-100">
                     <td className="px-4 py-3 font-medium text-slate-900">
-                      {workspace.name}
+                      <form
+                        action={updateWorkspaceNameAction}
+                        className="flex flex-wrap items-center gap-2"
+                      >
+                        <input
+                          type="hidden"
+                          name="workspaceId"
+                          value={workspace.id}
+                        />
+                        <input
+                          type="text"
+                          name="name"
+                          defaultValue={workspace.name}
+                          className="min-w-[180px] rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-700"
+                        />
+                        <button className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900">
+                          Save
+                        </button>
+                      </form>
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       {workspace.slug}

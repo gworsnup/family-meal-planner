@@ -43,6 +43,8 @@ type CookClientProps = {
   q: string;
   minRating: number;
   manualOnly: boolean;
+  source: string;
+  sourceOptions: Array<{ label: string; value: string }>;
   sort: SortField;
   dir: SortDirection;
   selectedRecipe: RecipeDetail | null;
@@ -106,6 +108,8 @@ export default function CookClient({
   q,
   minRating,
   manualOnly,
+  source,
+  sourceOptions,
   sort,
   dir,
   selectedRecipe,
@@ -140,6 +144,7 @@ export default function CookClient({
   const currentManualOnly = currentParams.get("manual")
     ? currentParams.get("manual") === "1"
     : manualOnly;
+  const currentSource = currentParams.get("source") ?? source;
   const currentRecipeId = currentParams.get("recipeId") ?? selectedRecipe?.id ?? null;
   const currentCookRecipeId =
     currentParams.get("cookRecipeId") ?? selectedCookingRecipe?.id ?? null;
@@ -478,6 +483,27 @@ export default function CookClient({
                 <option value="3">3+</option>
                 <option value="4">4+</option>
                 <option value="5">5</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-2 text-sm text-slate-600">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Source
+              </span>
+              <select
+                value={currentSource}
+                onChange={(event) =>
+                  updateParams({
+                    source: event.target.value === "all" ? null : event.target.value,
+                  })
+                }
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+              >
+                {sourceOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
 

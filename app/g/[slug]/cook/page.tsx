@@ -16,6 +16,11 @@ type SortField = (typeof SORT_FIELDS)[number];
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
+type SourceOption = {
+  label: string;
+  value: string;
+};
+
 function getParam(value: string | string[] | undefined) {
   if (Array.isArray(value)) return value[0];
   return value;
@@ -47,6 +52,51 @@ function parseMinRating(value?: string) {
 
 function parseBooleanFlag(value?: string) {
   return value === "1";
+}
+
+function formatSourceLabel(sourceName?: string | null, sourceUrl?: string | null) {
+  if (sourceName?.trim()) return sourceName.trim();
+  if (sourceUrl?.trim()) {
+    try {
+      const url = new URL(sourceUrl);
+      return url.hostname.replace(/^www\./, "");
+    } catch {
+      return sourceUrl;
+    }
+  }
+  return "Manually Added";
+}
+
+function buildSourceOptions(
+  recipes: Array<{ sourceName: string | null; sourceUrl: string | null }>,
+): SourceOption[] {
+  const optionMap = new Map<string, string>();
+  let hasManual = false;
+
+  recipes.forEach(({ sourceName, sourceUrl }) => {
+    if (!sourceName?.trim() && !sourceUrl?.trim()) {
+      hasManual = true;
+      return;
+    }
+    const label = formatSourceLabel(sourceName, sourceUrl);
+    if (label === "Manually Added") {
+      hasManual = true;
+      return;
+    }
+    const valuePrefix = sourceName?.trim() ? "name:" : "url:";
+    const value = `${valuePrefix}${encodeURIComponent(label)}`;
+    optionMap.set(value, label);
+  });
+
+  const options = Array.from(optionMap.entries())
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  if (hasManual) {
+    options.push({ label: "Manually Added", value: "manual" });
+  }
+
+  return [{ label: "All sources", value: "all" }, ...options];
 }
 
 async function fetchRecipeDetail(recipeId: string, workspaceId: string) {
@@ -122,6 +172,7 @@ export default async function CookPage({
   const q = getParam(resolvedSearchParams.q) ?? "";
   const minRating = parseMinRating(getParam(resolvedSearchParams.minRating));
   const manualOnly = parseBooleanFlag(getParam(resolvedSearchParams.manual));
+  const source = getParam(resolvedSearchParams.source) ?? "all";
   const recipeId = getParam(resolvedSearchParams.recipeId);
   const cookRecipeId = getParam(resolvedSearchParams.cookRecipeId);
   const cookView = parseBooleanFlag(getParam(resolvedSearchParams.cookView));
@@ -134,12 +185,17 @@ export default async function CookPage({
     rating?: { gte: number };
     AND?: Array<{
       photoUrl?: { not: string | null };
-      sourceUrl?: { equals: string | null } | null;
+      sourceName?: { equals: string };
+      sourceUrl?: { equals?: string | null; contains?: string; mode?: "insensitive" } | null;
       OR?: Array<{ sourceUrl: { equals: string | null } | null }>;
       import?: { is: null };
     }>;
   } = {
     workspaceId: workspace.id,
+  };
+
+  const addAndClause = (clause: NonNullable<(typeof where)["AND"]>[number]) => {
+    where.AND = [...(where.AND ?? []), clause];
   };
 
   if (q.trim()) {
@@ -151,12 +207,37 @@ export default async function CookPage({
   }
 
   if (manualOnly) {
-    where.AND = [
-      ...(where.AND ?? []),
-      { OR: [{ sourceUrl: { equals: null } }, { sourceUrl: { equals: "" } }] },
-      { import: { is: null } },
-    ];
+    addAndClause({
+      OR: [{ sourceUrl: { equals: null } }, { sourceUrl: { equals: "" } }],
+    });
+    addAndClause({ import: { is: null } });
   }
+
+  if (source && source !== "all") {
+    if (source === "manual") {
+      addAndClause({
+        OR: [{ sourceUrl: { equals: null } }, { sourceUrl: { equals: "" } }],
+      });
+      addAndClause({ import: { is: null } });
+    } else if (source.startsWith("name:")) {
+      const name = decodeURIComponent(source.slice(5));
+      if (name) {
+        addAndClause({ sourceName: { equals: name } });
+      }
+    } else if (source.startsWith("url:")) {
+      const host = decodeURIComponent(source.slice(4));
+      if (host) {
+        addAndClause({ sourceUrl: { contains: host, mode: "insensitive" } });
+      }
+    }
+  }
+
+  const sourceRecipes = await prisma.recipe.findMany({
+    where: { workspaceId: workspace.id },
+    select: { sourceName: true, sourceUrl: true },
+  });
+
+  const sourceOptions = buildSourceOptions(sourceRecipes);
 
   const recipes = await prisma.recipe.findMany({
     where,
@@ -192,7 +273,7 @@ export default async function CookPage({
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#fcfcfc]">
       <WorkspaceHeader
         slug={slug}
         workspaceName={workspace.name}
@@ -209,6 +290,8 @@ export default async function CookPage({
           q={q}
           minRating={minRating}
           manualOnly={manualOnly}
+          source={source}
+          sourceOptions={sourceOptions}
           sort={sort}
           dir={dir}
           selectedRecipe={selectedRecipe}
