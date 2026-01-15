@@ -266,38 +266,38 @@ export async function applyMealTemplateToTarget({
     dateISO: string;
   };
 
-  const itemsToInsert = template.items
-    .map((item) => {
-      const date = addDays(gridStart, item.dayIndex);
-      if (date < rangeStart || date > rangeEnd) return null;
-      const dateISO = formatDateISO(date);
-      if (mode === "MERGE_EMPTY" && existingByDate.has(dateISO)) {
-        return null;
-      }
-      if (item.kind === "TAKEAWAY") {
-        return {
-          date,
-          type: "TAKEAWAY" as const,
-          recipeId: null,
-          title: TAKEAWAY_TITLE,
-          dateISO,
-        };
-      }
-      const recipe = item.recipeId ? recipeMap.get(item.recipeId) : null;
-      if (!recipe) {
-        skipped += 1;
-        return null;
-      }
-      return {
+  const itemsToInsert: InsertItem[] = [];
+  for (const item of template.items) {
+    const date = addDays(gridStart, item.dayIndex);
+    if (date < rangeStart || date > rangeEnd) continue;
+    const dateISO = formatDateISO(date);
+    if (mode === "MERGE_EMPTY" && existingByDate.has(dateISO)) {
+      continue;
+    }
+    if (item.kind === "TAKEAWAY") {
+      itemsToInsert.push({
         date,
-        type: "RECIPE" as const,
-        recipeId: recipe.id,
-        title: recipe.title,
-        photoUrl: recipe.photoUrl,
+        type: "TAKEAWAY",
+        recipeId: null,
+        title: TAKEAWAY_TITLE,
         dateISO,
-      };
-    })
-    .filter((item): item is InsertItem => item !== null);
+      });
+      continue;
+    }
+    const recipe = item.recipeId ? recipeMap.get(item.recipeId) : null;
+    if (!recipe) {
+      skipped += 1;
+      continue;
+    }
+    itemsToInsert.push({
+      date,
+      type: "RECIPE",
+      recipeId: recipe.id,
+      title: recipe.title,
+      photoUrl: recipe.photoUrl,
+      dateISO,
+    });
+  }
 
   const insertData = itemsToInsert.map((item) => ({
     workspaceId: user.workspace.id,
