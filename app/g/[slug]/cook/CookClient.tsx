@@ -126,6 +126,17 @@ export default function CookClient({
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importId, setImportId] = useState<string | null>(null);
   const [importRecipeId, setImportRecipeId] = useState<string | null>(null);
+  const [importSourceUrl, setImportSourceUrl] = useState<string | null>(null);
+
+  const isSocialImportUrl = (url: string | null) => {
+    if (!url) return false;
+    try {
+      const hostname = new URL(url).hostname.toLowerCase();
+      return hostname.includes("tiktok.com") || hostname.includes("instagram.com");
+    } catch {
+      return false;
+    }
+  };
 
   const currentParams = useMemo(
     () => new URLSearchParams(searchParams.toString()),
@@ -294,6 +305,7 @@ export default function CookClient({
         );
         setImportId(nextImportId);
         setImportRecipeId(recipeId);
+        setImportSourceUrl(trimmed);
         setImportStatus("queued");
         updateParams({ recipeId });
         router.refresh();
@@ -350,7 +362,9 @@ export default function CookClient({
       case "queued":
         return "Queued for import…";
       case "running":
-        return "Importing…";
+        return isSocialImportUrl(importSourceUrl)
+          ? "Using AI to parse ingredients & directions…"
+          : "Importing…";
       case "success":
         return "Import complete.";
       case "partial":

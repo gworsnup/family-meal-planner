@@ -131,12 +131,6 @@ export default function WorkspaceHeader({
               {workspaceName}
             </span>
           )}
-          <Link
-            href={`/g/${slug}/cook`}
-            className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white md:hidden"
-          >
-            Recipes
-          </Link>
           {showLogout ? (
             <form action={logoutAction}>
               <button className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20">
