@@ -88,6 +88,34 @@ export async function deleteWorkspaceAction(formData: FormData) {
   revalidatePath("/admin");
 }
 
+export async function updateWorkspaceNameAction(formData: FormData) {
+  await requireAdmin();
+  const workspaceId = formData.get("workspaceId");
+  const nameValue = formData.get("name");
+
+  if (typeof workspaceId !== "string" || !workspaceId) {
+    throw new Error("Workspace not found");
+  }
+
+  const parsed = workspaceSchema.safeParse({ name: nameValue });
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? "Workspace name is required.";
+    throw new Error(message);
+  }
+
+  const name = parsed.data.name.trim();
+  if (!name) {
+    throw new Error("Workspace name is required.");
+  }
+
+  await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: { name },
+  });
+
+  revalidatePath("/admin");
+}
+
 export async function createUserAction(
   _prevState: ActionState,
   formData: FormData,
