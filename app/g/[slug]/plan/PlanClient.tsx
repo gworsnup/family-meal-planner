@@ -47,6 +47,7 @@ import CookingViewOverlay from "../cook/CookingViewOverlay";
 import RecipeOverlay from "../cook/RecipeOverlay";
 import type { RecipeDetail } from "../cook/types";
 import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
+import { ModeSegmentedControl } from "./ModeSegmentedControl";
 
 type RecipeItem = {
   id: string;
