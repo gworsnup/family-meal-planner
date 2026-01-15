@@ -45,6 +45,8 @@ type CookClientProps = {
   manualOnly: boolean;
   sort: SortField;
   dir: SortDirection;
+  sourceFilter: string;
+  sourceOptions: Array<{ label: string; value: string }>;
   selectedRecipe: RecipeDetail | null;
   selectedCookingRecipe: RecipeDetail | null;
 };
@@ -108,6 +110,8 @@ export default function CookClient({
   manualOnly,
   sort,
   dir,
+  sourceFilter,
+  sourceOptions,
   selectedRecipe,
   selectedCookingRecipe,
 }: CookClientProps) {
@@ -122,6 +126,10 @@ export default function CookClient({
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importId, setImportId] = useState<string | null>(null);
   const [importRecipeId, setImportRecipeId] = useState<string | null>(null);
+  const isSocialImport = useMemo(
+    () => /tiktok\.com|instagram\.com/i.test(importUrl),
+    [importUrl],
+  );
 
   const currentParams = useMemo(
     () => new URLSearchParams(searchParams.toString()),
@@ -131,6 +139,7 @@ export default function CookClient({
   const currentView = (currentParams.get("view") as ViewMode | null) ?? view;
   const currentSort = (currentParams.get("sort") as SortField | null) ?? sort;
   const currentDir = (currentParams.get("dir") as SortDirection | null) ?? dir;
+  const currentSource = currentParams.get("source") ?? sourceFilter;
   const storageKey = useMemo(() => `ft_recipes_view_${slug}`, [slug]);
   const currentMinRating = (() => {
     const raw = currentParams.get("minRating");
@@ -345,7 +354,9 @@ export default function CookClient({
       case "queued":
         return "Queued for import…";
       case "running":
-        return "Importing…";
+        return isSocialImport
+          ? "Using AI to parse ingredients & directions…"
+          : "Importing…";
       case "success":
         return "Import complete.";
       case "partial":
@@ -478,6 +489,25 @@ export default function CookClient({
                 <option value="3">3+</option>
                 <option value="4">4+</option>
                 <option value="5">5</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-2 text-sm text-slate-600">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Source
+              </span>
+              <select
+                value={currentSource}
+                onChange={(event) =>
+                  updateParams({ source: event.target.value || null })
+                }
+                className="min-w-[180px] rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+              >
+                {sourceOptions.map((option) => (
+                  <option key={option.value || "all"} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
 

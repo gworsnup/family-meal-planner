@@ -47,25 +47,11 @@ export default function CookingViewOverlay({
         <div className="flex-1 overflow-y-auto px-6 py-6">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)]">
             <div className="space-y-6">
-              {recipe.photoUrl ? (
-                <img
-                  src={recipe.photoUrl}
-                  alt={recipe.title}
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                  className="max-h-[420px] w-full rounded-2xl object-cover"
-                />
-              ) : (
-                <div className="flex h-64 w-full items-center justify-center rounded-2xl bg-slate-100 text-sm text-slate-400">
-                  No photo available
-                </div>
-              )}
-
               <section>
                 <h3 className="text-lg font-semibold text-slate-900">
                   Directions
                 </h3>
-                <div className="mt-3 whitespace-pre-line text-lg leading-relaxed text-slate-700">
+                <div className="mt-3 whitespace-pre-line text-xl leading-relaxed text-slate-700">
                   {recipe.directions?.trim()
                     ? recipe.directions
                     : "No directions added yet."}
@@ -73,24 +59,40 @@ export default function CookingViewOverlay({
               </section>
             </div>
 
-            <aside className="rounded-2xl border border-slate-200 bg-[#fcfcfc]/60 p-5">
-              <h3 className="text-lg font-semibold text-slate-900">
-                Ingredients
-              </h3>
-              {recipe.ingredientLines.length > 0 ? (
-                <ul className="mt-3 list-disc space-y-2 pl-5 text-base text-slate-700">
-                  {recipe.ingredientLines
-                    .slice()
-                    .sort((a, b) => a.position - b.position)
-                    .map((line) => (
-                      <li key={line.id}>{line.ingredient}</li>
-                    ))}
-                </ul>
+            <aside className="space-y-6">
+              {recipe.photoUrl ? (
+                <img
+                  src={recipe.photoUrl}
+                  alt={recipe.title}
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  className="max-h-[360px] w-full rounded-2xl object-cover"
+                />
               ) : (
-                <p className="mt-3 text-base text-slate-600">
-                  No ingredients added yet.
-                </p>
+                <div className="flex h-64 w-full items-center justify-center rounded-2xl bg-slate-100 text-sm text-slate-400">
+                  No photo available
+                </div>
               )}
+
+              <div className="rounded-2xl border border-slate-200 bg-[#fcfcfc]/60 p-5">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Ingredients
+                </h3>
+                {recipe.ingredientLines.length > 0 ? (
+                  <ul className="mt-3 list-disc space-y-2 pl-5 text-base text-slate-700">
+                    {recipe.ingredientLines
+                      .slice()
+                      .sort((a, b) => a.position - b.position)
+                      .map((line) => (
+                        <li key={line.id}>{line.ingredient}</li>
+                      ))}
+                  </ul>
+                ) : (
+                  <p className="mt-3 text-base text-slate-600">
+                    No ingredients added yet.
+                  </p>
+                )}
+              </div>
             </aside>
           </div>
         </div>

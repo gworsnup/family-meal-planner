@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import WorkspaceHeader from "../_components/WorkspaceHeader";
 import CookClient from "./CookClient";
@@ -43,6 +43,19 @@ function parseMinRating(value?: string) {
   const parsed = Number(value);
   if (Number.isNaN(parsed)) return 0;
   return Math.min(5, Math.max(0, Math.floor(parsed)));
+}
+
+function formatSourceLabel(sourceName?: string | null, sourceUrl?: string | null) {
+  if (sourceName?.trim()) return sourceName.trim();
+  if (sourceUrl) {
+    try {
+      const url = new URL(sourceUrl);
+      return url.hostname.replace(/^www\./, "");
+    } catch {
+      return sourceUrl;
+    }
+  }
+  return null;
 }
 
 function parseBooleanFlag(value?: string) {
@@ -127,21 +140,30 @@ export default async function CookPage({
   const cookView = parseBooleanFlag(getParam(resolvedSearchParams.cookView));
   const sort = parseSort(getParam(resolvedSearchParams.sort));
   const dir = parseDir(getParam(resolvedSearchParams.dir), sort);
+  const source = getParam(resolvedSearchParams.source) ?? "";
 
-  const where: {
-    workspaceId: string;
-    title?: { contains: string; mode: "insensitive" };
-    rating?: { gte: number };
-    AND?: Array<{
-      photoUrl?: { not: string | null };
-      sourceUrl?: { equals: string | null } | null;
-      OR?: Array<{ sourceUrl: { equals: string | null } | null }>;
-      import?: { is: null };
-    }>;
-  } = {
-    workspaceId: workspace.id,
-  };
-
+  const where: Prisma.RecipeWhereInput = {};
+  where.workspaceId = workspace.id;
+    const andFilters: Prisma.RecipeWhereInput[] = Array.isArray(where.AND)
+      ? [...where.AND]
+      : [];
+    andFilters.push({
+      OR: [{ sourceUrl: { equals: null } }, { sourceUrl: { equals: "" } }],
+    });
+    andFilters.push({ import: { is: null } });
+    where.AND = andFilters;
+      const andFilters: Prisma.RecipeWhereInput[] = Array.isArray(where.AND)
+        ? [...where.AND]
+        : [];
+      andFilters.push({
+        OR: [{ sourceUrl: { equals: null } }, { sourceUrl: { equals: "" } }],
+      });
+      andFilters.push({ import: { is: null } });
+      where.AND = andFilters;
+        sourceUrl: { contains: source, mode: "insensitive" },
+      });
+      andFilters.push({ OR: orFilters });
+      where.AND = andFilters;
   if (q.trim()) {
     where.title = { contains: q.trim(), mode: "insensitive" };
   }
@@ -157,6 +179,54 @@ export default async function CookPage({
       { import: { is: null } },
     ];
   }
+
+  if (source) {
+    if (source === "manual") {
+      where.AND = [
+        ...(where.AND ?? []),
+        { OR: [{ sourceUrl: { equals: null } }, { sourceUrl: { equals: "" } }] },
+        { import: { is: null } },
+      ];
+    } else {
+      where.AND = [
+        ...(where.AND ?? []),
+        {
+          OR: [
+            { sourceName: { equals: source, mode: "insensitive" } },
+            { sourceUrl: { contains: source, mode: "insensitive" } },
+          ],
+        },
+      ];
+    }
+  }
+
+  const sourceRows = await prisma.recipe.findMany({
+    where: { workspaceId: workspace.id },
+    select: {
+      sourceName: true,
+      sourceUrl: true,
+      import: { select: { id: true } },
+    },
+  });
+
+  const sourceMap = new Map<string, string>();
+  let hasManualSource = false;
+  sourceRows.forEach((row) => {
+    const label = formatSourceLabel(row.sourceName, row.sourceUrl);
+    if (label) {
+      sourceMap.set(label.toLowerCase(), label);
+    } else if (!row.import) {
+      hasManualSource = true;
+    }
+  });
+
+  const sourceOptions = [
+    { label: "All sources", value: "" },
+    ...Array.from(sourceMap.values())
+      .sort((a, b) => a.localeCompare(b))
+      .map((label) => ({ label, value: label })),
+    ...(hasManualSource ? [{ label: "Manually Added", value: "manual" }] : []),
+  ];
 
   const recipes = await prisma.recipe.findMany({
     where,
@@ -192,7 +262,7 @@ export default async function CookPage({
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#fcfcfc]">
       <WorkspaceHeader
         slug={slug}
         workspaceName={workspace.name}
@@ -211,6 +281,8 @@ export default async function CookPage({
           manualOnly={manualOnly}
           sort={sort}
           dir={dir}
+          sourceFilter={source}
+          sourceOptions={sourceOptions}
           selectedRecipe={selectedRecipe}
           selectedCookingRecipe={selectedCookingRecipe}
         />

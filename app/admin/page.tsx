@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import {
   deleteUserAction,
   deleteWorkspaceAction,
+  updateWorkspaceNameAction,
   updateUserWorkspaceAction,
 } from "./actions";
 import WorkspaceForm from "./WorkspaceForm";
@@ -72,7 +73,22 @@ export default async function AdminPage() {
                 workspaces.map((workspace) => (
                   <tr key={workspace.id} className="border-b border-slate-100">
                     <td className="px-4 py-3 font-medium text-slate-900">
-                      {workspace.name}
+                      <form
+                        id={`workspace-${workspace.id}`}
+                        action={updateWorkspaceNameAction}
+                        className="flex items-center gap-2"
+                      >
+                        <input
+                          type="hidden"
+                          name="workspaceId"
+                          value={workspace.id}
+                        />
+                        <input
+                          name="name"
+                          defaultValue={workspace.name}
+                          className="w-full min-w-[160px] rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-700 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                        />
+                      </form>
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       {workspace.slug}
@@ -81,16 +97,25 @@ export default async function AdminPage() {
                       {formatDate(workspace.createdAt)}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <form action={deleteWorkspaceAction}>
-                        <input
-                          type="hidden"
-                          name="workspaceId"
-                          value={workspace.id}
-                        />
-                        <button className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:border-rose-300 hover:text-rose-700">
-                          Delete
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <button
+                          type="submit"
+                          form={`workspace-${workspace.id}`}
+                          className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                        >
+                          Save
                         </button>
-                      </form>
+                        <form action={deleteWorkspaceAction}>
+                          <input
+                            type="hidden"
+                            name="workspaceId"
+                            value={workspace.id}
+                          />
+                          <button className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:border-rose-300 hover:text-rose-700">
+                            Delete
+                          </button>
+                        </form>
+                      </div>
                     </td>
                   </tr>
                 ))

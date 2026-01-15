@@ -19,7 +19,7 @@ type JobSummary = {
 
 type Notification = {
   id: string;
-  type: "success" | "failure";
+  type: "success" | "failure" | "progress";
   message: string;
   smartListId?: string | null;
   error?: string | null;
@@ -79,6 +79,13 @@ export default function SmartListJobNotifier({
         jobs.forEach((job) => {
           const previousStatus = seen[job.id];
           if (previousStatus !== job.status) {
+            if (job.status === "QUEUED" || job.status === "RUNNING") {
+              notifications.push({
+                id: job.id,
+                type: "progress",
+                message: `Smart List generation is running for ${job.shoppingListName}.`,
+              });
+            }
             if (job.status === "SUCCEEDED") {
               if (!job.smartListId) {
                 notifications.push({
@@ -136,7 +143,11 @@ export default function SmartListJobNotifier({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-slate-900">
-              {active.type === "success" ? "Smart List Ready" : "Smart List Failed"}
+              {active.type === "success"
+                ? "Smart List Ready"
+                : active.type === "failure"
+                  ? "Smart List Failed"
+                  : "Smart List Updating"}
             </p>
             <p className="mt-1 text-xs text-slate-600">{active.message}</p>
           </div>
