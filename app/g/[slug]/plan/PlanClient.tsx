@@ -1606,7 +1606,7 @@ export default function PlanClient({
                       Smart Templates
                     </p>
                     <p className="text-[11px] text-slate-400">
-                      Drop smart templates here to auto-generate meals.
+                      Smart templates will appear here with auto-generated meal plans.
                     </p>
                   </div>
                   <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
@@ -1722,16 +1722,6 @@ export default function PlanClient({
                     >
                       Share week
                     </button>
-                    <button
-                      type="button"
-                      disabled
-                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-slate-300"
-                    >
-                      <span>Share month</span>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-300">
-                        Coming soon
-                      </span>
-                    </button>
                   </div>
                 ) : null}
               </div>
@@ -1769,80 +1759,35 @@ export default function PlanClient({
           ) : null}
         </header>
 
-        {selectionMode ? (
-          isShareWeekMode ? (
-            <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-[#fafafa] px-3 py-2 text-xs font-semibold text-slate-700">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span>
-                  {shareWeekStartISO
-                    ? "Ready to share this week on WhatsApp."
-                    : "Select a week to share on WhatsApp"}
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => resetShareSelection()}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-900"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleShareNow}
-                    disabled={!shareWeekReady}
-                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold transition ${
-                      shareWeekReady
-                        ? "bg-[#25D366] text-white hover:bg-[#1EBE5D]"
-                        : "cursor-not-allowed bg-slate-200 text-slate-500"
-                    }`}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                      className="h-4 w-4 fill-current"
-                    >
-                      <path d="M12 3.5a7.5 7.5 0 0 0-6.48 11.27L4 21l6.4-1.63A7.5 7.5 0 1 0 12 3.5zm0-1.5a9 9 0 0 1 0 18c-1.69 0-3.3-.47-4.68-1.34L3 20l1.6-4.23A9 9 0 1 1 12 2zm4.63 12.82c-.2.57-1.13 1.1-1.57 1.15-.4.05-.9.08-1.46-.1-.34-.11-.78-.25-1.35-.49-2.36-1.02-3.9-3.4-4.02-3.56-.12-.16-.96-1.28-.96-2.45 0-1.17.6-1.74.82-1.97.2-.23.46-.28.61-.28h.44c.14 0 .34-.03.53.4.2.44.68 1.5.73 1.61.06.11.1.25.02.4-.07.16-.1.25-.2.39-.1.14-.22.32-.31.43-.1.11-.2.23-.08.45.12.22.56.92 1.2 1.49.82.73 1.5.96 1.72 1.06.22.1.35.08.48-.05.13-.13.56-.65.71-.87.15-.22.3-.19.5-.12.2.08 1.27.6 1.49.71.22.11.36.16.41.25.05.09.05.52-.15 1.09z" />
-                    </svg>
-                    Share now
-                  </button>
-                </div>
-              </div>
-              {shareWeekStartISO && !shareWeekReady ? (
-                <p className="text-[11px] font-semibold text-slate-500">
-                  No meals planned for this week yet.
-                </p>
-              ) : null}
-            </div>
-          ) : (
-            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-[#fafafa] px-3 py-2 text-xs font-semibold text-slate-700">
-              <span>
-                {selectionMode === "week"
-                  ? "Select a week to save as a template"
-                  : "Select the month to save as a template"}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectionMode(null);
-                  setSelectionIntent(null);
-                  setWeekHoverKey(null);
-                  setMonthHover(false);
-                }}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-900"
-              >
-                Cancel
-              </button>
-            </div>
-          )
+        {selectionMode && !isShareWeekMode ? (
+          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-[#fafafa] px-3 py-2 text-xs font-semibold text-slate-700">
+            <span>
+              {selectionMode === "week"
+                ? "Select a week to save as a template"
+                : "Select the month to save as a template"}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectionMode(null);
+                setSelectionIntent(null);
+                setWeekHoverKey(null);
+                setMonthHover(false);
+              }}
+              className="text-xs font-semibold text-slate-500 hover:text-slate-900"
+            >
+              Cancel
+            </button>
+          </div>
         ) : null}
 
         <div className="grid grid-cols-7 gap-2 text-xs font-semibold text-slate-400">
-            {weekdayLabels.map((label) => (
-              <div key={label} className="px-2">
-                {label}
-              </div>
-            ))}
-          </div>
+          {weekdayLabels.map((label) => (
+            <div key={label} className="px-2">
+              {label}
+            </div>
+          ))}
+        </div>
 
           <div
             ref={calendarRef}
@@ -1969,6 +1914,42 @@ export default function PlanClient({
                 className="w-full text-[11px] font-semibold text-slate-500 hover:text-slate-700"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isShareWeekMode && shareWeekStartISO ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
+            <h2 className="text-base font-semibold text-slate-900">
+              Ready to share this week on WhatsApp.
+            </h2>
+            {shareWeekReady ? null : (
+              <p className="mt-2 text-xs font-semibold text-slate-500">
+                No meals planned for this week yet.
+              </p>
+            )}
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => resetShareSelection()}
+                className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:border-slate-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleShareNow}
+                disabled={!shareWeekReady}
+                className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                  shareWeekReady
+                    ? "bg-[#25D366] text-white hover:bg-[#1EBE5D]"
+                    : "cursor-not-allowed bg-slate-200 text-slate-500"
+                }`}
+              >
+                Share now
               </button>
             </div>
           </div>
