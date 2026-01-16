@@ -46,9 +46,6 @@ export default function WorkspaceHeader({
             priority
             className="h-10 w-auto"
           />
-          <span className="text-sm font-semibold text-slate-700">
-            FamilyTable
-          </span>
         </div>
 
         <nav className="hidden items-center gap-2 text-sm font-medium text-slate-600 md:flex">

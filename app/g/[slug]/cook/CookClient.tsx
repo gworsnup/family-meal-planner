@@ -229,9 +229,8 @@ export default function CookClient({
     ? currentParams.get("manual") === "1"
     : manualOnly;
   const currentSource = currentParams.get("source") ?? source;
-  const currentRecipeId = currentParams.get("recipeId") ?? selectedRecipe?.id ?? null;
-  const currentCookRecipeId =
-    currentParams.get("cookRecipeId") ?? selectedCookingRecipe?.id ?? null;
+  const currentRecipeId = currentParams.get("recipeId");
+  const currentCookRecipeId = currentParams.get("cookRecipeId");
   const isCookingView = currentParams.get("cookView") === "1";
 
   const [searchText, setSearchText] = useState(currentParams.get("q") ?? q);
@@ -500,6 +499,14 @@ export default function CookClient({
     });
   };
 
+  const resetImportState = useCallback(() => {
+    setImportStatus("idle");
+    setImportMessage(null);
+    setImportId(null);
+    setImportRecipeId(null);
+    setImportSourceUrl(null);
+  }, []);
+
   const handleInspirationSiteClick = useCallback(
     (site: (typeof inspirationSites)[number]) => {
       window.open(site.url, "_blank", "noopener,noreferrer");
@@ -604,7 +611,7 @@ export default function CookClient({
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <div
                     className={`flex w-full flex-1 flex-col text-sm text-slate-600 transition-shadow ${
                       inspirationOpen ? "rounded-lg ring-2 ring-slate-300/60" : ""
@@ -651,6 +658,15 @@ export default function CookClient({
                     </span>
                     {isImportPending ? "Starting…" : "Add from URL"}
                   </button>
+                  {(isImportActive || importStatus === "failed") && (
+                    <button
+                      type="button"
+                      onClick={resetImportState}
+                      className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+                    >
+                      {isImportActive ? "Cancel import" : "Clear status"}
+                    </button>
+                  )}
                 </div>
                 <span
                   id="recipe-url-helper"
@@ -660,16 +676,14 @@ export default function CookClient({
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
-              <button
-                type="button"
-                onClick={handleInspirationOpen}
-                aria-expanded={inspirationOpen}
-                aria-haspopup="dialog"
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50/60 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-              >
-                  <span aria-hidden="true">
-                    ✨
-                  </span>
+                <button
+                  type="button"
+                  onClick={handleInspirationOpen}
+                  aria-expanded={inspirationOpen}
+                  aria-haspopup="dialog"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50/60 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                >
+                  <span aria-hidden="true">✨</span>
                   Find recipe ideas
                 </button>
                 <span aria-hidden="true" className="text-slate-300">
