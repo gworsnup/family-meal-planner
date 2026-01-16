@@ -10,9 +10,12 @@ import {
 } from "@/lib/ingredientParsing";
 import type { SmartListData } from "@/lib/smartListTypes";
 import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
+import { buildSmartListPath } from "@/lib/smartListLinks";
+import { buildWhatsAppShareUrl, openInNewTab } from "@/lib/whatsapp";
 
 type ShopClientProps = {
   workspaceId: string;
+  workspaceSlug: string;
   workspaceName: string;
   weekLists: WeekList[];
 };
@@ -82,6 +85,7 @@ function getSmartCategoryEmoji(label: string) {
 
 export default function ShopClient({
   workspaceId,
+  workspaceSlug,
   workspaceName,
   weekLists,
 }: ShopClientProps) {
@@ -167,11 +171,6 @@ export default function ShopClient({
     setHasManualViewSelection(false);
   }, [selectedWeek?.weekId]);
 
-  useEffect(() => {
-    setErrorMessage(null);
-  }, [selectedWeek?.weekId]);
-
-
   const currentSmartList = selectedWeek?.weekId
     ? smartListByWeek[selectedWeek.weekId] ?? null
     : null;
@@ -189,6 +188,31 @@ export default function ShopClient({
       setViewMode("smart");
     }
   }, [currentSmartList, hasManualViewSelection, viewMode]);
+
+  useEffect(() => {
+    setErrorMessage(null);
+  }, [selectedWeek?.weekId]);
+
+  const shareLink = useMemo(() => {
+    if (!currentSmartList?.id) return null;
+    return buildSmartListPath(workspaceSlug, currentSmartList.id);
+  }, [currentSmartList?.id, workspaceSlug]);
+
+  const shareLinkAbsolute = useMemo(() => {
+    if (!shareLink) return null;
+    if (typeof window === "undefined") return shareLink;
+    return new URL(shareLink, window.location.origin).toString();
+  }, [shareLink]);
+
+  const shareError =
+    selectedWeek && !shareLinkAbsolute ? "Unable to build share link." : null;
+
+  const handleWhatsAppShare = () => {
+    if (!shareLinkAbsolute) return;
+    const listTitle = selectedWeek?.title ?? "Shopping List";
+    const message = `🛒 Shopping List: ${listTitle}\n\nOpen the list:\n${shareLinkAbsolute}`.trim();
+    openInNewTab(buildWhatsAppShareUrl(message));
+  };
 
   const handleGenerateSmartList = async () => {
     if (!selectedWeek?.weekId || isGenerating || smartListReady) return;
@@ -311,72 +335,81 @@ export default function ShopClient({
                   : "Select a week to see ingredients."}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center rounded-full border border-slate-200 bg-[#fcfcfc] p-1 text-xs font-medium text-slate-600">
+            <div className="flex flex-col gap-1">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center rounded-full border border-slate-200 bg-[#fcfcfc] p-1 text-xs font-medium text-slate-600">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHasManualViewSelection(true);
+                      setViewMode("aggregated");
+                    }}
+                    className={`rounded-full px-3 py-1 transition ${
+                      viewMode === "aggregated"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    Aggregated
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHasManualViewSelection(true);
+                      setViewMode("smart");
+                    }}
+                    disabled={!currentSmartList}
+                    className={`rounded-full px-3 py-1 transition ${
+                      viewMode === "smart"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    } ${!currentSmartList ? "cursor-not-allowed opacity-50" : ""}`}
+                  >
+                    Smart List
+                  </button>
+                </div>
+                {smartListOutdated ? (
+                  <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">
+                    Out of date
+                  </span>
+                ) : null}
                 <button
                   type="button"
-                  onClick={() => {
-                    setHasManualViewSelection(true);
-                    setViewMode("aggregated");
-                  }}
-                  className={`rounded-full px-3 py-1 transition ${
-                    viewMode === "aggregated"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
+                  onClick={handleGenerateSmartList}
+                  disabled={!selectedWeek || smartListReady || isGenerating}
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition ${
+                    smartListReady || !selectedWeek
+                      ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                      : "bg-slate-900 text-white hover:bg-slate-800"
                   }`}
                 >
-                  Aggregated
+                  {isGenerating ? (
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  ) : null}
+                  <span className="flex h-4 w-4 items-center justify-center">
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      className="h-4 w-4 fill-current"
+                    >
+                      <path d="M12 2l1.4 4.2L18 7.6l-4.2 1.4L12 13.2l-1.4-4.2L6.4 7.6l4.2-1.4L12 2zm7 10l.9 2.7 2.7.9-2.7.9L19 19l-.9-2.7-2.7-.9 2.7-.9L19 12zm-14 1l.9 2.7 2.7.9-2.7.9L5 20l-.9-2.7-2.7-.9 2.7-.9L5 13z" />
+                    </svg>
+                  </span>
+                  {smartListReady
+                    ? "Smart List Ready"
+                    : isGenerating
+                    ? "Generating..."
+                    : "Generate Smart List"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHasManualViewSelection(true);
-                    setViewMode("smart");
-                  }}
-                  disabled={!currentSmartList}
-                  className={`rounded-full px-3 py-1 transition ${
-                    viewMode === "smart"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  } ${!currentSmartList ? "cursor-not-allowed opacity-50" : ""}`}
-                >
-                  Smart List
-                </button>
+                <WhatsAppShareButton
+                  label="Share via WhatsApp"
+                  onClick={handleWhatsAppShare}
+                  disabled={!shareLinkAbsolute}
+                />
               </div>
-              {smartListOutdated ? (
-                <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">
-                  Out of date
-                </span>
+              {shareError ? (
+                <p className="text-[11px] font-semibold text-rose-500">{shareError}</p>
               ) : null}
-              <button
-                type="button"
-                onClick={handleGenerateSmartList}
-                disabled={!selectedWeek || smartListReady || isGenerating}
-                className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition ${
-                  smartListReady || !selectedWeek
-                    ? "cursor-not-allowed bg-slate-200 text-slate-500"
-                    : "bg-slate-900 text-white hover:bg-slate-800"
-                }`}
-              >
-                {isGenerating ? (
-                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                ) : null}
-                <span className="flex h-4 w-4 items-center justify-center">
-                  <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    className="h-4 w-4 fill-current"
-                  >
-                    <path d="M12 2l1.4 4.2L18 7.6l-4.2 1.4L12 13.2l-1.4-4.2L6.4 7.6l4.2-1.4L12 2zm7 10l.9 2.7 2.7.9-2.7.9L19 19l-.9-2.7-2.7-.9 2.7-.9L19 12zm-14 1l.9 2.7 2.7.9-2.7.9L5 20l-.9-2.7-2.7-.9 2.7-.9L5 13z" />
-                  </svg>
-                </span>
-                {smartListReady
-                  ? "Smart List Ready"
-                  : isGenerating
-                  ? "Generating..."
-                  : "Generate Smart List"}
-              </button>
-              <WhatsAppShareButton label="Share via WhatsApp" />
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4">

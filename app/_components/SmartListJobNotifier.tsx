@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { buildSmartListPath } from "@/lib/smartListLinks";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -174,7 +175,7 @@ export default function SmartListJobNotifier({
               type="button"
               onClick={() => {
                 setQueue((current) => current.slice(1));
-                router.push(`/g/${workspaceSlug}/smart-lists/${active.smartListId}`);
+                router.push(buildSmartListPath(workspaceSlug, active.smartListId));
               }}
               className="inline-flex items-center justify-center rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
             >
