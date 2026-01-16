@@ -9,8 +9,8 @@ export type NormalizedJsonLdRecipe = {
   prepTimeMinutes?: number | null;
   cookTimeMinutes?: number | null;
   totalTimeMinutes?: number | null;
-  ingredients?: string[];
-  instructions?: string[];
+  ingredients: string[];
+  instructions: string[];
 };
 
 export type HtmlFallbackRecipe = {
@@ -182,7 +182,9 @@ export function extractRecipeFromJsonLd(
     return { recipe: null, raw: null };
   }
 
-  const instructions = normalizeInstructionsToSteps(recipeNode.recipeInstructions);
+  const instructions =
+    normalizeInstructionsToSteps(recipeNode.recipeInstructions) ?? [];
+  const ingredients = normalizeIngredientList(recipeNode.recipeIngredient) ?? [];
   return {
     recipe: {
       title: typeof recipeNode.name === "string" ? recipeNode.name : undefined,
@@ -197,7 +199,7 @@ export function extractRecipeFromJsonLd(
       totalTimeMinutes: parseDurationToMinutes(
         typeof recipeNode.totalTime === "string" ? recipeNode.totalTime : undefined,
       ),
-      ingredients: normalizeIngredientList(recipeNode.recipeIngredient),
+      ingredients,
       instructions,
     },
     raw: recipeNode,

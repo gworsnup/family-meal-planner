@@ -7,6 +7,7 @@ import {
 } from "@/lib/importers/jsonldRecipe";
 import {
   fetchRecipeWithPlaywright,
+  PlaywrightBlockedError,
   type PlaywrightFetchResult,
 } from "@/lib/importers/playwrightFetcher";
 import { parseRecipeFromCaption } from "./parseCaption";
@@ -586,8 +587,9 @@ export async function scrapeRecipeWithPlaywright(
         totalTimeMinutes: jsonLdRecipe.totalTimeMinutes,
         servings: jsonLdRecipe.recipeYield ?? null,
         yields: jsonLdRecipe.recipeYield ?? null,
-        ingredients: jsonLdRecipe.ingredients ?? undefined,
-        directions: jsonLdRecipe.instructions?.join("\n\n"),
+        ingredients:
+          jsonLdRecipe.ingredients.length > 0 ? jsonLdRecipe.ingredients : undefined,
+        directions: jsonLdRecipe.instructions.join("\n\n"),
         raw: {
           jsonLd: recipeNode,
           meta,
@@ -615,6 +617,9 @@ export async function scrapeRecipeWithPlaywright(
       importMethod: "playwright",
     };
   } catch (error) {
+    if (error instanceof PlaywrightBlockedError) {
+      throw error;
+    }
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("[Scrape] Playwright fallback failed", { url, message });
     throw new Error(`Playwright fallback failed: ${message}`);
@@ -689,8 +694,9 @@ export async function scrapeUrl(
       totalTimeMinutes: jsonLdRecipe.totalTimeMinutes,
       servings: jsonLdRecipe.recipeYield ?? null,
       yields: jsonLdRecipe.recipeYield ?? null,
-      ingredients: jsonLdRecipe.ingredients ?? undefined,
-      directions: jsonLdRecipe.instructions?.join("\n\n"),
+      ingredients:
+        jsonLdRecipe.ingredients.length > 0 ? jsonLdRecipe.ingredients : undefined,
+      directions: jsonLdRecipe.instructions.join("\n\n"),
       raw: {
         jsonLd: recipeNode,
         meta,

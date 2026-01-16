@@ -261,7 +261,7 @@ enum SmartListJobStatus {
 model RecipeImport {
   id          String   @id @default(cuid())
   workspaceId String
-  recipeId    String   @unique
+  recipeId    String?  @unique
   sourceUrl   String
   status      String
   importMethod String  @default("fetch")
@@ -271,7 +271,7 @@ model RecipeImport {
   updatedAt   DateTime @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  recipe    Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipe    Recipe?   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
   @@index([status])

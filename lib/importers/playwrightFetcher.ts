@@ -11,6 +11,18 @@ export type PlaywrightFetchResult = {
   jsonLd: unknown[];
 };
 
+export class PlaywrightBlockedError extends Error {
+  finalUrl: string;
+  pageTitle: string;
+
+  constructor(details: { finalUrl: string; pageTitle: string }) {
+    super("Playwright blocked by site protections");
+    this.name = "PlaywrightBlockedError";
+    this.finalUrl = details.finalUrl;
+    this.pageTitle = details.pageTitle;
+  }
+}
+
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
@@ -39,6 +51,27 @@ export async function fetchRecipeWithPlaywright(
   try {
     await page.goto(url, { waitUntil: "networkidle", timeout: 30_000 });
     await page.waitForTimeout(1_000);
+    const pageTitle = await page.title();
+    const finalUrl = page.url();
+    const bodyTextSample = await page.evaluate(
+      () => document.body?.innerText?.slice(0, 3000) ?? "",
+    );
+    const loweredTitle = pageTitle.toLowerCase();
+    const loweredBody = bodyTextSample.toLowerCase();
+    const loweredUrl = finalUrl.toLowerCase();
+    const blocked =
+      loweredTitle.includes("access denied") ||
+      loweredTitle.includes("forbidden") ||
+      loweredBody.includes("access denied") ||
+      loweredBody.includes("you don't have permission") ||
+      loweredBody.includes("reference #") ||
+      loweredBody.includes("request id") ||
+      loweredBody.includes("akamai") ||
+      loweredUrl.includes("accessdenied") ||
+      loweredUrl.includes("forbidden");
+    if (blocked) {
+      throw new PlaywrightBlockedError({ finalUrl, pageTitle });
+    }
     const jsonLdBlocks = await page.$$eval(
       'script[type="application/ld+json"]',
       (elements) =>
@@ -49,7 +82,7 @@ export async function fetchRecipeWithPlaywright(
     );
     const html = await page.content();
     return {
-      finalUrl: page.url(),
+      finalUrl,
       html,
       jsonLd: parseJsonLdBlocks(jsonLdBlocks),
     };
