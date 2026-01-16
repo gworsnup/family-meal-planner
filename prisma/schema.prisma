@@ -264,6 +264,7 @@ model RecipeImport {
   recipeId    String   @unique
   sourceUrl   String
   status      String
+  importMethod String  @default("fetch")
   error       String?  @db.Text
   raw         Json?
   createdAt   DateTime @default(now())
