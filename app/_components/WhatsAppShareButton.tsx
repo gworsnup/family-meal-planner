@@ -3,6 +3,8 @@
 type WhatsAppShareButtonProps = {
   label: string;
   className?: string;
+  onClick?: () => void;
+  disabled?: boolean;
 };
 
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -18,16 +20,21 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export default function WhatsAppShareButton({ label, className }: WhatsAppShareButtonProps) {
+export default function WhatsAppShareButton({
+  label,
+  className,
+  onClick,
+  disabled = false,
+}: WhatsAppShareButtonProps) {
   const classes = [
-    "inline-flex items-center gap-2 rounded-full bg-[#25D366] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1EBE5D]",
+    "inline-flex items-center gap-2 rounded-full bg-[#25D366] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#1EBE5D] disabled:cursor-not-allowed disabled:opacity-60",
     className,
   ]
     .filter(Boolean)
     .join(" ");
 
   return (
-    <button type="button" onClick={() => {}} className={classes}>
+    <button type="button" onClick={onClick} className={classes} disabled={disabled}>
       <WhatsAppIcon className="h-4 w-4" />
       <span>{label}</span>
     </button>

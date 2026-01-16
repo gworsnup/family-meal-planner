@@ -243,6 +243,7 @@ export default async function ShoppingListPage({
       />
       <ShopClient
         workspaceId={workspace.id}
+        workspaceSlug={workspace.slug}
         workspaceName={workspace.name}
         weekLists={weekListsWithMeta}
       />
