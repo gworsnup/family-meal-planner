@@ -48,6 +48,7 @@ import RecipeOverlay from "../cook/RecipeOverlay";
 import type { RecipeDetail } from "../cook/types";
 import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
 import { ModeSegmentedControl } from "./ModeSegmentedControl";
+import { buildWhatsAppShareUrl, openInNewTab } from "@/lib/whatsapp";
 
 type RecipeItem = {
   id: string;
@@ -116,6 +117,7 @@ type RectLike = ClientRect | DOMRect | null | undefined;
 type ConfettiOrigin = { x: number; y: number };
 type LeftPanelTab = "recipes" | "templates";
 type SelectionMode = "week" | "month" | null;
+type SelectionIntent = "template" | "whatsapp" | null;
 
 type TemplateTarget =
   | { scope: "WEEK"; weekStartISO: string }
@@ -179,6 +181,26 @@ function getMonthLabel(date: Date) {
     year: "numeric",
     timeZone: "UTC",
   }).format(date);
+}
+
+function formatWeekRangeLabel(startDate: Date) {
+  const endDate = addDays(startDate, 6);
+  const dayFormatter = new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    timeZone: "UTC",
+  });
+  const monthFormatter = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    timeZone: "UTC",
+  });
+  const startDay = dayFormatter.format(startDate);
+  const endDay = dayFormatter.format(endDate);
+  const startMonth = monthFormatter.format(startDate);
+  const endMonth = monthFormatter.format(endDate);
+  if (startMonth === endMonth) {
+    return `${startDay}–${endDay} ${startMonth}`;
+  }
+  return `${startDay} ${startMonth} – ${endDay} ${endMonth}`;
 }
 
 function addMonths(date: Date, amount: number) {
@@ -802,9 +824,13 @@ export default function PlanClient({
   const [leftTab, setLeftTab] = useState<LeftPanelTab>("recipes");
   const [templates, setTemplates] = useState<MealTemplateSummary[]>(initialTemplates);
   const [selectionMode, setSelectionMode] = useState<SelectionMode>(null);
+  const [selectionIntent, setSelectionIntent] = useState<SelectionIntent>(null);
   const [weekHoverKey, setWeekHoverKey] = useState<string | null>(null);
   const [monthHover, setMonthHover] = useState(false);
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
+  const [shareScope, setShareScope] = useState<"week" | "month" | null>(null);
+  const [shareWeekStartISO, setShareWeekStartISO] = useState<string | null>(null);
   const [saveDialog, setSaveDialog] = useState<{
     scope: MealTemplateScope;
     weekStartISO?: string;
@@ -820,6 +846,7 @@ export default function PlanClient({
   } | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const calendarRef = useRef<HTMLDivElement | null>(null);
+  const shareMenuRef = useRef<HTMLDivElement | null>(null);
   const confettiWeeksRef = useRef<Set<string>>(new Set());
   const filtersId = useId();
 
@@ -849,9 +876,13 @@ export default function PlanClient({
         event.preventDefault();
         if (confirmPopover) setConfirmPopover(null);
         if (saveDialog) setSaveDialog(null);
+        if (saveMenuOpen) setSaveMenuOpen(false);
+        if (shareMenuOpen) setShareMenuOpen(false);
         if (selectionMode) {
           setSelectionMode(null);
-          setSaveMenuOpen(false);
+          setSelectionIntent(null);
+          setShareScope(null);
+          setShareWeekStartISO(null);
           setWeekHoverKey(null);
           setMonthHover(false);
         }
@@ -867,7 +898,7 @@ export default function PlanClient({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [confirmPopover, saveDialog, selectionMode]);
+  }, [confirmPopover, saveDialog, saveMenuOpen, selectionMode, shareMenuOpen]);
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -899,6 +930,29 @@ export default function PlanClient({
     }
     setTemplateName("");
   }, [saveDialog]);
+
+  useEffect(() => {
+    if (!shareMenuOpen) return;
+    const handler = (event: globalThis.MouseEvent) => {
+      const target = event.target as Node | null;
+      if (target && shareMenuRef.current?.contains(target)) return;
+      setShareMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [shareMenuOpen]);
+
+  const resetShareSelection = useCallback(() => {
+    setShareScope(null);
+    setShareWeekStartISO(null);
+    setShareMenuOpen(false);
+    if (selectionIntent === "whatsapp") {
+      setSelectionIntent(null);
+      setSelectionMode(null);
+      setWeekHoverKey(null);
+      setMonthHover(false);
+    }
+  }, [selectionIntent]);
 
   const focusedDate = useMemo(() => {
     return parseDateISO(focusedDateISO) ?? getTodayUTC();
@@ -943,6 +997,47 @@ export default function PlanClient({
     });
     return map;
   }, [items]);
+
+  const shareWeekDates = useMemo(() => {
+    if (!shareWeekStartISO) return [];
+    const startDate = startOfWeek(normalizeDateISO(shareWeekStartISO));
+    return Array.from({ length: 7 }, (_, index) => addDays(startDate, index));
+  }, [shareWeekStartISO]);
+
+  const shareWeekLines = useMemo(() => {
+    if (!shareWeekStartISO) return [];
+    return shareWeekDates
+      .map((date, index) => {
+        const dayItems = itemsByDate.get(formatDateISO(date)) ?? [];
+        if (dayItems.length === 0) return null;
+        const titles = dayItems.map((item) => {
+          if (item.type === "TAKEAWAY") {
+            return "Takeaway Night 🍕";
+          }
+          return item.title;
+        });
+        return titles.length > 0 ? `${weekdayLabels[index]}: ${titles.join(" + ")}` : null;
+      })
+      .filter((line): line is string => Boolean(line));
+  }, [itemsByDate, shareWeekDates, shareWeekStartISO]);
+
+  const shareWeekMessage = useMemo(() => {
+    if (!shareWeekStartISO) return "";
+    if (shareWeekLines.length === 0) return "";
+    const startDate = startOfWeek(normalizeDateISO(shareWeekStartISO));
+    const rangeLabel = formatWeekRangeLabel(startDate);
+    const header = `🍽️ Dinners this week (${rangeLabel})`;
+    return [header, "", ...shareWeekLines].join("\n").trim();
+  }, [shareWeekLines, shareWeekStartISO]);
+
+  const isShareWeekMode = selectionIntent === "whatsapp" && shareScope === "week";
+  const shareWeekReady = Boolean(shareWeekStartISO && shareWeekLines.length > 0);
+
+  const handleShareNow = () => {
+    if (!shareWeekMessage) return;
+    openInNewTab(buildWhatsAppShareUrl(shareWeekMessage));
+    resetShareSelection();
+  };
 
   const hasItemsInView = useMemo(() => {
     return items.some((item) => {
@@ -1040,6 +1135,7 @@ export default function PlanClient({
   };
 
   const handleViewChange = (nextView: PlanView) => {
+    resetShareSelection();
     updateParams({ view: nextView, date: focusedDateISO });
   };
 
@@ -1554,7 +1650,11 @@ export default function PlanClient({
                 <div className="relative">
                   <button
                     type="button"
-                    onClick={() => setSaveMenuOpen((prev) => !prev)}
+                    onClick={() => {
+                      resetShareSelection();
+                      setShareMenuOpen(false);
+                      setSaveMenuOpen((prev) => !prev);
+                    }}
                     className="flex h-8 items-center gap-2 rounded-full bg-slate-900 px-4 py-1 text-xs font-semibold text-white transition hover:bg-slate-800"
                   >
                     Save meal template
@@ -1571,6 +1671,7 @@ export default function PlanClient({
                         type="button"
                         onClick={() => {
                           setSelectionMode("week");
+                          setSelectionIntent("template");
                           setSaveMenuOpen(false);
                         }}
                         className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-slate-50"
@@ -1581,6 +1682,7 @@ export default function PlanClient({
                         type="button"
                         onClick={() => {
                           setSelectionMode("month");
+                          setSelectionIntent("template");
                           if (view !== "month") {
                             handleViewChange("month");
                           }
@@ -1594,7 +1696,45 @@ export default function PlanClient({
                   ) : null}
                 </div>
               ) : null}
-              <WhatsAppShareButton label="Share via WhatsApp" className="h-8 px-3 py-1" />
+              <div ref={shareMenuRef} className="relative">
+                <WhatsAppShareButton
+                  label="Share via WhatsApp"
+                  className="h-8 px-3 py-1"
+                  onClick={() => {
+                    if (saveMenuOpen) setSaveMenuOpen(false);
+                    setShareMenuOpen((prev) => !prev);
+                  }}
+                />
+                {shareMenuOpen ? (
+                  <div className="absolute left-0 top-full z-20 mt-2 w-44 rounded-xl border border-slate-200 bg-white p-1 text-xs text-slate-700 shadow-lg">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectionMode("week");
+                        setSelectionIntent("whatsapp");
+                        setShareScope("week");
+                        setShareWeekStartISO(null);
+                        setWeekHoverKey(null);
+                        setMonthHover(false);
+                        setShareMenuOpen(false);
+                      }}
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-slate-50"
+                    >
+                      Share week
+                    </button>
+                    <button
+                      type="button"
+                      disabled
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-slate-300"
+                    >
+                      <span>Share month</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+                        Coming soon
+                      </span>
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2 text-sm text-slate-600">
@@ -1630,24 +1770,70 @@ export default function PlanClient({
         </header>
 
         {selectionMode ? (
-          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-[#fafafa] px-3 py-2 text-xs font-semibold text-slate-700">
-            <span>
-              {selectionMode === "week"
-                ? "Select a week to save as a template"
-                : "Select the month to save as a template"}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectionMode(null);
-                setWeekHoverKey(null);
-                setMonthHover(false);
-              }}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-900"
-            >
-              Cancel
-            </button>
-          </div>
+          isShareWeekMode ? (
+            <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-[#fafafa] px-3 py-2 text-xs font-semibold text-slate-700">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span>
+                  {shareWeekStartISO
+                    ? "Ready to share this week on WhatsApp."
+                    : "Select a week to share on WhatsApp"}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => resetShareSelection()}
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-900"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShareNow}
+                    disabled={!shareWeekReady}
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      shareWeekReady
+                        ? "bg-[#25D366] text-white hover:bg-[#1EBE5D]"
+                        : "cursor-not-allowed bg-slate-200 text-slate-500"
+                    }`}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      className="h-4 w-4 fill-current"
+                    >
+                      <path d="M12 3.5a7.5 7.5 0 0 0-6.48 11.27L4 21l6.4-1.63A7.5 7.5 0 1 0 12 3.5zm0-1.5a9 9 0 0 1 0 18c-1.69 0-3.3-.47-4.68-1.34L3 20l1.6-4.23A9 9 0 1 1 12 2zm4.63 12.82c-.2.57-1.13 1.1-1.57 1.15-.4.05-.9.08-1.46-.1-.34-.11-.78-.25-1.35-.49-2.36-1.02-3.9-3.4-4.02-3.56-.12-.16-.96-1.28-.96-2.45 0-1.17.6-1.74.82-1.97.2-.23.46-.28.61-.28h.44c.14 0 .34-.03.53.4.2.44.68 1.5.73 1.61.06.11.1.25.02.4-.07.16-.1.25-.2.39-.1.14-.22.32-.31.43-.1.11-.2.23-.08.45.12.22.56.92 1.2 1.49.82.73 1.5.96 1.72 1.06.22.1.35.08.48-.05.13-.13.56-.65.71-.87.15-.22.3-.19.5-.12.2.08 1.27.6 1.49.71.22.11.36.16.41.25.05.09.05.52-.15 1.09z" />
+                    </svg>
+                    Share now
+                  </button>
+                </div>
+              </div>
+              {shareWeekStartISO && !shareWeekReady ? (
+                <p className="text-[11px] font-semibold text-slate-500">
+                  No meals planned for this week yet.
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-[#fafafa] px-3 py-2 text-xs font-semibold text-slate-700">
+              <span>
+                {selectionMode === "week"
+                  ? "Select a week to save as a template"
+                  : "Select the month to save as a template"}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectionMode(null);
+                  setSelectionIntent(null);
+                  setWeekHoverKey(null);
+                  setMonthHover(false);
+                }}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-900"
+              >
+                Cancel
+              </button>
+            </div>
+          )
         ) : null}
 
         <div className="grid grid-cols-7 gap-2 text-xs font-semibold text-slate-400">
@@ -1670,6 +1856,7 @@ export default function PlanClient({
               onSelect={(nextMonthStartISO) => {
                 setSaveDialog({ scope: "MONTH", monthStartISO: nextMonthStartISO });
                 setSelectionMode(null);
+                setSelectionIntent(null);
                 setMonthHover(false);
               }}
               activeTemplateScope={view === "month" ? activeTemplateScope : null}
@@ -1686,8 +1873,13 @@ export default function PlanClient({
                       isHovered={weekHoverKey === weekStartISO}
                       onHoverChange={(next) => setWeekHoverKey(next ? weekStartISO : null)}
                       onSelect={(selectedWeekStartISO) => {
+                        if (selectionIntent === "whatsapp") {
+                          setShareWeekStartISO(selectedWeekStartISO);
+                          return;
+                        }
                         setSaveDialog({ scope: "WEEK", weekStartISO: selectedWeekStartISO });
                         setSelectionMode(null);
+                        setSelectionIntent(null);
                         setWeekHoverKey(null);
                       }}
                       activeTemplateScope={activeTemplateScope}
