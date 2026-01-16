@@ -174,6 +174,7 @@ export default function SmartListJobNotifier({
             <button
               type="button"
               onClick={() => {
+                if (!active.smartListId) return;
                 setQueue((current) => current.slice(1));
                 router.push(buildSmartListPath(workspaceSlug, active.smartListId));
               }}
