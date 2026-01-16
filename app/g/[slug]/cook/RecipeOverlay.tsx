@@ -154,10 +154,10 @@ export default function RecipeOverlay({
 
   const handleDelete = () => {
     if (!confirm("Delete this recipe?")) return;
-    onClose();
     startTransition(async () => {
       await deleteRecipe(slug, recipe.id);
       onDeleted();
+      onClose();
     });
   };
 
