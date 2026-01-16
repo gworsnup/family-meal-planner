@@ -1,5 +1,15 @@
 import "server-only";
 
+import {
+  extractJsonLdFromHtml,
+  extractRecipeFromHtmlFallback,
+  extractRecipeFromJsonLd,
+} from "@/lib/importers/jsonldRecipe";
+import {
+  fetchRecipeWithPlaywright,
+  PlaywrightBlockedError,
+  type PlaywrightFetchResult,
+} from "@/lib/importers/playwrightFetcher";
 import { parseRecipeFromCaption } from "./parseCaption";
 import { parseCaptionWithOpenAI } from "./parseCaptionWithOpenAI";
 import { parseInstagramCaptionToRecipe } from "./parseInstagramCaption";
@@ -20,6 +30,7 @@ export type ScrapeResult = {
   ingredients?: string[];
   directions?: string;
   raw?: any;
+  importMethod?: "fetch" | "playwright";
   confidence: "high" | "medium" | "low";
 };
 
@@ -33,6 +44,8 @@ type HtmlResult = {
   finalUrl: string;
   html: string;
 };
+
+export type PlaywrightFetcher = (url: string) => Promise<PlaywrightFetchResult>;
 
 async function readResponseBody(
   response: Response,
@@ -123,112 +136,60 @@ function getMetaContent(html: string, key: string) {
   return undefined;
 }
 
-function extractJsonLd(html: string) {
-  const scripts: any[] = [];
-  const regex =
-    /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(html)) !== null) {
-    const raw = match[1];
-    if (!raw) continue;
-    try {
-      const parsed = JSON.parse(raw);
-      scripts.push(parsed);
-    } catch {
-      continue;
-    }
+function looksLikeAppShell(html: string) {
+  const lowered = html.toLowerCase();
+  if (
+    lowered.includes("enable javascript") ||
+    lowered.includes("please enable javascript") ||
+    lowered.includes("requires javascript")
+  ) {
+    return true;
   }
-  return scripts;
+  return /<noscript[\s\S]*?javascript[\s\S]*?<\/noscript>/i.test(html);
 }
 
-function flattenJsonLd(node: any): any[] {
-  if (!node) return [];
-  if (Array.isArray(node)) {
-    return node.flatMap((item) => flattenJsonLd(item));
-  }
-  if (typeof node === "object") {
-    const graph = node["@graph"];
-    if (graph) {
-      return flattenJsonLd(graph);
-    }
-    return [node];
-  }
-  return [];
+function parseHttpStatusFromError(error: unknown): number | null {
+  const message = error instanceof Error ? error.message : String(error);
+  const match = message.match(/HTTP\s(\d{3})/i);
+  return match ? Number(match[1]) : null;
 }
 
-function isRecipeType(value: any) {
-  if (!value) return false;
-  if (Array.isArray(value)) {
-    return value.some((item) => String(item).toLowerCase() === "recipe");
-  }
-  return String(value).toLowerCase() === "recipe";
-}
-
-function normalizeImageUrl(image: any): string | undefined {
-  if (!image) return undefined;
-  if (typeof image === "string") return image;
-  if (Array.isArray(image)) {
-    for (const entry of image) {
-      const normalized = normalizeImageUrl(entry);
-      if (normalized) return normalized;
-    }
-    return undefined;
-  }
-  if (typeof image === "object") {
-    if (typeof image.url === "string") return image.url;
-    if (typeof image["@id"] === "string") return image["@id"];
-  }
-  return undefined;
-}
-
-function parseDurationToMinutes(value?: string | null) {
-  if (!value) return null;
-  const match = value.match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
-  if (!match) return null;
-  const hours = match[1] ? Number(match[1]) : 0;
-  const minutes = match[2] ? Number(match[2]) : 0;
-  const total = hours * 60 + minutes;
-  return Number.isNaN(total) ? null : total;
-}
-
-function normalizeInstructions(instructions: any): string | undefined {
-  if (!instructions) return undefined;
-  const lines: string[] = [];
-  const pushLine = (line: string) => {
-    const trimmed = line.trim();
-    if (trimmed) lines.push(trimmed);
+function buildMeta(html: string) {
+  return {
+    ogTitle: getMetaContent(html, "og:title"),
+    ogImage: getMetaContent(html, "og:image"),
+    ogDescription: getMetaContent(html, "og:description"),
+    ogSiteName: getMetaContent(html, "og:site_name"),
+    twitterTitle: getMetaContent(html, "twitter:title"),
+    twitterImage: getMetaContent(html, "twitter:image"),
   };
+}
 
-  const handle = (item: any) => {
-    if (!item) return;
-    if (typeof item === "string") {
-      pushLine(item);
-      return;
-    }
-    if (Array.isArray(item)) {
-      item.forEach(handle);
-      return;
-    }
-    if (typeof item === "object") {
-      if (item.text) {
-        handle(item.text);
-        return;
-      }
-      if (item.itemListElement) {
-        handle(item.itemListElement);
-        return;
-      }
-      if (item.name) {
-        pushLine(item.name);
-        return;
-      }
-    }
+function buildBaseResult({
+  html,
+  resolvedUrl,
+  hostname,
+  importMethod,
+}: {
+  html: string;
+  resolvedUrl: string;
+  hostname?: string;
+  importMethod: "fetch" | "playwright";
+}): { baseResult: ScrapeResult; meta: ReturnType<typeof buildMeta> } {
+  const meta = buildMeta(html);
+  return {
+    baseResult: {
+      title: meta.ogTitle ?? meta.twitterTitle,
+      photoUrl: meta.ogImage ?? meta.twitterImage,
+      description: meta.ogDescription,
+      sourceUrl: resolvedUrl,
+      sourceName: meta.ogSiteName ?? hostname,
+      confidence: "medium",
+      raw: { meta },
+      importMethod,
+    },
+    meta,
   };
-
-  handle(instructions);
-
-  if (lines.length === 0) return undefined;
-  return lines.join("\n\n");
 }
 
 function htmlToText(html: string) {
@@ -584,13 +545,112 @@ function extractInstagramImage(html: string) {
   return image ? decodeHtmlEntities(image) : null;
 }
 
-export async function scrapeUrl(url: string): Promise<ScrapeResult> {
+export async function scrapeRecipeWithPlaywright(
+  url: string,
+  playwrightFetcher: PlaywrightFetcher,
+): Promise<ScrapeResult> {
+  const shouldLogParser =
+    process.env.SCRAPER_DEBUG === "1" || process.env.NODE_ENV !== "production";
+  if (shouldLogParser) {
+    console.log("Scrape fallback: playwright", { url });
+  }
+
+  try {
+    const { html, finalUrl, jsonLd } = await playwrightFetcher(url);
+    const resolvedUrl = finalUrl ?? url;
+    const hostname = (() => {
+      try {
+        return new URL(resolvedUrl).hostname.replace(/^www\./, "");
+      } catch {
+        return undefined;
+      }
+    })();
+    const { baseResult, meta } = buildBaseResult({
+      html,
+      resolvedUrl,
+      hostname,
+      importMethod: "playwright",
+    });
+    const { recipe: jsonLdRecipe, raw: recipeNode } = extractRecipeFromJsonLd(
+      jsonLd,
+    );
+
+    if (jsonLdRecipe) {
+      return {
+        title: jsonLdRecipe.title,
+        sourceUrl: resolvedUrl,
+        sourceName: meta.ogSiteName ?? hostname,
+        photoUrl: jsonLdRecipe.image,
+        description: meta.ogDescription ?? baseResult.description,
+        prepTimeMinutes: jsonLdRecipe.prepTimeMinutes,
+        cookTimeMinutes: jsonLdRecipe.cookTimeMinutes,
+        totalTimeMinutes: jsonLdRecipe.totalTimeMinutes,
+        servings: jsonLdRecipe.recipeYield ?? null,
+        yields: jsonLdRecipe.recipeYield ?? null,
+        ingredients:
+          jsonLdRecipe.ingredients.length > 0 ? jsonLdRecipe.ingredients : undefined,
+        directions: jsonLdRecipe.instructions.join("\n\n"),
+        raw: {
+          jsonLd: recipeNode,
+          meta,
+        },
+        confidence: "high",
+        importMethod: "playwright",
+      };
+    }
+
+    const fallback = extractRecipeFromHtmlFallback(html);
+    const hasFallbackData = Boolean(
+      fallback.ingredients?.length || fallback.instructions?.length,
+    );
+
+    return {
+      ...baseResult,
+      title: fallback.title ?? baseResult.title,
+      ingredients: fallback.ingredients ?? baseResult.ingredients,
+      directions: fallback.instructions?.join("\n\n") ?? baseResult.directions,
+      confidence: hasFallbackData ? "low" : baseResult.confidence,
+      raw: {
+        ...baseResult.raw,
+        fallback,
+      },
+      importMethod: "playwright",
+    };
+  } catch (error) {
+    if (error instanceof PlaywrightBlockedError) {
+      throw error;
+    }
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[Scrape] Playwright fallback failed", { url, message });
+    throw new Error(`Playwright fallback failed: ${message}`);
+  }
+}
+
+export async function scrapeUrl(
+  url: string,
+  options?: { playwrightFetcher?: PlaywrightFetcher },
+): Promise<ScrapeResult> {
   const shouldLogParser =
     process.env.SCRAPER_DEBUG === "1" || process.env.NODE_ENV !== "production";
   if (shouldLogParser) {
     console.log("Scrape start", { url });
   }
-  const { html, finalUrl } = await safeFetchHtml(url);
+  const playwrightFetcher = options?.playwrightFetcher ?? fetchRecipeWithPlaywright;
+  let htmlResult: HtmlResult;
+  try {
+    htmlResult = await safeFetchHtml(url);
+  } catch (error) {
+    const status = parseHttpStatusFromError(error);
+    if (status === 401 || status === 403) {
+      if (shouldLogParser) {
+        console.log("Scrape fallback due to status", { url, status });
+      }
+      return scrapeRecipeWithPlaywright(url, playwrightFetcher);
+    }
+    throw error;
+  }
+
+  const { html, finalUrl } = htmlResult;
   const resolvedUrl = finalUrl ?? url;
   const hostname = (() => {
     try {
@@ -600,53 +660,51 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
     }
   })();
 
-  const rawJsonLd = extractJsonLd(html);
-  const jsonLdObjects = rawJsonLd.flatMap((item) => flattenJsonLd(item));
-  const recipeNode = jsonLdObjects.find((node) => isRecipeType(node["@type"]));
+  if (looksLikeAppShell(html)) {
+    if (shouldLogParser) {
+      console.log("Scrape fallback due to app shell", { url });
+    }
+    return scrapeRecipeWithPlaywright(url, playwrightFetcher);
+  }
 
-  const meta = {
-    ogTitle: getMetaContent(html, "og:title"),
-    ogImage: getMetaContent(html, "og:image"),
-    ogDescription: getMetaContent(html, "og:description"),
-    ogSiteName: getMetaContent(html, "og:site_name"),
-    twitterTitle: getMetaContent(html, "twitter:title"),
-    twitterImage: getMetaContent(html, "twitter:image"),
-  };
+  if (shouldLogParser) {
+    console.log("Scrape path: fetch", { url });
+  }
 
-  if (recipeNode) {
-    const instructions = normalizeInstructions(recipeNode.recipeInstructions);
+  const { baseResult, meta } = buildBaseResult({
+    html,
+    resolvedUrl,
+    hostname,
+    importMethod: "fetch",
+  });
+
+  const { recipe: jsonLdRecipe, raw: recipeNode } = extractRecipeFromJsonLd(
+    extractJsonLdFromHtml(html),
+  );
+
+  if (jsonLdRecipe) {
     return {
-      title: recipeNode.name,
+      title: jsonLdRecipe.title,
       sourceUrl: resolvedUrl,
       sourceName: meta.ogSiteName ?? hostname,
-      photoUrl: normalizeImageUrl(recipeNode.image),
-      description: recipeNode.description ?? meta.ogDescription,
-      prepTimeMinutes: parseDurationToMinutes(recipeNode.prepTime),
-      cookTimeMinutes: parseDurationToMinutes(recipeNode.cookTime),
-      totalTimeMinutes: parseDurationToMinutes(recipeNode.totalTime),
-      servings: recipeNode.recipeYield ? String(recipeNode.recipeYield) : null,
-      yields: recipeNode.recipeYield ? String(recipeNode.recipeYield) : null,
-      ingredients: recipeNode.recipeIngredient ?? undefined,
-      directions: instructions,
+      photoUrl: jsonLdRecipe.image,
+      description: meta.ogDescription ?? baseResult.description,
+      prepTimeMinutes: jsonLdRecipe.prepTimeMinutes,
+      cookTimeMinutes: jsonLdRecipe.cookTimeMinutes,
+      totalTimeMinutes: jsonLdRecipe.totalTimeMinutes,
+      servings: jsonLdRecipe.recipeYield ?? null,
+      yields: jsonLdRecipe.recipeYield ?? null,
+      ingredients:
+        jsonLdRecipe.ingredients.length > 0 ? jsonLdRecipe.ingredients : undefined,
+      directions: jsonLdRecipe.instructions.join("\n\n"),
       raw: {
         jsonLd: recipeNode,
         meta,
       },
       confidence: "high",
+      importMethod: "fetch",
     };
   }
-
-  const baseResult: ScrapeResult = {
-    title: meta.ogTitle ?? meta.twitterTitle,
-    photoUrl: meta.ogImage ?? meta.twitterImage,
-    description: meta.ogDescription,
-    sourceUrl: resolvedUrl,
-    sourceName: meta.ogSiteName ?? hostname,
-    confidence: "medium",
-    raw: {
-      meta,
-    },
-  };
 
   if (hostname && hostname.includes("tiktok.com")) {
     const tiktokResult = extractTikTokCaptionFromHtml(html, resolvedUrl);

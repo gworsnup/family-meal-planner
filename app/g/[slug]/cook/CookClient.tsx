@@ -485,15 +485,11 @@ export default function CookClient({
     setImportMessage(null);
     startImportTransition(async () => {
       try {
-        const { importId: nextImportId, recipeId } = await startRecipeImport(
-          slug,
-          trimmed,
-        );
+        const { importId: nextImportId } = await startRecipeImport(slug, trimmed);
         setImportId(nextImportId);
-        setImportRecipeId(recipeId);
+        setImportRecipeId(null);
         setImportSourceUrl(trimmed);
         setImportStatus("queued");
-        updateParams({ recipeId });
         router.refresh();
       } catch (error) {
         setImportStatus("failed");
@@ -532,13 +528,15 @@ export default function CookClient({
         const data = (await response.json()) as {
           status?: "queued" | "running" | "success" | "partial" | "failed";
           error?: string | null;
+          recipeId?: string | null;
         };
         if (!isActive || !data.status) return;
         setImportStatus(data.status);
         setImportMessage(data.error ?? null);
         if (data.status === "success" || data.status === "partial") {
-          if (importRecipeId) {
-            updateParams({ recipeId: importRecipeId });
+          if (data.recipeId) {
+            setImportRecipeId(data.recipeId);
+            updateParams({ recipeId: data.recipeId });
           }
           router.refresh();
         }

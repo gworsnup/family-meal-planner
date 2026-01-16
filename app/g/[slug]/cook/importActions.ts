@@ -89,20 +89,9 @@ export async function startRecipeImport(slug: string, url: string) {
   const cleanedUrl = url.trim();
   await assertSafeUrl(cleanedUrl);
 
-  const recipe = await prisma.recipe.create({
-    data: {
-      workspaceId: user.workspace.id,
-      title: "Importing…",
-      sourceUrl: cleanedUrl,
-      isDraft: true,
-    },
-    select: { id: true },
-  });
-
   const recipeImport = await prisma.recipeImport.create({
     data: {
       workspaceId: user.workspace.id,
-      recipeId: recipe.id,
       sourceUrl: cleanedUrl,
       status: "queued",
     },
@@ -116,5 +105,5 @@ export async function startRecipeImport(slug: string, url: string) {
     body: JSON.stringify({ importId: recipeImport.id }),
   }).catch(() => null);
 
-  return { recipeId: recipe.id, importId: recipeImport.id };
+  return { importId: recipeImport.id };
 }
