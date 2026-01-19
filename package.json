@@ -22,6 +22,7 @@
     "react-countup": "^6.5.3",
     "react-dom": "19.2.3",
     "react-intersection-observer": "^10.0.2",
+    "react-responsive-modal": "^7.1.0",
     "react-slick": "^0.31.0",
     "slick-carousel": "^1.8.1",
     "zod": "^4.1.5"

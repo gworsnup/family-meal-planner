@@ -44,6 +44,9 @@ importers:
       react-intersection-observer:
         specifier: ^10.0.2
         version: 10.0.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react-responsive-modal:
+        specifier: ^7.1.0
+        version: 7.1.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react-slick:
         specifier: ^0.31.0
         version: 0.31.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -157,6 +160,16 @@ packages:
   '@babel/types@7.28.5':
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
     engines: {node: '>=6.9.0'}
+
+  '@bedrock-layout/use-forwarded-ref@2.0.17':
+    resolution: {integrity: sha512-4meaaQjg2ZtP9eg0F2LsL0tENmxZ6CTNz4tLheOOyKjqTSjM11yKjSOsMwaEJ8uRyQf+XBDFBmb/IfpHAuCqug==}
+    peerDependencies:
+      react: ^16.8 || ^17 || ^18
+
+  '@bedrock-layout/use-stateful-ref@2.0.17':
+    resolution: {integrity: sha512-pzVUYMTa32E9dGa2xadOFej96gYJEHg+Qh4Tg0fMj6zYT4y5LZpE+XkCiPcFafR3kTFhqSGfjRTIJbnSyeEAxQ==}
+    peerDependencies:
+      react: ^16.8 || ^17 || ^18
 
   '@dnd-kit/accessibility@3.1.1':
     resolution: {integrity: sha512-2P+YgaXF+gRsIihwwY1gCsQSYnu9Zyj2py8kY5fFvUM1qm2WA2u639R6YNVfU4GWr+ZM5mqEsfHZZLoRONbemw==}
@@ -916,6 +929,9 @@ packages:
   bcryptjs@3.0.3:
     resolution: {integrity: sha512-GlF5wPWnSa/X5LKM1o0wz0suXIINz1iHRLvTS+sLyi7XPbe5ycmYI3DlZqVGZZtDgl4DmasFg7gOB3JYbphV5g==}
     hasBin: true
+
+  body-scroll-lock@3.1.5:
+    resolution: {integrity: sha512-Yi1Xaml0EvNA0OYWxXiYNqY24AfWkbA6w5vxE7GWxtKfzIbZM+Qw+aSmkgsbWzbHiy/RCSkUZBplVxTA+E4jJg==}
 
   brace-expansion@1.1.12:
     resolution: {integrity: sha512-9T9UjW3r0UW5c1Q7GTwllptXwhvYmEzFhzMfZ9H7FQWt+uZePjZPjBP/W1ZEyZ1twGWom5/56TF4lPcqjnDHcg==}
@@ -1940,6 +1956,12 @@ packages:
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
+  react-responsive-modal@7.1.0:
+    resolution: {integrity: sha512-BKcvf+SYCmTqmgd22l0tkWT2/eZ9FzkirS0e/4SwDIAfry5QyqGRtsMUpq9z8XPQzIOQZ3EM+5Z2u46iTmVtvQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18 || ^19
+      react-dom: ^16.8.0 || ^17 || ^18 || ^19
+
   react-slick@0.31.0:
     resolution: {integrity: sha512-zo6VLT8wuSBJffg/TFPbzrw2dEnfZ/cUKmYsKByh3AgatRv29m2LoFbq5vRMa3R3A4wp4d8gwbJKO2fWZFaI3g==}
     peerDependencies:
@@ -2376,6 +2398,15 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
+
+  '@bedrock-layout/use-forwarded-ref@2.0.17(react@19.2.3)':
+    dependencies:
+      '@bedrock-layout/use-stateful-ref': 2.0.17(react@19.2.3)
+      react: 19.2.3
+
+  '@bedrock-layout/use-stateful-ref@2.0.17(react@19.2.3)':
+    dependencies:
+      react: 19.2.3
 
   '@dnd-kit/accessibility@3.1.1(react@19.2.3)':
     dependencies:
@@ -3092,6 +3123,8 @@ snapshots:
   baseline-browser-mapping@2.9.11: {}
 
   bcryptjs@3.0.3: {}
+
+  body-scroll-lock@3.1.5: {}
 
   brace-expansion@1.1.12:
     dependencies:
@@ -4239,6 +4272,14 @@ snapshots:
       react-dom: 19.2.3(react@19.2.3)
 
   react-is@16.13.1: {}
+
+  react-responsive-modal@7.1.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+    dependencies:
+      '@bedrock-layout/use-forwarded-ref': 2.0.17(react@19.2.3)
+      body-scroll-lock: 3.1.5
+      classnames: 2.5.1
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
 
   react-slick@0.31.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
