@@ -1,6 +1,6 @@
 "use client";
 
-import faq_data from "@/data/faq-data";
+import faq_data from "../../../data/faq-data";
 import React, { useState } from "react";
 export default function FaqHomeTwo() {
   const [activeIndex, setActiveIndex] = useState<number>(0);
