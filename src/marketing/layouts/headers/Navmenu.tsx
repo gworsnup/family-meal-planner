@@ -1,4 +1,4 @@
-import menu_data from "@/marketing/data/menu-data";
+import menu_data from "../../data/menu-data";
 import Link from "next/link";
 
 interface NavmenuProps {
