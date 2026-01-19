@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
@@ -18,9 +19,16 @@
         "name": "next"
       }
     ],
-    "paths": {
-      "@/*": ["./*"]
-    }
+   "paths": {
+  "@/*": ["./*"],
+  "@/common/*": ["src/marketing-template/common/*"],
+  "@/layouts/*": ["src/marketing-template/layouts/*"],
+  "@/data/*": ["src/marketing-template/data/*"],
+  "@/hooks/*": ["src/marketing-template/hooks/*"],
+  "@/modal/*": ["src/marketing-template/modal/*"]
+}
+
+
   },
   "include": [
     "next-env.d.ts",
@@ -30,5 +38,8 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+    "exclude": [
+    "node_modules",
+    "src/marketing-template/components/**/index.tsx"
+  ]
 }
