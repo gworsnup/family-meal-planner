@@ -1,4 +1,4 @@
-import Count from "@/common/count";
+import Count from "../../common/count";
 
 const counter_data = [
   { end: 20, suffix: "K+", label: "Successful Implementations" },
