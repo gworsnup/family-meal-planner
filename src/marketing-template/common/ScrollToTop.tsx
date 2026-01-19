@@ -1,6 +1,6 @@
 "use client";
 
-import UseSticky from "@/hooks/UseSticky";
+import UseSticky from "../hooks/UseSticky";
 import React, { useState, useEffect } from "react";
 
  
