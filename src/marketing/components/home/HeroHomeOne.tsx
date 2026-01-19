@@ -1,31 +1,28 @@
 "use client";
 import Link from "next/link";
-import Slider from "react-slick";
 
-const settings = {
-  slidesToShow: 4,
-  slidesToScroll: 1,
-  autoplay: true,
-  autoplaySpeed: 0,
-  speed: 5000,
-  arrows: false,
-  pauseOnHover: false,
-  cssEase: "linear",
-  responsive: [
-    {
-      breakpoint: 1199,
-      settings: {
-        slidesToShow: 3,
-      },
-    },
-    {
-      breakpoint: 767,
-      settings: {
-        slidesToShow: 1,
-      },
-    },
-  ],
-};
+const brandLogos = [
+  {
+    src: "assets/images/home1/icon1.svg",
+    alt: "Icon",
+  },
+  {
+    src: "assets/images/home1/icon2.svg",
+    alt: "Icon",
+  },
+  {
+    src: "assets/images/home1/icon3.svg",
+    alt: "Icon",
+  },
+  {
+    src: "assets/images/home1/icon4.svg",
+    alt: "Icon",
+  },
+  {
+    src: "assets/images/home1/icon5.svg",
+    alt: "Icon",
+  },
+];
 
 export default function HeroHomeOne() {
   return (
@@ -75,23 +72,13 @@ export default function HeroHomeOne() {
               growth and innovation
             </p>
           </div>
-          <Slider {...settings} className="azzle-brand-slider">
-            <div className="azzle-logo-icon-item">
-              <img src="assets/images/home1/icon1.svg" alt="Icon" />
-            </div>
-            <div className="azzle-logo-icon-item">
-              <img src="assets/images/home1/icon2.svg" alt="Icon" />
-            </div>
-            <div className="azzle-logo-icon-item">
-              <img src="assets/images/home1/icon3.svg" alt="Icon" />
-            </div>
-            <div className="azzle-logo-icon-item">
-              <img src="assets/images/home1/icon4.svg" alt="Icon" />
-            </div>
-            <div className="azzle-logo-icon-item">
-              <img src="assets/images/home1/icon5.svg" alt="Icon" />
-            </div>
-          </Slider>
+          <div className="azzle-brand-slider">
+            {brandLogos.map((logo) => (
+              <div className="azzle-logo-icon-item" key={logo.src}>
+                <img src={logo.src} alt={logo.alt} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
