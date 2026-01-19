@@ -12,13 +12,14 @@ const Wrapper = ({ children }: WrapperProps) => {
   
  
 
- return (
+return (
   <>
     <AnimationProvider>{children}</AnimationProvider>
     <ScrollToTop />
   </>
 );
 
+};
 
 export default Wrapper;
  
