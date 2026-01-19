@@ -1,4 +1,4 @@
-import ModalVideo from "@/modal/modalVideo";
+import ModalVideo from "../../../modal/modalVideo";
 
 
 export default function VideoHomeOne() {
