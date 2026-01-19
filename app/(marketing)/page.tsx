@@ -1,9 +1,5 @@
-import HeroHomeOne from "@/src/marketing/components/home/HeroHomeOne";
+import HomeOne from "@/marketing-template/components/homes/home-1";
 
-export default function MarketingHomepage() {
-  return (
-    <main>
-      <HeroHomeOne />
-    </main>
-  );
+export default function Page() {
+  return <HomeOne />;
 }
