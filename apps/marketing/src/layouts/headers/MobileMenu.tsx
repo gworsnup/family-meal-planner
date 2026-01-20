@@ -72,7 +72,7 @@ export default function MobileMenu({ setIsOpen, isOpen }: MobileMenuProps) {
             </ul>
           </div>
           <div className="azzle-mobile-menu-btn">
-            <Link className="azzle-default-btn sm-size" href="/contact-us">Contact Us</Link>
+            <Link className="azzle-default-btn sm-size" href="/contact">Contact Us</Link>
           </div>
         </div>
       </div>
