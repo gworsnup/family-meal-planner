@@ -5,11 +5,12 @@ interface NavmenuProps {
   menu_style?: boolean;
 }
 
-
 export default function Navmenu({ menu_style = false }: NavmenuProps) {
+  const navItems = menu_data.filter((item) => item.title !== "Home");
+
   return (
     <ul>
-      {menu_data.map((item, i) => (
+      {navItems.map((item, i) => (
         <li key={i} className={`${item.has_submenu ? "menu-item-has-children" : ""}`}>
           <Link href={item.path} className={`${menu_style ? "light-color" : ""}`}>{item.title}</Link>
           {item.has_submenu &&

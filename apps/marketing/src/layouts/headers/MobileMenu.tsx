@@ -26,6 +26,7 @@ export default function MobileMenu({ setIsOpen, isOpen }: MobileMenuProps) {
     }
   };
 
+  const navItems = menu_data.filter((item) => item.title !== "Home");
 
   return (
     <>
@@ -44,7 +45,7 @@ export default function MobileMenu({ setIsOpen, isOpen }: MobileMenuProps) {
           </div>
           <div className="azzle-mobile-menu">
             <ul>
-              {menu_data.map((item, i) => (
+              {navItems.map((item, i) => (
                 <li key={i} className={`${item.title === navTitle ? 'azzle-active' : ''} ${item.has_submenu ? 'menu-item-has-children azzle-item-has-children' : ''}`}>
                   <Link href={item.path}>{item.title}{item.has_submenu && <span className="azzle-mean-expand" onClick={() => openMobileMenu(item.title)}></span>}</Link>
                   {item.has_submenu &&
