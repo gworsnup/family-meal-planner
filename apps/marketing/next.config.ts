@@ -83,6 +83,11 @@ const nextConfig = {
     // Allow production builds to succeed even if there are ESLint errors
     ignoreDuringBuilds: true,
   },
+  env: {
+    SANITY_PROJECT_ID: process.env.SANITY_PROJECT_ID,
+    SANITY_DATASET: process.env.SANITY_DATASET,
+    SANITY_API_VERSION: process.env.SANITY_API_VERSION,
+  },
 };
 
 export default nextConfig;
