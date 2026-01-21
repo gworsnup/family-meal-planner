@@ -13,7 +13,6 @@ interface MenuItem {
 }
 
 const menu_data: MenuItem[] = [
-  { title: "Home", path: "/" },
   { title: "Features", path: "/features" },
   { title: "Pricing", path: "/pricing" },
   { title: "Blog", path: "/blog" },
