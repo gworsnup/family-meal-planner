@@ -38,7 +38,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Sanity CMS setup (marketing)
 
 1. Set the required environment variables in `apps/marketing/.env.local` (see `.env.example`).
-2. Run the marketing app and open `/studio` to access Sanity Studio.
+2. Run the marketing app and open Sanity Studio via https://manage.sanity.io (hosted Studio) to edit content.
 3. Create a new **Page** document with:
    - **Title**: Home
    - **Slug**: `home`
