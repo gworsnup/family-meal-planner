@@ -1,9 +1,20 @@
 "use client";
 import Link from "next/link";
 import Slider from "react-slick";
+import { urlFor } from "@/lib/sanity/image";
+
+export interface HeroContent {
+  _type: "hero";
+  enabled?: boolean;
+  headline?: string;
+  subheadline?: string;
+  primaryCta?: { label?: string; href?: string };
+  image?: any;
+  imageAlt?: string;
+}
 
 type HeroHomeOneProps = {
-  content?: any;
+  content?: HeroContent;
 };
 
 const settings = {
@@ -28,8 +39,18 @@ const settings = {
   }]
 }
 
+export default function HeroHomeOne({ content }: HeroHomeOneProps) {
+  const headline = content?.headline ?? "Simplify your SaaS solution with AI";
+  const subheadline =
+    content?.subheadline ??
+    "Our AI SAAS tool is a cloud-based software delivery model. It helps businesses forecast demand for products and services and optimize inventory management and supply chain operations.";
+  const primaryCtaLabel = content?.primaryCta?.label ?? "Get started for free";
+  const primaryCtaHref = content?.primaryCta?.href ?? "/contact-us";
+  const heroImageSrc = content?.image
+    ? urlFor(content.image).width(1600).quality(80).url()
+    : "assets/images/home1/Dashboard.png";
+  const heroImageAlt = content?.imageAlt ?? "Dashboard";
 
-export default function HeroHomeOne({ content: _content }: HeroHomeOneProps) {
   return (
     <div className="azzle-hero-section">
       <div className="azzle-hero-shape">
@@ -37,11 +58,11 @@ export default function HeroHomeOne({ content: _content }: HeroHomeOneProps) {
       </div>
       <div className="container">
         <div className="azzle-hero-content1">
-          <h1 data-aos="fade-left" data-aos-delay="500">Simplify your SaaS solution with AI</h1>
-          <p data-aos="zoom-in" data-aos-delay="700">Our AI SAAS tool is a cloud-based software delivery model. It helps businesses forecast demand for products and services and optimize inventory management and supply chain operations.</p>
+          <h1 data-aos="fade-left" data-aos-delay="500">{headline}</h1>
+          <p data-aos="zoom-in" data-aos-delay="700">{subheadline}</p>
           <div className="azzle-hero-button mt-50">
-            <Link className="azzle-default-btn" data-aos="fade-up" data-aos-delay="900" href="/contact-us" data-text="Get started for free">
-              <span className="button-wraper">Get started for free</span>
+            <Link className="azzle-default-btn" data-aos="fade-up" data-aos-delay="900" href={primaryCtaHref} data-text={primaryCtaLabel}>
+              <span className="button-wraper">{primaryCtaLabel}</span>
             </Link>
             <Link className="azzle-default-btn outline-btn" data-aos="fade-up" data-aos-delay="1000" href="/contact-us" data-text="Learn more">
               <span className="button-wraper">Learn more</span>
@@ -49,7 +70,7 @@ export default function HeroHomeOne({ content: _content }: HeroHomeOneProps) {
           </div>
         </div>
         <div className="azzle-hero-dashboard" data-aos="fade-up" data-aos-delay=".7s">
-          <img src="assets/images/home1/Dashboard.png" alt="Dashboard" />
+          <img src={heroImageSrc} alt={heroImageAlt} />
         </div>
         <div className="divider"></div>
         <div className="azzle-brand-slider-wraper">
