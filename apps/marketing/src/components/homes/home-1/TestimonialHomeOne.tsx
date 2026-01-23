@@ -1,6 +1,11 @@
 
+type TestimonialHomeOneProps = {
+  content?: any;
+};
 
-export default function TestimonialHomeOne() {
+export default function TestimonialHomeOne({
+  content: _content,
+}: TestimonialHomeOneProps) {
   return (
     <div className="azzle-section-padding3 bg-heading">
       <div className="container">

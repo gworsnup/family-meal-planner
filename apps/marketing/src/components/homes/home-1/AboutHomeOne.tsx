@@ -1,6 +1,9 @@
 
+type AboutHomeOneProps = {
+  content?: any;
+};
 
-export default function AboutHomeOne() {
+export default function AboutHomeOne({ content: _content }: AboutHomeOneProps) {
   return (
     <>
       <div className="azzle-section-padding pt-0 overflow-hidden">

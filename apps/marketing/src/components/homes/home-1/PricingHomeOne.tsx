@@ -2,7 +2,13 @@
 import Link from "next/link";
 import { useState } from "react";
 
-export default function PricingHomeOne() { 
+type PricingHomeOneProps = {
+  content?: any;
+};
+
+export default function PricingHomeOne({
+  content: _content,
+}: PricingHomeOneProps) { 
   const [isMonthly, setIsMonthly] = useState(false);
 
   return (

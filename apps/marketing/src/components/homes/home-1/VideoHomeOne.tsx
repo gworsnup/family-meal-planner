@@ -1,7 +1,10 @@
 import ModalVideo from "@/modal/modalVideo";
 
+type VideoHomeOneProps = {
+  content?: any;
+};
 
-export default function VideoHomeOne() {
+export default function VideoHomeOne({ content: _content }: VideoHomeOneProps) {
   return (
     <section className="azzle-video-section">
       <div className="row">

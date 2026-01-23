@@ -8,24 +8,25 @@ import VideoHomeOne from "./VideoHomeOne";
 
 type ThemeSection = {
   _type: string;
+  [key: string]: unknown;
 };
 
 const renderSection = (section: ThemeSection, index: number) => {
   switch (section._type) {
     case "hero":
-      return <HeroHomeOne key={`hero-${index}`} />;
+      return <HeroHomeOne key={`hero-${index}`} content={section} />;
     case "featureGrid":
-      return <FeaturesHomeOne key={`featureGrid-${index}`} />;
+      return <FeaturesHomeOne key={`featureGrid-${index}`} content={section} />;
     case "about":
-      return <AboutHomeOne key={`about-${index}`} />;
+      return <AboutHomeOne key={`about-${index}`} content={section} />;
     case "video":
-      return <VideoHomeOne key={`video-${index}`} />;
+      return <VideoHomeOne key={`video-${index}`} content={section} />;
     case "pricing":
-      return <PricingHomeOne key={`pricing-${index}`} />;
+      return <PricingHomeOne key={`pricing-${index}`} content={section} />;
     case "faq":
-      return <FaqHomeOne key={`faq-${index}`} />;
+      return <FaqHomeOne key={`faq-${index}`} content={section} />;
     case "testimonial":
-      return <TestimonialHomeOne key={`testimonial-${index}`} />;
+      return <TestimonialHomeOne key={`testimonial-${index}`} content={section} />;
     default:
       return null;
   }

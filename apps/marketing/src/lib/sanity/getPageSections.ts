@@ -3,18 +3,21 @@ import { sanityClient } from "@/lib/sanity/client";
 
 const pageSectionsQuery = groq`
   *[_type == "page" && slug.current == $slug][0]{
-    sections[]{_type, enabled}
+    title,
+    "slug": slug.current,
+    seo,
+    sections[]
   }
 `;
 
 type PageSectionsResult = {
-  sections?: Array<{ _type: string; enabled?: boolean }>;
+  sections?: Array<{ _type: string; enabled?: boolean; [key: string]: unknown }>;
 };
 
 export const getPageSections = async (
   slug: string,
 ): Promise<{
-  sections: Array<{ _type: string; enabled?: boolean }>;
+  sections: Array<{ _type: string; enabled?: boolean; [key: string]: unknown }>;
   found: boolean;
 }> => {
   if (!sanityClient) {

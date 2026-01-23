@@ -1,8 +1,12 @@
 import Link from "next/link";
 
+type FeaturesHomeOneProps = {
+  content?: any;
+};
 
-
-export default function FeaturesHomeOne() {
+export default function FeaturesHomeOne({
+  content: _content,
+}: FeaturesHomeOneProps) {
   return (
     <section className="azzle-section-padding">
       <div className="container">

@@ -35,9 +35,13 @@ const faq_data: FaqItem[] = [
 
 interface StyleProps {
   style_2?: boolean;
+  content?: any;
 }
 
-export default function FaqHomeOne({ style_2 = false }: StyleProps) {
+export default function FaqHomeOne({
+  style_2 = false,
+  content: _content,
+}: StyleProps) {
   const [activeId, setActiveId] = useState<number>(1); 
 
   const toggleFaq = (index: number) => {
