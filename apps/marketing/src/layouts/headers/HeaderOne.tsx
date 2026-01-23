@@ -5,6 +5,7 @@ import UseSticky from "@/hooks/UseSticky";
 import { useState } from "react";
 import MobileMenu from "./MobileMenu"; 
 import { siteContent } from "@/content/site";
+import { headerContent } from "@/content/header";
  
 
 export default function HeaderOne() {
@@ -17,8 +18,11 @@ export default function HeaderOne() {
           <div className="row gx-3 align-items-center justify-content-between">
             <div className="col-8 col-sm-auto ">
               <div className="header-logo">
-                <Link href="/">
-                  <img src={siteContent.brand.logoDarkSrc} alt={siteContent.brand.name} />   
+                <Link href={headerContent.logo.href ?? "/"}>
+                  <img
+                    src={headerContent.logo.src ?? siteContent.brand.logoDarkSrc}
+                    alt={headerContent.logo.alt ?? siteContent.brand.name}
+                  />   
                 </Link>
               </div>
             </div>
@@ -31,12 +35,23 @@ export default function HeaderOne() {
             </div>
             <div className="col-auto d-flex align-items-center">
               <div className="azzle-header-button-wraper">
+                <div className="azzle-header-login-button button3">
+                  <ul>
+                    <li>
+                      <Link href={headerContent.links.login.href ?? "/sign-in"}>
+                        {headerContent.links.login.label ?? "Login"}
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
                 <Link
                   className="azzle-default-btn azzle-header-btn"
-                  href={siteContent.headerCta.href}
-                  data-text={siteContent.headerCta.label}
+                  href={headerContent.links.primaryCta.href ?? siteContent.headerCta.href}
+                  data-text={headerContent.links.primaryCta.label ?? siteContent.headerCta.label}
                 >
-                  <span className="button-wraper">{siteContent.headerCta.label}</span>
+                  <span className="button-wraper">
+                    {headerContent.links.primaryCta.label ?? siteContent.headerCta.label}
+                  </span>
                 </Link>
               </div>
               <div className="azzle-header-menu">
