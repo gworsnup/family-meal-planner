@@ -10,8 +10,8 @@ type AboutTeamProps = {
   content?: {
     title?: string;
     cta?: { label?: string; href?: string };
-    members?: TeamMember[];
-    socialLinks?: { href: string; iconSrc: string }[];
+    members?: Partial<TeamMember>[];
+    socialLinks?: Partial<{ href: string; iconSrc: string }>[];
   };
 };
 
@@ -24,17 +24,23 @@ export default function AboutTeam({ content }: AboutTeamProps) {
     { name: "Jack Fox", role: "NLP Expert", imageSrc: "assets/images/team/team5.png" },
     { name: "Adam Smith", role: "Project Manager", imageSrc: "assets/images/team/team6.png" },
   ];
-  const members = content?.members ?? defaultMembers;
+  const members = defaultMembers.map((member, index) => ({
+    ...member,
+    ...content?.members?.[index],
+  }));
   const title = content?.title ?? "Our team consists of a group of talents";
   const ctaLabel = content?.cta?.label ?? "Join our team";
   const ctaHref = content?.cta?.href ?? "/team";
-  const socialLinks =
-    content?.socialLinks ?? [
-      { href: "https://www.facebook.com", iconSrc: "assets/images/home2/facebook.svg" },
-      { href: "https://www.twitter.com", iconSrc: "assets/images/home2/twitter.svg" },
-      { href: "https://www.instagram.com", iconSrc: "assets/images/home2/insta.svg" },
-      { href: "https://www.linkedin.com", iconSrc: "assets/images/home2/in.svg" },
-    ];
+  const defaultSocialLinks = [
+    { href: "https://www.facebook.com", iconSrc: "assets/images/home2/facebook.svg" },
+    { href: "https://www.twitter.com", iconSrc: "assets/images/home2/twitter.svg" },
+    { href: "https://www.instagram.com", iconSrc: "assets/images/home2/insta.svg" },
+    { href: "https://www.linkedin.com", iconSrc: "assets/images/home2/in.svg" },
+  ];
+  const socialLinks = defaultSocialLinks.map((link, index) => ({
+    ...link,
+    ...content?.socialLinks?.[index],
+  }));
 
   return (
     <section className="azzle-section-padding2">

@@ -8,17 +8,22 @@ import BlogArea from "./BlogArea";
 
 type BlogContent = {
   breadcrumb?: { title?: string; page?: string };
-  posts?: {
+  posts?: Partial<{
     imageSrc: string;
     category: string;
     date: string;
     title: string;
     excerpt: string;
     href: string;
-  }[];
+  }>[];
   pagination?: string[];
   categories?: string[];
-  recentPosts?: { imageSrc: string; date: string; title: string; href: string }[];
+  recentPosts?: Partial<{
+    imageSrc: string;
+    date: string;
+    title: string;
+    href: string;
+  }>[];
   tags?: string[];
   subscribe?: { title?: string; description?: string };
 };

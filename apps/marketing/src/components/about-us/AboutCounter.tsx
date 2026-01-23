@@ -8,11 +8,14 @@ const counter_data = [
 ];
 
 type AboutCounterProps = {
-  content?: typeof counter_data;
+  content?: Partial<(typeof counter_data)[number]>[];
 };
 
 export default function AboutCounter({ content }: AboutCounterProps) {
-  const counters = content ?? counter_data;
+  const counters = counter_data.map((item, index) => ({
+    ...item,
+    ...content?.[index],
+  }));
   return (
     <div className="section">
       <div className="container">

@@ -4,7 +4,7 @@ type AboutCtaProps = {
     imageAlt?: string;
     title?: string;
     description?: string;
-    contacts?: { label: string; value: string; href?: string }[];
+    contacts?: Partial<{ label: string; value: string; href?: string }>[];
   };
 };
 
@@ -15,12 +15,15 @@ export default function AboutCta({ content }: AboutCtaProps) {
   const description =
     content?.description ??
     "AI accessible and beneficial for organizations, and we look forward to partnering with businesses to achieve their AI goals.";
-  const contacts =
-    content?.contacts ?? [
-      { label: "Website", value: "www.example.com", href: "" },
-      { label: "Email", value: "info@example.com", href: "" },
-      { label: "Phone", value: "(123) 456-7890", href: "" },
-    ];
+  const defaultContacts = [
+    { label: "Website", value: "www.example.com", href: "" },
+    { label: "Email", value: "info@example.com", href: "" },
+    { label: "Phone", value: "(123) 456-7890", href: "" },
+  ];
+  const contacts = defaultContacts.map((item, index) => ({
+    ...item,
+    ...content?.contacts?.[index],
+  }));
 
   return (
     <div className="azzle-content-section overflow-hidden">
