@@ -72,15 +72,6 @@ importers:
 
   apps/marketing:
     dependencies:
-      '@portabletext/react':
-        specifier: ^3.2.1
-        version: 3.2.4(react@19.1.0)
-      '@sanity/client':
-        specifier: ^7.11.0
-        version: 7.14.0(debug@4.4.3)
-      '@sanity/image-url':
-        specifier: ^1.0.2
-        version: 1.2.0
       aos:
         specifier: ^2.3.4
         version: 2.3.4
@@ -90,9 +81,6 @@ importers:
       next:
         specifier: 16.1.4
         version: 16.1.4(@babel/core@7.28.5)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      next-sanity:
-        specifier: ^9.12.3
-        version: 9.12.3(@emotion/is-prop-valid@1.4.0)(@sanity/client@7.14.0)(@sanity/icons@3.7.4(react@19.1.0))(@sanity/types@3.99.0(@types/react@19.2.7))(@sanity/ui@2.16.22(@emotion/is-prop-valid@1.4.0)(react-dom@19.1.0(react@19.1.0))(react-is@18.3.1)(react@19.1.0)(styled-components@6.3.8(react-dom@19.1.0(react@19.1.0))(react@19.1.0)))(next@16.1.4(@babel/core@7.28.5)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react-is@18.3.1)(react@19.1.0)(sanity@3.99.0(@emotion/is-prop-valid@1.4.0)(@types/node@20.19.27)(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(immer@10.2.0)(jiti@2.6.1)(lightningcss@1.30.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(styled-components@6.3.8(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.3)(yaml@2.8.2))(styled-components@6.3.8(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.3)
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -111,9 +99,6 @@ importers:
       react-slick:
         specifier: ^0.31.0
         version: 0.31.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      sanity:
-        specifier: ^3.96.0
-        version: 3.99.0(@emotion/is-prop-valid@1.4.0)(@types/node@20.19.27)(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(immer@10.2.0)(jiti@2.6.1)(lightningcss@1.30.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(styled-components@6.3.8(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.3)(yaml@2.8.2)
       slick-carousel:
         specifier: ^1.8.1
         version: 1.8.1(jquery@4.0.0)

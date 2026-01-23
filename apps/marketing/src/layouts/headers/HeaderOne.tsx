@@ -4,6 +4,7 @@ import Navmenu from "./Navmenu";
 import UseSticky from "@/hooks/UseSticky";
 import { useState } from "react";
 import MobileMenu from "./MobileMenu"; 
+import { siteContent } from "@/content/site";
  
 
 export default function HeaderOne() {
@@ -17,7 +18,7 @@ export default function HeaderOne() {
             <div className="col-8 col-sm-auto ">
               <div className="header-logo">
                 <Link href="/">
-                  <img src="/assets/images/logo-1-dark.svg" alt="logo" />   
+                  <img src={siteContent.brand.logoDarkSrc} alt={siteContent.brand.name} />   
                 </Link>
               </div>
             </div>
@@ -30,8 +31,12 @@ export default function HeaderOne() {
             </div>
             <div className="col-auto d-flex align-items-center">
               <div className="azzle-header-button-wraper">
-                <Link className="azzle-default-btn azzle-header-btn" href="https://app.familytable.me/" data-text="Sign up free">
-                  <span className="button-wraper">Sign up free</span>
+                <Link
+                  className="azzle-default-btn azzle-header-btn"
+                  href={siteContent.headerCta.href}
+                  data-text={siteContent.headerCta.label}
+                >
+                  <span className="button-wraper">{siteContent.headerCta.label}</span>
                 </Link>
               </div>
               <div className="azzle-header-menu">

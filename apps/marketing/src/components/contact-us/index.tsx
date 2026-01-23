@@ -7,14 +7,22 @@ import GoogleMap from "./GoogleMap";
 
  
 
-export default function Contactus() {
+type ContactContent = {
+  breadcrumb?: { title?: string; page?: string };
+  contactArea?: Parameters<typeof ContactArea>[0]["content"];
+};
+
+export default function Contactus({ content }: { content?: ContactContent }) {
+  const breadcrumbTitle = content?.breadcrumb?.title ?? "Contact Us";
+  const breadcrumbPage = content?.breadcrumb?.page ?? "Contact Us";
+
   return (
     <Wrapper>
       <HeaderOne />
       <div id="smooth-wrapper">
         <div id="smooth-content">
-          <Breacrumb title="Contact Us" page="Contact Us" />
-          <ContactArea />
+          <Breacrumb title={breadcrumbTitle} page={breadcrumbPage} />
+          <ContactArea content={content?.contactArea} />
           <GoogleMap />          
           <FooterOne />
         </div>

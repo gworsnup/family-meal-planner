@@ -6,14 +6,43 @@ import BlogArea from "./BlogArea";
 
  
 
-export default function Blog() {
+type BlogContent = {
+  breadcrumb?: { title?: string; page?: string };
+  posts?: {
+    imageSrc: string;
+    category: string;
+    date: string;
+    title: string;
+    excerpt: string;
+    href: string;
+  }[];
+  pagination?: string[];
+  categories?: string[];
+  recentPosts?: { imageSrc: string; date: string; title: string; href: string }[];
+  tags?: string[];
+  subscribe?: { title?: string; description?: string };
+};
+
+export default function Blog({ content }: { content?: BlogContent }) {
+  const breadcrumbTitle = content?.breadcrumb?.title ?? "Our Blog";
+  const breadcrumbPage = content?.breadcrumb?.page ?? "Our Blog";
+
   return (
     <Wrapper>
       <HeaderOne />
       <div id="smooth-wrapper">
         <div id="smooth-content">
-          <Breacrumb title="Our Blog" page="Our Blog" />
-          <BlogArea />          
+          <Breacrumb title={breadcrumbTitle} page={breadcrumbPage} />
+          <BlogArea
+            content={{
+              posts: content?.posts,
+              pagination: content?.pagination,
+              categories: content?.categories,
+              recentPosts: content?.recentPosts,
+              tags: content?.tags,
+              subscribe: content?.subscribe,
+            }}
+          />          
           <FooterOne />
         </div>
       </div>

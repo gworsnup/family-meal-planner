@@ -1,16 +1,15 @@
 "use client";
 import Link from "next/link";
 import Slider from "react-slick";
-import { urlFor } from "@/lib/sanity/image";
 
 export interface HeroContent {
-  _type: "hero";
-  enabled?: boolean;
   headline?: string;
   subheadline?: string;
   primaryCta?: { label?: string; href?: string };
-  image?: any;
+  secondaryCta?: { label?: string; href?: string };
+  imageSrc?: string;
   imageAlt?: string;
+  brandLine?: string;
 }
 
 type HeroHomeOneProps = {
@@ -46,10 +45,13 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
     "Our AI SAAS tool is a cloud-based software delivery model. It helps businesses forecast demand for products and services and optimize inventory management and supply chain operations.";
   const primaryCtaLabel = content?.primaryCta?.label ?? "Get started for free";
   const primaryCtaHref = content?.primaryCta?.href ?? "/contact-us";
-  const heroImageSrc = content?.image
-    ? urlFor(content.image).width(1600).quality(80).url()
-    : "assets/images/home1/Dashboard.png";
+  const secondaryCtaLabel = content?.secondaryCta?.label ?? "Learn more";
+  const secondaryCtaHref = content?.secondaryCta?.href ?? "/contact-us";
+  const heroImageSrc = content?.imageSrc ?? "assets/images/home1/Dashboard.png";
   const heroImageAlt = content?.imageAlt ?? "Dashboard";
+  const brandLine =
+    content?.brandLine ??
+    "Companies of all sizes trust us to find AI SaaS critical to their growth and innovation";
 
   return (
     <div className="azzle-hero-section">
@@ -64,8 +66,14 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
             <Link className="azzle-default-btn" data-aos="fade-up" data-aos-delay="900" href={primaryCtaHref} data-text={primaryCtaLabel}>
               <span className="button-wraper">{primaryCtaLabel}</span>
             </Link>
-            <Link className="azzle-default-btn outline-btn" data-aos="fade-up" data-aos-delay="1000" href="/contact-us" data-text="Learn more">
-              <span className="button-wraper">Learn more</span>
+            <Link
+              className="azzle-default-btn outline-btn"
+              data-aos="fade-up"
+              data-aos-delay="1000"
+              href={secondaryCtaHref}
+              data-text={secondaryCtaLabel}
+            >
+              <span className="button-wraper">{secondaryCtaLabel}</span>
             </Link>
           </div>
         </div>
@@ -75,7 +83,7 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
         <div className="divider"></div>
         <div className="azzle-brand-slider-wraper">
           <div className="azzle-brand-slider-title" data-aos="fade-up" data-aos-delay=".9s">
-            <p>Companies of all sizes trust us to find AI SaaS critical to their growth and innovation</p>
+            <p>{brandLine}</p>
           </div>
           <Slider {...settings} className="azzle-brand-slider">
             <div className="azzle-logo-icon-item">
