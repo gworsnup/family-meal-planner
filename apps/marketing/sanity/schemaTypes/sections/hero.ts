@@ -40,6 +40,23 @@ export const hero = defineType({
       ],
     }),
     defineField({
+      name: "primaryCta",
+      title: "Primary CTA",
+      type: "object",
+      fields: [
+        defineField({
+          name: "label",
+          title: "Label",
+          type: "string",
+        }),
+        defineField({
+          name: "href",
+          title: "Link",
+          type: "url",
+        }),
+      ],
+    }),
+    defineField({
       name: "secondaryButton",
       title: "Secondary Button",
       type: "object",
@@ -55,6 +72,16 @@ export const hero = defineType({
           type: "url",
         }),
       ],
+    }),
+    defineField({
+      name: "image",
+      title: "Image",
+      type: "image",
+    }),
+    defineField({
+      name: "imageAlt",
+      title: "Image Alt",
+      type: "string",
     }),
   ],
 });

@@ -1,7 +1,7 @@
 import AboutHomeOne from "./AboutHomeOne";
 import FaqHomeOne from "./FaqHomeOne";
 import FeaturesHomeOne from "./FeaturesHomeOne";
-import HeroHomeOne from "./HeroHomeOne";
+import HeroHomeOne, { type HeroContent } from "./HeroHomeOne";
 import PricingHomeOne from "./PricingHomeOne";
 import TestimonialHomeOne from "./TestimonialHomeOne";
 import VideoHomeOne from "./VideoHomeOne";
@@ -14,7 +14,7 @@ type ThemeSection = {
 const renderSection = (section: ThemeSection, index: number) => {
   switch (section._type) {
     case "hero":
-      return <HeroHomeOne key={`hero-${index}`} content={section} />;
+      return <HeroHomeOne key={`hero-${index}`} content={section as HeroContent} />;
     case "featureGrid":
       return <FeaturesHomeOne key={`featureGrid-${index}`} content={section} />;
     case "about":
