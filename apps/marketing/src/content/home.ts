@@ -4,7 +4,7 @@ export const homeContent = {
     subheadline: "Collect recipes, plan meals, and streamline shopping in one shared space.",
     primaryCta: { label: "Sign up free", href: "https://app.familytable.me/" },
     secondaryCta: { label: "See how it works", href: "/features" },
-    imageSrc: "/assets/images/home1/Dashboard.png",
+    imageSrc: "/assets/images/home1/Dashboard1.png",
     imageAlt: "FamilyTable meal planning",
     brandLine: "Families of all sizes trust FamilyTable to plan together and shop smarter.",
   },
