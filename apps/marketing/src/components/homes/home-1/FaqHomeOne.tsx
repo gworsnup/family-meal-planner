@@ -35,14 +35,26 @@ const faq_data: FaqItem[] = [
 
 interface StyleProps {
   style_2?: boolean;
-  content?: any;
+  content?: {
+    title?: string;
+    description?: string;
+    cta?: { label?: string; href?: string };
+    items?: FaqItem[];
+  };
 }
 
 export default function FaqHomeOne({
   style_2 = false,
-  content: _content,
+  content,
 }: StyleProps) {
   const [activeId, setActiveId] = useState<number>(1); 
+  const title = content?.title ?? "Freely ask us for more information";
+  const description =
+    content?.description ??
+    "Our AI SaaS solutions can be quickly deployed, enabling users to start benefiting from AI capabilities without lengthy setup and development times in fast-paced industries.";
+  const ctaLabel = content?.cta?.label ?? "Ask you questions";
+  const ctaHref = content?.cta?.href ?? "/faq";
+  const faqItems = content?.items ?? faq_data;
 
   const toggleFaq = (index: number) => {
       if (activeId === index) {
@@ -66,21 +78,17 @@ export default function FaqHomeOne({
               data-aos="fade-up"
               data-aos-delay="500"
             >
-              <h2>Freely ask us for more information</h2>
-              <p>
-                Our AI SaaS solutions can be quickly deployed, enabling users to
-                start benefiting from AI capabilities without lengthy setup and
-                development times in fast-paced industries.
-              </p>
+              <h2>{title}</h2>
+              <p>{description}</p>
               <div className="mt-50">
                 <Link
                   className="azzle-default-btn"
                   data-aos="fade-up"
                   data-aos-delay="700"
-                  href="/faq"
-                  data-text="Ask you questions"
+                  href={ctaHref}
+                  data-text={ctaLabel}
                 >
-                  <span className="button-wraper">Ask you questions</span>
+                  <span className="button-wraper">{ctaLabel}</span>
                 </Link>
               </div>
             </div>
@@ -93,7 +101,7 @@ export default function FaqHomeOne({
               data-aos="fade-up"
               data-aos-delay="700"
             >
-              {faq_data.map((faq) => (
+              {faqItems.map((faq) => (
                 <div
                   key={faq.id}
                   className={`azzle-faq-item ${

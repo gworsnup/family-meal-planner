@@ -1,3 +1,5 @@
+import { siteContent } from "@/content/site";
+
 interface MenuItem {
   title: string;
   path: string;
@@ -12,12 +14,6 @@ interface MenuItem {
   noBorder?: boolean;
 }
 
-const menu_data: MenuItem[] = [
-  { title: "Features", path: "/features" },
-  { title: "Pricing", path: "/pricing" },
-  { title: "Blog", path: "/blog" },
-  { title: "About", path: "/about" },
-  { title: "Contact", path: "/contact" },
-];
+const menu_data: MenuItem[] = siteContent.nav;
 
 export default menu_data;

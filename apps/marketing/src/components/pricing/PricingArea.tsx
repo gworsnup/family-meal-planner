@@ -2,8 +2,103 @@
 import Link from "next/link";
 import { useState } from "react";
 
-export default function PricingArea() {
+type PricingPlan = {
+  name: string;
+  audience: string;
+  monthlyPrice: string;
+  yearlyPrice: string;
+  description: string;
+  features: string[];
+  ctaLabel: string;
+  ctaHref: string;
+  featured?: boolean;
+};
+
+type PricingAreaProps = {
+  content?: {
+    title?: string;
+    billing?: { monthlyLabel?: string; yearlyLabel?: string };
+    plans?: Partial<PricingPlan>[];
+  };
+};
+
+export default function PricingArea({ content }: PricingAreaProps) {
   const [isYearly, setIsYearly] = useState(false);
+  const defaultPlans: PricingPlan[] = [
+    {
+      name: "Free",
+      audience: "1 member",
+      monthlyPrice: "$0",
+      yearlyPrice: "$20",
+      description:
+        "Ideal for individuals person and small businesses just getting started.",
+      features: [
+        "AI-Ready Data Prep",
+        "Feature Engineering",
+        "Classification Models",
+      ],
+      ctaLabel: "Start for free",
+      ctaHref: "/contact-us",
+    },
+    {
+      name: "Beginner",
+      audience: "Up to 50 members",
+      monthlyPrice: "$29",
+      yearlyPrice: "$39",
+      description: "This is an excellent option for small businesses who are starting out.",
+      features: [
+        "AI-Ready Data Prep",
+        "Feature Engineering",
+        "Classification Models",
+        "Regression Models",
+      ],
+      ctaLabel: "Start for free",
+      ctaHref: "/contact-us",
+    },
+    {
+      name: "Starter",
+      audience: "Up to 100 members",
+      monthlyPrice: "$59",
+      yearlyPrice: "$79",
+      description:
+        "This plan is suitable for e-commerce stores as well as professional blogs.",
+      features: [
+        "AI-Ready Data Prep",
+        "Feature Engineering",
+        "Classification Models",
+        "Regression Models",
+        "Time Series Models",
+      ],
+      ctaLabel: "Start for free",
+      ctaHref: "/contact-us",
+      featured: true,
+    },
+    {
+      name: "Pro",
+      audience: "Up to 150 members",
+      monthlyPrice: "$89",
+      yearlyPrice: "$99",
+      description:
+        "Ideal for complex websites, online platforms, enterprise-level projects.",
+      features: [
+        "AI-Ready Data Prep",
+        "Feature Engineering",
+        "Classification Models",
+        "Regression Models",
+        "Time Series Models",
+        "Clustering models",
+      ],
+      ctaLabel: "Start for free",
+      ctaHref: "/contact-us",
+    },
+  ];
+  const plans = defaultPlans.map((plan, index) => ({
+    ...plan,
+    ...content?.plans?.[index],
+  }));
+  const title = content?.title ?? "Find a flexible plan that fits your business";
+  const monthlyLabel = content?.billing?.monthlyLabel ?? "Monthly";
+  const yearlyLabel = content?.billing?.yearlyLabel ?? "Yearly";
 
   return (
     <div className="azzle-section-pt">
@@ -13,7 +108,7 @@ export default function PricingArea() {
           data-aos="fade-up"
           data-aos-delay="500"
         >
-          <h2>Find a flexible plan that fits your business</h2>
+          <h2>{title}</h2>
         </div>
         <div
           className="azzle-section-title center"
@@ -29,334 +124,71 @@ export default function PricingArea() {
                 checked={isYearly}
                 onChange={(e) => setIsYearly(e.target.checked)}
               />
-              <span>Monthly</span>
-              <span>Yearly</span>
+              <span>{monthlyLabel}</span>
+              <span>{yearlyLabel}</span>
             </label>
           </div>
         </div>
 
         <div className="row">
-          {/* Free */}
-          <div className="col-xxl-3 col-md-6">
-            <div className="azzle-pricing-column">
-              <div
-                className="azzle-pricing-wrap wrap2"
-                data-aos="fade-up"
-                data-aos-delay="500"
-              >
-                <div className="azzle-pricing-top">
-                  <div className="azzle-pricing-header">
-                    <h3>Free</h3>
-                    <p>1 member</p>
-                  </div>
+          {plans.map((plan, index) => {
+            const checkIcon = plan.featured
+              ? "assets/images/home1/check2.png"
+              : "assets/images/home1/check.png";
 
-                  {isYearly ? (
-                    <div className="azzle-pricing-price">
-                      <h2>$20</h2>
-                      <span>/Per Year</span>
-                    </div>
-                  ) : (
-                    <div className="azzle-pricing-price">
-                      <h2>$0</h2>
-                      <span>/Per Month</span>
-                    </div>
-                  )}
-
-                  <div className="azzle-pricing-body">
-                    <p>
-                      Ideal for individuals person and small businesses just
-                      getting started.
-                    </p>
-                  </div>
-                  <div className="azzle-pricing-feature">
-                    <ul>
-                      <li>
-                        <img
-                          src="assets/images/home1/check.png"
-                          alt="ratting"
-                        />
-                        AI-Ready Data Prep
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check.png"
-                          alt="ratting"
-                        />
-                        Feature Engineering
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check.png"
-                          alt="ratting"
-                        />
-                        Classification Models
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="azzle-pricing-footer mt-50">
-                  <Link
-                    className="azzle-default-btn d-block outline-btn"
-                    href="/contact-us"
+            return (
+              <div key={plan.name} className="col-xxl-3 col-md-6">
+                <div className="azzle-pricing-column">
+                  <div
+                    className={`azzle-pricing-wrap wrap2${plan.featured ? " active" : ""}`}
+                    data-aos="fade-up"
+                    data-aos-delay={500 + index * 200}
                   >
-                    Start for free
-                  </Link>
+                    <div className="azzle-pricing-top">
+                      <div className="azzle-pricing-header">
+                        <h3>{plan.name}</h3>
+                        <p>{plan.audience}</p>
+                      </div>
+
+                      {isYearly ? (
+                        <div className="azzle-pricing-price">
+                          <h2>{plan.yearlyPrice}</h2>
+                          <span>/Per Year</span>
+                        </div>
+                      ) : (
+                        <div className="azzle-pricing-price">
+                          <h2>{plan.monthlyPrice}</h2>
+                          <span>/Per Month</span>
+                        </div>
+                      )}
+
+                      <div className="azzle-pricing-body">
+                        <p>{plan.description}</p>
+                      </div>
+                      <div className="azzle-pricing-feature">
+                        <ul>
+                          {plan.features.map((feature) => (
+                            <li key={feature}>
+                              <img src={checkIcon} alt="ratting" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    <div className="azzle-pricing-footer mt-50">
+                      <Link
+                        className={`azzle-default-btn d-block outline-btn${plan.featured ? " btn2" : ""}`}
+                        href={plan.ctaHref}
+                      >
+                        {plan.ctaLabel}
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Beginner */}
-          <div className="col-xxl-3 col-md-6">
-            <div className="azzle-pricing-column">
-              <div
-                className="azzle-pricing-wrap wrap2"
-                data-aos="fade-up"
-                data-aos-delay="700"
-              >
-                <div className="azzle-pricing-top">
-                  <div className="azzle-pricing-header">
-                    <h3>Beginner</h3>
-                    <p>Up to 50 members</p>
-                  </div>
-
-                  {isYearly ? (
-                    <div className="azzle-pricing-price">
-                      <h2>$39</h2>
-                      <span>/Per Year</span>
-                    </div>
-                  ) : (
-                    <div className="azzle-pricing-price">
-                      <h2>$29</h2>
-                      <span>/Per Month</span>
-                    </div>
-                  )}
-
-                  <div className="azzle-pricing-body">
-                    <p>
-                      This is an excellent option for small businesses who are
-                      starting out.
-                    </p>
-                  </div>
-                  <div className="azzle-pricing-feature">
-                    <ul>
-                      <li>
-                        <img
-                          src="assets/images/home1/check.png"
-                          alt="ratting"
-                        />
-                        AI-Ready Data Prep
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check.png"
-                          alt="ratting"
-                        />
-                        Feature Engineering
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check.png"
-                          alt="ratting"
-                        />
-                        Classification Models
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check.png"
-                          alt="ratting"
-                        />
-                        Regression Models
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="azzle-pricing-footer mt-50">
-                  <Link
-                    className="azzle-default-btn d-block outline-btn"
-                    href="/contact-us"
-                  >
-                    Start for free
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Starter */}
-          <div className="col-xxl-3 col-md-6">
-            <div className="azzle-pricing-column">
-              <div
-                className="azzle-pricing-wrap wrap2 active"
-                data-aos="fade-up"
-                data-aos-delay="900"
-              >
-                <div className="azzle-pricing-top">
-                  <div className="azzle-pricing-header">
-                    <h3>Starter</h3>
-                    <p>Up to 100 members</p>
-                  </div>
-
-                  {isYearly ? (
-                    <div className="azzle-pricing-price">
-                      <h2>$79</h2>
-                      <span>/Per Year</span>
-                    </div>
-                  ) : (
-                    <div className="azzle-pricing-price">
-                      <h2>$59</h2>
-                      <span>/Per Month</span>
-                    </div>
-                  )}
-
-                  <div className="azzle-pricing-body">
-                    <p>
-                      This plan is suitable for e-commerce stores as well as
-                      professional blogs.
-                    </p>
-                  </div>
-                  <div className="azzle-pricing-feature">
-                    <ul>
-                      <li>
-                        <img
-                          src="assets/images/home1/check2.png"
-                          alt="ratting"
-                        />
-                        AI-Ready Data Prep
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check2.png"
-                          alt="ratting"
-                        />
-                        Feature Engineering
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check2.png"
-                          alt="ratting"
-                        />
-                        Classification Models
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check2.png"
-                          alt="ratting"
-                        />
-                        Regression Models
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check2.png"
-                          alt="ratting"
-                        />
-                        Time Series Models
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="azzle-pricing-footer mt-50">
-                  <Link
-                    className="azzle-default-btn d-block outline-btn btn2"
-                    href="/contact-us"
-                  >
-                    Start for free
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Pro */}
-          <div className="col-xxl-3 col-md-6">
-            <div className="azzle-pricing-column">
-              <div
-                className="azzle-pricing-wrap wrap2"
-                data-aos="fade-up"
-                data-aos-delay="1100"
-              >
-                <div className="azzle-pricing-top">
-                  <div className="azzle-pricing-header">
-                    <h3>Pro</h3>
-                    <p>Up to 150 members</p>
-                  </div>
-
-                  {isYearly ? (
-                    <div className="azzle-pricing-price">
-                      <h2>$99</h2>
-                      <span>/Per Year</span>
-                    </div>
-                  ) : (
-                    <div className="azzle-pricing-price">
-                      <h2>$89</h2>
-                      <span>/Per Month</span>
-                    </div>
-                  )}
-
-                  <div className="azzle-pricing-body">
-                    <p>
-                      Ideal for complex websites, online platforms,
-                      enterprise-level projects.
-                    </p>
-                  </div>
-                  <div className="azzle-pricing-feature">
-                    <ul>
-                      <li>
-                        <img
-                          src="assets/images/home1/check.png"
-                          alt="ratting"
-                        />
-                        AI-Ready Data Prep
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check.png"
-                          alt="ratting"
-                        />
-                        Feature Engineering
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check.png"
-                          alt="ratting"
-                        />
-                        Classification Models
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check.png"
-                          alt="ratting"
-                        />
-                        Regression Models
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check.png"
-                          alt="ratting"
-                        />
-                        Time Series Models
-                      </li>
-                      <li>
-                        <img
-                          src="assets/images/home1/check.png"
-                          alt="ratting"
-                        />
-                        Clustering models
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="azzle-pricing-footer mt-50">
-                  <Link
-                    className="azzle-default-btn d-block outline-btn"
-                    href="/contact-us"
-                  >
-                    Start for free
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>
