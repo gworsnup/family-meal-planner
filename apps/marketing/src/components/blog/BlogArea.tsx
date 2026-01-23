@@ -18,10 +18,10 @@ type RecentPost = {
 
 type BlogAreaProps = {
   content?: {
-    posts?: BlogPost[];
+    posts?: Partial<BlogPost>[];
     pagination?: string[];
     categories?: string[];
-    recentPosts?: RecentPost[];
+    recentPosts?: Partial<RecentPost>[];
     tags?: string[];
     subscribe?: { title?: string; description?: string };
   };
@@ -114,10 +114,16 @@ export default function BlogArea({ content }: BlogAreaProps) {
   ];
   const defaultTags = ["Marketing", "Business", "Solutions", "Studio", "Brand"];
 
-  const posts = content?.posts ?? defaultPosts;
+  const posts = defaultPosts.map((post, index) => ({
+    ...post,
+    ...content?.posts?.[index],
+  }));
   const pagination = content?.pagination ?? defaultPagination;
   const categories = content?.categories ?? defaultCategories;
-  const recentPosts = content?.recentPosts ?? defaultRecentPosts;
+  const recentPosts = defaultRecentPosts.map((post, index) => ({
+    ...post,
+    ...content?.recentPosts?.[index],
+  }));
   const tags = content?.tags ?? defaultTags;
   const subscribeTitle = content?.subscribe?.title ?? "Subscribe";
   const subscribeDescription =

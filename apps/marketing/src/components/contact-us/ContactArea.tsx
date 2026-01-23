@@ -5,7 +5,7 @@ type ContactAreaProps = {
     description?: string;
     email?: string;
     phone?: string;
-    socialLinks?: { href: string; iconSrc: string }[];
+    socialLinks?: Partial<{ href: string; iconSrc: string }>[];
   };
 };
 
@@ -17,13 +17,16 @@ export default function ContactArea({ content }: ContactAreaProps) {
   const email = content?.email ?? "info@example.com";
   const phone = content?.phone ?? "(123) 456-7890";
   const phoneHref = `tel:${phone.replace(/[^0-9+]/g, "")}`;
-  const socialLinks =
-    content?.socialLinks ?? [
-      { href: "https://www.facebook.com", iconSrc: "assets/images/home2/facebook.svg" },
-      { href: "https://www.twitter.com", iconSrc: "assets/images/home2/twitter.svg" },
-      { href: "https://www.instagram.com", iconSrc: "assets/images/home2/insta.svg" },
-      { href: "https://www.linkedin.com", iconSrc: "assets/images/home2/in.svg" },
-    ];
+  const defaultSocialLinks = [
+    { href: "https://www.facebook.com", iconSrc: "assets/images/home2/facebook.svg" },
+    { href: "https://www.twitter.com", iconSrc: "assets/images/home2/twitter.svg" },
+    { href: "https://www.instagram.com", iconSrc: "assets/images/home2/insta.svg" },
+    { href: "https://www.linkedin.com", iconSrc: "assets/images/home2/in.svg" },
+  ];
+  const socialLinks = defaultSocialLinks.map((link, index) => ({
+    ...link,
+    ...content?.socialLinks?.[index],
+  }));
 
   return (
     <div className="azzle-section-padding">
