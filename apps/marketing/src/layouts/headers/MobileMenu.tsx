@@ -4,6 +4,7 @@ import menu_data from '@/data/menu-data';
 import Link from 'next/link'
 import { useState } from 'react';
 import { siteContent } from "@/content/site";
+import { headerContent } from "@/content/header";
 interface MobileMenuProps {
   setIsOpen?: Function;
   isOpen?: boolean;
@@ -36,8 +37,11 @@ export default function MobileMenu({ setIsOpen, isOpen }: MobileMenuProps) {
         <div className="azzle-menu-area text-center" onClick={(e) => e.stopPropagation()}>
           <div className="azzle-menu-mobile-top">
             <div className="mobile-logo">
-              <Link href="/">
-                <img src={siteContent.brand.logoMobileSrc} alt={siteContent.brand.name} />
+              <Link href={headerContent.logo.href ?? "/"}>
+                <img
+                  src={headerContent.logo.src ?? siteContent.brand.logoMobileSrc}
+                  alt={headerContent.logo.alt ?? siteContent.brand.name}
+                />
               </Link>
             </div>
             <button className="azzle-menu-toggle mobile" onClick={() => setIsOpen && setIsOpen(false)}>
@@ -74,8 +78,11 @@ export default function MobileMenu({ setIsOpen, isOpen }: MobileMenuProps) {
             </ul>
           </div>
           <div className="azzle-mobile-menu-btn">
-            <Link className="azzle-default-btn sm-size" href={siteContent.mobileCta.href}>
-              {siteContent.mobileCta.label}
+            <Link
+              className="azzle-default-btn sm-size"
+              href={headerContent.mobileCta.href ?? siteContent.mobileCta.href}
+            >
+              {headerContent.mobileCta.label ?? siteContent.mobileCta.label}
             </Link>
           </div>
         </div>
