@@ -2,6 +2,10 @@
 import Link from "next/link";
 import Slider from "react-slick";
 
+type HeroHomeOneProps = {
+  content?: any;
+};
+
 const settings = {
   slidesToShow: 4,
   slidesToScroll: 1,
@@ -25,7 +29,7 @@ const settings = {
 }
 
 
-export default function HeroHomeOne() {
+export default function HeroHomeOne({ content: _content }: HeroHomeOneProps) {
   return (
     <div className="azzle-hero-section">
       <div className="azzle-hero-shape">
