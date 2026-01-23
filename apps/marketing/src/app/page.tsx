@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import HomeOne from "@/components/homes/home-1";
-import CMSHomePage from "@/components/cms/CMSHomePage";
 import { sanityClient } from "@/lib/sanity/client";
 import { pageBySlugQuery } from "@/lib/sanity/queries";
 import type { SanityPage } from "@/lib/sanity/types";
+
+export const revalidate = 60;
 
 const homeSlug = "home";
 
@@ -36,12 +37,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function Page() {
-  const page = await fetchHomePage();
-
-  if (!page) {
-    return <HomeOne />;
-  }
-
-  return <CMSHomePage page={page} />;
+export default function Page() {
+  return <HomeOne />;
 }
