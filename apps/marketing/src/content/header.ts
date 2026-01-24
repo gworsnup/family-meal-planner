@@ -2,7 +2,7 @@ const appUrl = "https://app.familytable.me";
 
 export const headerContent = {
   logo: {
-    src: "/assets/images/logo-1-dark.svg",
+    src: "/assets/images/f-t-logo.png",
     alt: "FamilyTable",
     href: "/",
   },
