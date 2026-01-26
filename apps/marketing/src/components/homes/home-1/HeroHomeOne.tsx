@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import Slider from "react-slick";
 import RecipeScrollSequence from "../../RecipeScrollSequence";
@@ -45,6 +45,7 @@ const settings = {
 
 export default function HeroHomeOne({ content }: HeroHomeOneProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef(0);
   const headline = content?.headline ?? "Simplify your SaaS solution with AI";
   const subheadline =
     content?.subheadline ??
@@ -73,13 +74,19 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
     value > 0.88 ? "auto" : "none",
   );
 
+  useEffect(() => {
+    return scrollYProgress.on("change", (value) => {
+      progressRef.current = value;
+    });
+  }, [scrollYProgress]);
+
   return (
     <>
       <section className="azzle-hero-section" style={{ position: "relative" }}>
         <div ref={wrapperRef} style={{ height: `${SCROLL_VH}vh` }}>
           <div className="sticky top-0 h-screen w-full overflow-hidden relative bg-white isolate">
             <RecipeScrollSequence
-              progress={scrollYProgress}
+              progressRef={progressRef}
               className="absolute inset-0 h-full w-full"
             />
             <motion.div
