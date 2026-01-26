@@ -6,8 +6,8 @@
  * - Frame path pattern: update frameSrc()
  * - Background color: adjust LOADER_BG or parent section styles
  */
-import { useEffect, useMemo, useRef, useState } from "react";
-import { isMotionValue, useReducedMotion, type MotionValue } from "framer-motion";
+import { useEffect, useRef, useState, type RefObject } from "react";
+import { useReducedMotion } from "framer-motion";
 
 const DEFAULT_FRAME_COUNT = 192;
 const LOADER_BG = "rgba(255, 255, 255, 0.85)";
@@ -141,30 +141,20 @@ function drawContain(
 }
 
 type RecipeScrollSequenceProps = {
-  progress?: number | MotionValue<number>;
+  progressRef: RefObject<number>;
   frameCount?: number;
   startIndex?: number;
   endIndex?: number;
   className?: string;
 };
 
-function useCanvasSizer() {
-  const syncCanvasSize = (canvas: HTMLCanvasElement, dpr: number) => {
-    const width = Math.max(1, Math.floor(canvas.clientWidth * dpr));
-    const height = Math.max(1, Math.floor(canvas.clientHeight * dpr));
-    if (canvas.width !== width) {
-      canvas.width = width;
-    }
-    if (canvas.height !== height) {
-      canvas.height = height;
-    }
-  };
-
-  return { syncCanvasSize };
-}
+type ReducedMotionSequenceProps = Omit<
+  RecipeScrollSequenceProps,
+  "progressRef"
+>;
 
 function AnimatedSequence({
-  progress,
+  progressRef,
   frameCount = DEFAULT_FRAME_COUNT,
   startIndex = 0,
   endIndex,
@@ -172,8 +162,14 @@ function AnimatedSequence({
 }: RecipeScrollSequenceProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
-  const currentFrameRef = useRef(0);
   const lastFrameRef = useRef<number | null>(null);
+  const resizeRafRef = useRef<number | null>(null);
+  const dprRef = useRef(1);
+  const canvasSizeRef = useRef({
+    width: 0,
+    height: 0,
+    dpr: 0,
+  });
   const resolvedEndIndex = Math.max(
     0,
     Math.min(
@@ -190,13 +186,6 @@ function AnimatedSequence({
     frameCount,
     staticFrameIndex: resolvedStartIndex,
   });
-  const { syncCanvasSize } = useCanvasSizer();
-
-  const resolvedProgress = useMemo(() => {
-    if (typeof progress === "number") return progress;
-    if (progress && isMotionValue(progress)) return progress.get();
-    return 0;
-  }, [progress]);
 
   const clampProgress = (value: number) =>
     Math.min(1, Math.max(0, value));
@@ -211,76 +200,81 @@ function AnimatedSequence({
     const canvas = canvasRef.current;
     if (!canvas) return;
     const dpr = window.devicePixelRatio || 1;
-    syncCanvasSize(canvas, dpr);
-    const image = imagesRef.current[currentFrameRef.current];
-    if (image) {
-      drawContain(canvas, image, dpr);
+    const width = Math.max(1, Math.floor(canvas.clientWidth * dpr));
+    const height = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+    if (
+      width === canvasSizeRef.current.width &&
+      height === canvasSizeRef.current.height &&
+      dpr === canvasSizeRef.current.dpr
+    ) {
+      return;
     }
+    canvasSizeRef.current = { width, height, dpr };
+    canvas.width = width;
+    canvas.height = height;
+    dprRef.current = dpr;
   };
 
-  const scheduleDraw = (index: number) => {
+  const drawFrame = (index: number) => {
     const canvas = canvasRef.current;
     const image = imagesRef.current[index];
     if (!canvas || !image) return;
-
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-    }
-
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = null;
-      const dpr = window.devicePixelRatio || 1;
-      syncCanvasSize(canvas, dpr);
-      drawContain(canvas, image, dpr);
-    });
-  };
-
-  const updateFrame = (value: number) => {
-    if (!loader.isReady) return;
-    const nextIndex = Math.min(
-      resolvedEndIndex,
-      Math.max(resolvedStartIndex, resolveFrameIndex(value)),
-    );
-    if (!imagesRef.current[nextIndex]) return;
-    if (lastFrameRef.current === nextIndex) return;
-    currentFrameRef.current = nextIndex;
-    lastFrameRef.current = nextIndex;
-    scheduleDraw(nextIndex);
+    drawContain(canvas, image, dprRef.current || 1);
+    lastFrameRef.current = index;
   };
 
   useEffect(() => {
-    if (!loader.isReady) return;
-    const initialIndex = resolveFrameIndex(resolvedProgress);
-    currentFrameRef.current = initialIndex;
-    lastFrameRef.current = initialIndex;
-    scheduleDraw(initialIndex);
-  }, [loader.isReady, resolvedProgress]);
-
-  useEffect(() => {
-    if (!loader.isReady) return undefined;
-    if (progress && isMotionValue(progress)) {
-      const unsubscribe = progress.on("change", (latest) => {
-        updateFrame(latest);
-      });
-      return () => {
-        unsubscribe();
-      };
-    }
-    updateFrame(resolvedProgress);
-    return undefined;
-  }, [loader.isReady, progress, resolvedProgress]);
-
-  useEffect(() => {
-    if (!loader.isReady) return undefined;
     resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
+    const handleResize = () => {
+      if (resizeRafRef.current !== null) {
+        cancelAnimationFrame(resizeRafRef.current);
+      }
+      resizeRafRef.current = requestAnimationFrame(() => {
+        resizeRafRef.current = null;
+        resizeCanvas();
+        if (lastFrameRef.current !== null) {
+          drawFrame(lastFrameRef.current);
+        }
+      });
+    };
+    window.addEventListener("resize", handleResize);
     return () => {
-      window.removeEventListener("resize", resizeCanvas);
-      if (rafRef.current) {
+      window.removeEventListener("resize", handleResize);
+      if (resizeRafRef.current !== null) {
+        cancelAnimationFrame(resizeRafRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!loader.isReady) return;
+    const initialIndex = resolveFrameIndex(progressRef.current ?? 0);
+    drawFrame(initialIndex);
+    const tick = () => {
+      const nextIndex = Math.min(
+        resolvedEndIndex,
+        Math.max(
+          resolvedStartIndex,
+          resolveFrameIndex(progressRef.current ?? 0),
+        ),
+      );
+      if (nextIndex !== lastFrameRef.current) {
+        drawFrame(nextIndex);
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [loader.isReady]);
+  }, [
+    loader.isReady,
+    progressRef,
+    resolvedEndIndex,
+    resolvedStartIndex,
+  ]);
 
   return (
     <div
@@ -346,7 +340,7 @@ function ReducedMotionSequence({
   startIndex = 0,
   endIndex,
   className,
-}: RecipeScrollSequenceProps) {
+}: ReducedMotionSequenceProps) {
   const resolvedEndIndex = Math.max(
     0,
     Math.min(
@@ -361,7 +355,7 @@ function ReducedMotionSequence({
   const { imagesRef, loader } = useFramePreload({
     reducedMotion: true,
     frameCount,
-    staticFrameIndex: resolvedStartIndex,
+    staticFrameIndex: resolvedEndIndex,
   });
   const image = imagesRef.current[0];
 
@@ -383,7 +377,7 @@ function ReducedMotionSequence({
         />
       ) : (
         <img
-          src={frameSrc(resolvedStartIndex)}
+          src={frameSrc(resolvedEndIndex)}
           alt=""
           style={{
             width: "100%",
@@ -416,7 +410,7 @@ function ReducedMotionSequence({
 }
 
 export default function RecipeScrollSequence({
-  progress,
+  progressRef,
   frameCount,
   startIndex,
   endIndex,
@@ -437,7 +431,7 @@ export default function RecipeScrollSequence({
 
   return (
     <AnimatedSequence
-      progress={progress}
+      progressRef={progressRef}
       frameCount={frameCount}
       startIndex={startIndex}
       endIndex={endIndex}
