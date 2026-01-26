@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import Slider from "react-slick";
+import RecipeScrollSequence from "../../RecipeScrollSequence";
 
 export interface HeroContent {
   headline?: string;
@@ -54,11 +55,12 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
     "Companies of all sizes trust us to find AI SaaS critical to their growth and innovation";
 
   return (
-    <div className="azzle-hero-section">
+    <div className="azzle-hero-section" style={{ position: "relative", backgroundColor: "#fff" }}>
+      <RecipeScrollSequence />
       <div className="azzle-hero-shape">
         <img src="assets/images/home1/hero-bg.png" alt="bg" />
       </div>
-      <div className="container">
+      <div className="container" style={{ position: "relative", zIndex: 2 }}>
         <div className="azzle-hero-content1">
           <h1 data-aos="fade-left" data-aos-delay="500">{headline}</h1>
           <p data-aos="zoom-in" data-aos-delay="700">{subheadline}</p>
