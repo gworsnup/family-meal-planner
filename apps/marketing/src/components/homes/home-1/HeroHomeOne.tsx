@@ -79,7 +79,7 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
         <div ref={wrapperRef} style={{ height: `${SCROLL_VH}vh` }}>
           <div className="sticky top-0 h-screen w-full overflow-hidden relative bg-white isolate">
             <RecipeScrollSequence
-              progress={smoothProgress}
+              progress={scrollYProgress}
               className="absolute inset-0 h-full w-full"
             />
             <motion.div

@@ -45,9 +45,10 @@ function useFramePreload({
       const progress = Math.min(100, Math.round((loaded / total) * 100));
       if (!isMounted) return;
       setLoader((prev) => {
+        const isReady = loaded === total;
         const nextState = {
           progress,
-          isReady: prev.isReady || loaded > 0,
+          isReady: prev.isReady || isReady,
         };
         if (
           prev.progress === nextState.progress &&
@@ -203,7 +204,7 @@ function AnimatedSequence({
   const resolveFrameIndex = (value: number) => {
     const clamped = clampProgress(value);
     const span = resolvedEndIndex - resolvedStartIndex;
-    return Math.round(resolvedStartIndex + span * clamped);
+    return Math.floor(resolvedStartIndex + span * clamped);
   };
 
   const resizeCanvas = () => {
@@ -297,7 +298,7 @@ function AnimatedSequence({
             opacity: loader.isReady ? 1 : 0,
           }}
         />
-        {loader.progress < 100 && (
+        {!loader.isReady && (
           <div
             style={{
               position: "absolute",
@@ -393,7 +394,7 @@ function ReducedMotionSequence({
           }}
         />
       )}
-      {loader.progress < 100 && (
+      {!loader.isReady && (
         <div
           style={{
             position: "absolute",
