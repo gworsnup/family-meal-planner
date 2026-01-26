@@ -145,7 +145,7 @@ function drawContain(
 type RecipeScrollSequenceVariant = "standalone" | "overlay";
 
 type RecipeScrollSequenceProps = {
-  scrollTargetRef?: React.RefObject<HTMLDivElement>;
+  scrollTargetRef?: React.RefObject<HTMLDivElement | null>;
   variant?: RecipeScrollSequenceVariant;
 };
 
