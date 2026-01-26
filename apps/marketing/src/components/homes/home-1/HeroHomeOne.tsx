@@ -1,7 +1,10 @@
 "use client";
 import Link from "next/link";
+import { useRef } from "react";
 import Slider from "react-slick";
-import RecipeScrollSequence from "../../RecipeScrollSequence";
+import RecipeScrollSequence, {
+  RECIPE_SCROLL_HEIGHT_VH,
+} from "../../RecipeScrollSequence";
 
 export interface HeroContent {
   headline?: string;
@@ -40,6 +43,7 @@ const settings = {
 }
 
 export default function HeroHomeOne({ content }: HeroHomeOneProps) {
+  const scrollSpacerRef = useRef<HTMLDivElement>(null);
   const headline = content?.headline ?? "Simplify your SaaS solution with AI";
   const subheadline =
     content?.subheadline ??
@@ -55,57 +59,93 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
     "Companies of all sizes trust us to find AI SaaS critical to their growth and innovation";
 
   return (
-    <div className="azzle-hero-section" style={{ position: "relative", backgroundColor: "#fff" }}>
-      <RecipeScrollSequence />
-      <div className="azzle-hero-shape">
-        <img src="assets/images/home1/hero-bg.png" alt="bg" />
-      </div>
-      <div className="container" style={{ position: "relative", zIndex: 2 }}>
-        <div className="azzle-hero-content1">
-          <h1 data-aos="fade-left" data-aos-delay="500">{headline}</h1>
-          <p data-aos="zoom-in" data-aos-delay="700">{subheadline}</p>
-          <div className="azzle-hero-button mt-50">
-            <Link className="azzle-default-btn" data-aos="fade-up" data-aos-delay="900" href={primaryCtaHref} data-text={primaryCtaLabel}>
-              <span className="button-wraper">{primaryCtaLabel}</span>
-            </Link>
-            <Link
-              className="azzle-default-btn outline-btn"
+    <>
+      <div
+        className="azzle-hero-section"
+        style={{
+          position: "relative",
+          backgroundColor: "#fff",
+          minHeight: "100vh",
+          isolation: "isolate",
+        }}
+      >
+        <RecipeScrollSequence
+          scrollTargetRef={scrollSpacerRef}
+          variant="overlay"
+        />
+        <div className="azzle-hero-shape">
+          <img src="assets/images/home1/hero-bg.png" alt="bg" />
+        </div>
+        <div className="container" style={{ position: "relative", zIndex: 10 }}>
+          <div className="azzle-hero-content1">
+            <h1 data-aos="fade-left" data-aos-delay="500">
+              {headline}
+            </h1>
+            <p data-aos="zoom-in" data-aos-delay="700">
+              {subheadline}
+            </p>
+            <div className="azzle-hero-button mt-50">
+              <Link
+                className="azzle-default-btn"
+                data-aos="fade-up"
+                data-aos-delay="900"
+                href={primaryCtaHref}
+                data-text={primaryCtaLabel}
+              >
+                <span className="button-wraper">{primaryCtaLabel}</span>
+              </Link>
+              <Link
+                className="azzle-default-btn outline-btn"
+                data-aos="fade-up"
+                data-aos-delay="1000"
+                href={secondaryCtaHref}
+                data-text={secondaryCtaLabel}
+              >
+                <span className="button-wraper">{secondaryCtaLabel}</span>
+              </Link>
+            </div>
+          </div>
+          <div
+            className="azzle-hero-dashboard"
+            data-aos="fade-up"
+            data-aos-delay=".7s"
+          >
+            <img src={heroImageSrc} alt={heroImageAlt} />
+          </div>
+          <div className="divider"></div>
+          <div className="azzle-brand-slider-wraper">
+            <div
+              className="azzle-brand-slider-title"
               data-aos="fade-up"
-              data-aos-delay="1000"
-              href={secondaryCtaHref}
-              data-text={secondaryCtaLabel}
+              data-aos-delay=".9s"
             >
-              <span className="button-wraper">{secondaryCtaLabel}</span>
-            </Link>
+              <p>{brandLine}</p>
+            </div>
+            <Slider {...settings} className="azzle-brand-slider">
+              <div className="azzle-logo-icon-item">
+                <img src="assets/images/home1/icon1.svg" alt="Icon" />
+              </div>
+              <div className="azzle-logo-icon-item">
+                <img src="assets/images/home1/icon2.svg" alt="Icon" />
+              </div>
+              <div className="azzle-logo-icon-item">
+                <img src="assets/images/home1/icon3.svg" alt="Icon" />
+              </div>
+              <div className="azzle-logo-icon-item">
+                <img src="assets/images/home1/icon4.svg" alt="Icon" />
+              </div>
+              <div className="azzle-logo-icon-item">
+                <img src="assets/images/home1/icon5.svg" alt="Icon" />
+              </div>
+            </Slider>
           </div>
-        </div>
-        <div className="azzle-hero-dashboard" data-aos="fade-up" data-aos-delay=".7s">
-          <img src={heroImageSrc} alt={heroImageAlt} />
-        </div>
-        <div className="divider"></div>
-        <div className="azzle-brand-slider-wraper">
-          <div className="azzle-brand-slider-title" data-aos="fade-up" data-aos-delay=".9s">
-            <p>{brandLine}</p>
-          </div>
-          <Slider {...settings} className="azzle-brand-slider">
-            <div className="azzle-logo-icon-item">
-              <img src="assets/images/home1/icon1.svg" alt="Icon" />
-            </div>
-            <div className="azzle-logo-icon-item">
-              <img src="assets/images/home1/icon2.svg" alt="Icon" />
-            </div>
-            <div className="azzle-logo-icon-item">
-              <img src="assets/images/home1/icon3.svg" alt="Icon" />
-            </div>
-            <div className="azzle-logo-icon-item">
-              <img src="assets/images/home1/icon4.svg" alt="Icon" />
-            </div>
-            <div className="azzle-logo-icon-item">
-              <img src="assets/images/home1/icon5.svg" alt="Icon" />
-            </div>
-          </Slider>
         </div>
       </div>
-    </div>
-  )
+      <div
+        ref={scrollSpacerRef}
+        style={{ height: `${RECIPE_SCROLL_HEIGHT_VH}vh` }}
+        aria-hidden="true"
+      />
+    </>
+  );
 }

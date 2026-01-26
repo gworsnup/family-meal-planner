@@ -22,6 +22,7 @@ export default function HeaderOne() {
                   <img
                     src={headerContent.logo.src ?? siteContent.brand.logoDarkSrc}
                     alt={headerContent.logo.alt ?? siteContent.brand.name}
+                    style={{ width: 230, height: "auto" }}
                   />   
                 </Link>
               </div>
