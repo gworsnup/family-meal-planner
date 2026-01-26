@@ -2,26 +2,15 @@
 
 /**
  * Tweak checklist:
- * - Scroll height: update SCROLL_HEIGHT_VH
- * - Frame count: update FRAME_COUNT
+ * - Frame count: update DEFAULT_FRAME_COUNT or pass frameCount
  * - Frame path pattern: update frameSrc()
  * - Background color: adjust LOADER_BG or parent section styles
  */
-import { useEffect, useRef, useState } from "react";
-import {
-  motion,
-  useReducedMotion,
-  useScroll,
-  useSpring,
-  useTransform,
-} from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { isMotionValue, useReducedMotion, type MotionValue } from "framer-motion";
 
-const SCROLL_HEIGHT_VH = 140;
-const PROGRESS_MULTIPLIER = 2.2;
-const FRAME_COUNT = 192;
-const LAST_FRAME_INDEX = FRAME_COUNT - 1;
+const DEFAULT_FRAME_COUNT = 192;
 const LOADER_BG = "rgba(255, 255, 255, 0.85)";
-export const RECIPE_SCROLL_HEIGHT_VH = SCROLL_HEIGHT_VH;
 
 const frameSrc = (index: number) =>
   `/assets/recipe_animation/frame_${String(index).padStart(
@@ -34,7 +23,15 @@ type LoaderState = {
   isReady: boolean;
 };
 
-function useFramePreload({ reducedMotion }: { reducedMotion: boolean }) {
+function useFramePreload({
+  reducedMotion,
+  frameCount,
+  staticFrameIndex,
+}: {
+  reducedMotion: boolean;
+  frameCount: number;
+  staticFrameIndex: number;
+}) {
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const [loader, setLoader] = useState<LoaderState>({
     progress: 0,
@@ -64,7 +61,7 @@ function useFramePreload({ reducedMotion }: { reducedMotion: boolean }) {
 
     if (reducedMotion) {
       const img = new Image();
-      img.src = frameSrc(LAST_FRAME_INDEX);
+      img.src = frameSrc(staticFrameIndex);
       let settled = false;
       const finalize = () => {
         if (settled) return;
@@ -85,16 +82,16 @@ function useFramePreload({ reducedMotion }: { reducedMotion: boolean }) {
     }
 
     let loadedCount = 0;
-    imagesRef.current = new Array(FRAME_COUNT);
+    imagesRef.current = new Array(frameCount);
 
     const handleLoad = (index: number, image: HTMLImageElement) => {
       loadedCount += 1;
       if (!isMounted) return;
       imagesRef.current[index] = image;
-      updateProgress(loadedCount, FRAME_COUNT);
+      updateProgress(loadedCount, frameCount);
     };
 
-    for (let i = 0; i < FRAME_COUNT; i += 1) {
+    for (let i = 0; i < frameCount; i += 1) {
       const img = new Image();
       img.src = frameSrc(i);
       let settled = false;
@@ -114,7 +111,7 @@ function useFramePreload({ reducedMotion }: { reducedMotion: boolean }) {
     return () => {
       isMounted = false;
     };
-  }, [reducedMotion]);
+  }, [frameCount, reducedMotion, staticFrameIndex]);
 
   return { imagesRef, loader };
 }
@@ -142,11 +139,12 @@ function drawContain(
   context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
 }
 
-type RecipeScrollSequenceVariant = "standalone" | "overlay";
-
 type RecipeScrollSequenceProps = {
-  scrollTargetRef?: React.RefObject<HTMLDivElement | null>;
-  variant?: RecipeScrollSequenceVariant;
+  progress?: number | MotionValue<number>;
+  frameCount?: number;
+  startIndex?: number;
+  endIndex?: number;
+  className?: string;
 };
 
 function useCanvasSizer() {
@@ -165,38 +163,48 @@ function useCanvasSizer() {
 }
 
 function AnimatedSequence({
-  scrollTargetRef,
-  variant = "standalone",
+  progress,
+  frameCount = DEFAULT_FRAME_COUNT,
+  startIndex = 0,
+  endIndex,
+  className,
 }: RecipeScrollSequenceProps) {
-  const localScrollRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
   const currentFrameRef = useRef(0);
   const lastFrameRef = useRef<number | null>(null);
-  const { imagesRef, loader } = useFramePreload({ reducedMotion: false });
+  const resolvedEndIndex = Math.max(
+    0,
+    Math.min(
+      endIndex ?? frameCount - 1,
+      frameCount - 1,
+    ),
+  );
+  const resolvedStartIndex = Math.max(
+    0,
+    Math.min(startIndex, resolvedEndIndex),
+  );
+  const { imagesRef, loader } = useFramePreload({
+    reducedMotion: false,
+    frameCount,
+    staticFrameIndex: resolvedStartIndex,
+  });
   const { syncCanvasSize } = useCanvasSizer();
 
-  const scrollTarget = scrollTargetRef ?? localScrollRef;
+  const resolvedProgress = useMemo(() => {
+    if (typeof progress === "number") return progress;
+    if (progress && isMotionValue(progress)) return progress.get();
+    return 0;
+  }, [progress]);
 
-  const { scrollYProgress } = useScroll({
-    target: scrollTarget,
-    offset: ["start start", "end end"],
-  });
+  const clampProgress = (value: number) =>
+    Math.min(1, Math.max(0, value));
 
-  const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-  });
-
-  const adjustedProgress = useTransform(smoothProgress, (value) =>
-    Math.min(1, Math.max(0, value * PROGRESS_MULTIPLIER)),
-  );
-  const frameIndex = useTransform(
-    adjustedProgress,
-    [0, 1],
-    [0, LAST_FRAME_INDEX],
-  );
-  const indicatorOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
+  const resolveFrameIndex = (value: number) => {
+    const clamped = clampProgress(value);
+    const span = resolvedEndIndex - resolvedStartIndex;
+    return Math.round(resolvedStartIndex + span * clamped);
+  };
 
   const resizeCanvas = () => {
     const canvas = canvasRef.current;
@@ -226,34 +234,40 @@ function AnimatedSequence({
     });
   };
 
+  const updateFrame = (value: number) => {
+    if (!loader.isReady) return;
+    const nextIndex = Math.min(
+      resolvedEndIndex,
+      Math.max(resolvedStartIndex, resolveFrameIndex(value)),
+    );
+    if (!imagesRef.current[nextIndex]) return;
+    if (lastFrameRef.current === nextIndex) return;
+    currentFrameRef.current = nextIndex;
+    lastFrameRef.current = nextIndex;
+    scheduleDraw(nextIndex);
+  };
+
   useEffect(() => {
     if (!loader.isReady) return;
-    const initialImage = imagesRef.current[0];
-    if (initialImage && canvasRef.current) {
-      currentFrameRef.current = 0;
-      lastFrameRef.current = 0;
-      scheduleDraw(0);
+    const initialIndex = resolveFrameIndex(resolvedProgress);
+    currentFrameRef.current = initialIndex;
+    lastFrameRef.current = initialIndex;
+    scheduleDraw(initialIndex);
+  }, [loader.isReady, resolvedProgress]);
+
+  useEffect(() => {
+    if (!loader.isReady) return undefined;
+    if (progress && isMotionValue(progress)) {
+      const unsubscribe = progress.on("change", (latest) => {
+        updateFrame(latest);
+      });
+      return () => {
+        unsubscribe();
+      };
     }
-  }, [loader.isReady, imagesRef]);
-
-  useEffect(() => {
-    if (!loader.isReady) return;
-    const unsubscribe = frameIndex.on("change", (latest) => {
-      const nextIndex = Math.min(
-        LAST_FRAME_INDEX,
-        Math.max(0, Math.round(latest)),
-      );
-      if (!imagesRef.current[nextIndex]) return;
-      if (lastFrameRef.current === nextIndex) return;
-      currentFrameRef.current = nextIndex;
-      lastFrameRef.current = nextIndex;
-      scheduleDraw(nextIndex);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [frameIndex, imagesRef, loader.isReady]);
+    updateFrame(resolvedProgress);
+    return undefined;
+  }, [loader.isReady, progress, resolvedProgress]);
 
   useEffect(() => {
     if (!loader.isReady) return undefined;
@@ -268,335 +282,165 @@ function AnimatedSequence({
   }, [loader.isReady]);
 
   return (
-    <>
-      {variant === "standalone" && (
-        <div
-          ref={localScrollRef}
-          style={{ height: `${SCROLL_HEIGHT_VH}vh` }}
-          aria-hidden="true"
-        >
+    <div
+      className={`absolute inset-0 h-full w-full ${className ?? ""}`.trim()}
+      aria-hidden="true"
+    >
+      <div style={{ position: "relative", width: "100%", height: "100%" }}>
+        <canvas
+          ref={canvasRef}
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "block",
+            backgroundColor: "#fff",
+            opacity: loader.isReady ? 1 : 0,
+          }}
+        />
+        {loader.progress < 100 && (
           <div
             style={{
-              position: "sticky",
-              top: 0,
-              height: "100vh",
-              width: "100%",
-            }}
-          >
-            <div style={{ position: "relative", width: "100%", height: "100%" }}>
-              <canvas
-                ref={canvasRef}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "block",
-                  opacity: loader.isReady ? 1 : 0,
-                }}
-              />
-              {loader.progress < 100 && (
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: LOADER_BG,
-                    pointerEvents: "none",
-                  }}
-                >
-                  <div style={{ textAlign: "center" }}>
-                    <div
-                      style={{
-                        width: "min(240px, 70vw)",
-                        height: 4,
-                        background: "rgba(15, 23, 42, 0.15)",
-                        borderRadius: 999,
-                        overflow: "hidden",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: `${loader.progress}%`,
-                          height: "100%",
-                          background: "#0f172a",
-                          transition: "width 0.2s ease",
-                        }}
-                      />
-                    </div>
-                    <span style={{ fontSize: 12, color: "#0f172a" }}>
-                      Loading {loader.progress}%
-                    </span>
-                  </div>
-                </div>
-              )}
-              <motion.div
-                style={{
-                  opacity: indicatorOpacity,
-                  position: "absolute",
-                  bottom: 24,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  fontSize: 12,
-                  letterSpacing: "0.2em",
-                  textTransform: "uppercase",
-                  color: "#111827",
-                  pointerEvents: "none",
-                }}
-              >
-                Scroll
-              </motion.div>
-            </div>
-          </div>
-        </div>
-      )}
-      {variant === "overlay" && (
-        <>
-          <div
-            style={{
-              position: "fixed",
+              position: "absolute",
               inset: 0,
-              height: "100vh",
-              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: LOADER_BG,
               pointerEvents: "none",
-              zIndex: 0,
             }}
-            aria-hidden="true"
           >
-            <div style={{ position: "relative", width: "100%", height: "100%" }}>
-              <canvas
-                ref={canvasRef}
+            <div style={{ textAlign: "center" }}>
+              <div
                 style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "block",
-                  opacity: loader.isReady ? 1 : 0,
-                }}
-              />
-              {loader.progress < 100 && (
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: LOADER_BG,
-                    pointerEvents: "none",
-                  }}
-                >
-                  <div style={{ textAlign: "center" }}>
-                    <div
-                      style={{
-                        width: "min(240px, 70vw)",
-                        height: 4,
-                        background: "rgba(15, 23, 42, 0.15)",
-                        borderRadius: 999,
-                        overflow: "hidden",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: `${loader.progress}%`,
-                          height: "100%",
-                          background: "#0f172a",
-                          transition: "width 0.2s ease",
-                        }}
-                      />
-                    </div>
-                    <span style={{ fontSize: 12, color: "#0f172a" }}>
-                      Loading {loader.progress}%
-                    </span>
-                  </div>
-                </div>
-              )}
-              <motion.div
-                style={{
-                  opacity: indicatorOpacity,
-                  position: "absolute",
-                  bottom: 24,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  fontSize: 12,
-                  letterSpacing: "0.2em",
-                  textTransform: "uppercase",
-                  color: "#111827",
-                  pointerEvents: "none",
+                  width: "min(240px, 70vw)",
+                  height: 4,
+                  background: "rgba(15, 23, 42, 0.15)",
+                  borderRadius: 999,
+                  overflow: "hidden",
+                  marginBottom: 8,
                 }}
               >
-                Scroll
-              </motion.div>
+                <div
+                  style={{
+                    width: `${loader.progress}%`,
+                    height: "100%",
+                    background: "#0f172a",
+                    transition: "width 0.2s ease",
+                  }}
+                />
+              </div>
+              <span style={{ fontSize: 12, color: "#0f172a" }}>
+                Loading {loader.progress}%
+              </span>
             </div>
           </div>
-          {!scrollTargetRef && (
-            <div
-              ref={localScrollRef}
-              style={{ height: `${SCROLL_HEIGHT_VH}vh` }}
-              aria-hidden="true"
-            />
-          )}
-        </>
-      )}
-    </>
+        )}
+      </div>
+    </div>
   );
 }
 
 function ReducedMotionSequence({
-  scrollTargetRef,
-  variant = "standalone",
+  frameCount = DEFAULT_FRAME_COUNT,
+  startIndex = 0,
+  endIndex,
+  className,
 }: RecipeScrollSequenceProps) {
-  const localScrollRef = useRef<HTMLDivElement>(null);
-  const { imagesRef, loader } = useFramePreload({ reducedMotion: true });
+  const resolvedEndIndex = Math.max(
+    0,
+    Math.min(
+      endIndex ?? frameCount - 1,
+      frameCount - 1,
+    ),
+  );
+  const resolvedStartIndex = Math.max(
+    0,
+    Math.min(startIndex, resolvedEndIndex),
+  );
+  const { imagesRef, loader } = useFramePreload({
+    reducedMotion: true,
+    frameCount,
+    staticFrameIndex: resolvedStartIndex,
+  });
   const image = imagesRef.current[0];
 
-  const scrollTarget = scrollTargetRef ?? localScrollRef;
-
   return (
-    <>
-      {variant === "standalone" && (
+    <div
+      className={`absolute inset-0 h-full w-full ${className ?? ""}`.trim()}
+      aria-hidden="true"
+    >
+      {image ? (
+        <img
+          src={image.src}
+          alt=""
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            display: "block",
+          }}
+        />
+      ) : (
+        <img
+          src={frameSrc(resolvedStartIndex)}
+          alt=""
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            display: "block",
+            opacity: loader.isReady ? 1 : 0,
+          }}
+        />
+      )}
+      {loader.progress < 100 && (
         <div
-          ref={scrollTarget}
-          style={{ height: `${SCROLL_HEIGHT_VH}vh` }}
-          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: LOADER_BG,
+            pointerEvents: "none",
+          }}
         >
-          <div
-            style={{
-              position: "sticky",
-              top: 0,
-              height: "100vh",
-              width: "100%",
-            }}
-          >
-            {image ? (
-              <img
-                src={image.src}
-                alt=""
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                  display: "block",
-                }}
-              />
-            ) : (
-              <img
-                src={frameSrc(LAST_FRAME_INDEX)}
-                alt=""
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                  display: "block",
-                  opacity: loader.isReady ? 1 : 0,
-                }}
-              />
-            )}
-            {loader.progress < 100 && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: LOADER_BG,
-                  pointerEvents: "none",
-                }}
-              >
-                <span style={{ fontSize: 12, color: "#0f172a" }}>
-                  Loading {loader.progress}%
-                </span>
-              </div>
-            )}
-          </div>
+          <span style={{ fontSize: 12, color: "#0f172a" }}>
+            Loading {loader.progress}%
+          </span>
         </div>
       )}
-      {variant === "overlay" && (
-        <>
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              height: "100vh",
-              width: "100%",
-              pointerEvents: "none",
-              zIndex: 0,
-            }}
-            aria-hidden="true"
-          >
-            {image ? (
-              <img
-                src={image.src}
-                alt=""
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                  display: "block",
-                }}
-              />
-            ) : (
-              <img
-                src={frameSrc(LAST_FRAME_INDEX)}
-                alt=""
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                  display: "block",
-                  opacity: loader.isReady ? 1 : 0,
-                }}
-              />
-            )}
-            {loader.progress < 100 && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: LOADER_BG,
-                  pointerEvents: "none",
-                }}
-              >
-                <span style={{ fontSize: 12, color: "#0f172a" }}>
-                  Loading {loader.progress}%
-                </span>
-              </div>
-            )}
-          </div>
-          {!scrollTargetRef && (
-            <div
-              ref={localScrollRef}
-              style={{ height: `${SCROLL_HEIGHT_VH}vh` }}
-              aria-hidden="true"
-            />
-          )}
-        </>
-      )}
-    </>
+    </div>
   );
 }
 
 export default function RecipeScrollSequence({
-  scrollTargetRef,
-  variant = "standalone",
+  progress,
+  frameCount,
+  startIndex,
+  endIndex,
+  className,
 }: RecipeScrollSequenceProps) {
   const reducedMotion = useReducedMotion();
 
   if (reducedMotion) {
     return (
       <ReducedMotionSequence
-        scrollTargetRef={scrollTargetRef}
-        variant={variant}
+        frameCount={frameCount}
+        startIndex={startIndex}
+        endIndex={endIndex}
+        className={className}
       />
     );
   }
 
   return (
-    <AnimatedSequence scrollTargetRef={scrollTargetRef} variant={variant} />
+    <AnimatedSequence
+      progress={progress}
+      frameCount={frameCount}
+      startIndex={startIndex}
+      endIndex={endIndex}
+      className={className}
+    />
   );
 }
