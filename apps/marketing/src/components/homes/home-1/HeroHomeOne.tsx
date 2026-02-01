@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import Slider from "react-slick";
 import RecipeScrollSequence from "../../RecipeScrollSequence";
@@ -45,7 +45,10 @@ const settings = {
 
 export default function HeroHomeOne({ content }: HeroHomeOneProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const fixedRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef(0);
+  const [isReleased, setIsReleased] = useState(false);
+  const [isInteractive, setIsInteractive] = useState(false);
   const headline = content?.headline ?? "Simplify your SaaS solution with AI";
   const subheadline =
     content?.subheadline ??
@@ -77,22 +80,28 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
   useEffect(() => {
     return scrollYProgress.on("change", (value) => {
       progressRef.current = value;
+      setIsReleased(value >= 1);
+      setIsInteractive(value > 0.88);
     });
   }, [scrollYProgress]);
 
   return (
     <>
-      <section
-        className="azzle-hero-section"
-        style={{ position: "relative", overflow: "visible" }}
-      >
-        {/* Sticky breaks if any ancestor has overflow hidden/auto or transform. Keep sticky wrapper at top-level. */}
+      <section className="azzle-hero-section">
         <div
           ref={wrapperRef}
-          className="relative overflow-visible"
+          className="relative"
           style={{ height: `${SCROLL_VH}vh` }}
         >
-          <div className="sticky top-0 h-screen w-full overflow-hidden relative bg-white isolate">
+          <div
+            ref={fixedRef}
+            className={
+              isReleased
+                ? "absolute bottom-0 left-0 w-full h-screen bg-white z-0"
+                : "fixed top-0 left-0 w-full h-screen bg-white z-0"
+            }
+            style={{ pointerEvents: isInteractive ? "auto" : "none" }}
+          >
             <RecipeScrollSequence
               progressRef={progressRef}
               className="absolute inset-0 h-full w-full"
@@ -179,6 +188,7 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
               </div>
             </motion.div>
           </div>
+          <div aria-hidden="true" className="h-screen w-full" />
         </div>
       </section>
     </>
