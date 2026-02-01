@@ -25,3 +25,7 @@
   transform: none;
   will-change: auto;
 }
+
+[data-aos="none"] * {
+  transform: none !important;
+}
