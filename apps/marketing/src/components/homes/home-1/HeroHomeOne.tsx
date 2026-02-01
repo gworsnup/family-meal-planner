@@ -44,11 +44,8 @@ const settings = {
 }
 
 export default function HeroHomeOne({ content }: HeroHomeOneProps) {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const fixedRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef(0);
-  const [isReleased, setIsReleased] = useState(false);
-  const [isInteractive, setIsInteractive] = useState(false);
   const headline = content?.headline ?? "Simplify your SaaS solution with AI";
   const subheadline =
     content?.subheadline ??
@@ -63,118 +60,121 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
     content?.brandLine ??
     "Companies of all sizes trust us to find AI SaaS critical to their growth and innovation";
 
+  // Use a longer scroll distance to allow time for the animation (e.g. 300vh)
   const { scrollYProgress } = useScroll({
-    target: wrapperRef,
+    target: containerRef,
     offset: ["start start", "end end"],
   });
+
   const smoothProgress = useSpring(scrollYProgress, {
     stiffness: 120,
     damping: 30,
   });
-  const contentOpacity = useTransform(smoothProgress, [0.78, 0.9], [0, 1]);
-  const contentY = useTransform(smoothProgress, [0.78, 0.9], [24, 0]);
+
+  // Map scroll progress to animation phases
+  // 0.0 - 0.7: Play video animation (controlled by RecipeScrollSequence via progressRef)
+  // 0.7 - 0.9: Fade in hero content
+  const contentOpacity = useTransform(smoothProgress, [0.75, 0.9], [0, 1]);
+  const contentY = useTransform(smoothProgress, [0.75, 0.9], [40, 0]);
   const contentPointerEvents = useTransform(smoothProgress, (value) =>
-    value > 0.88 ? "auto" : "none",
+    value > 0.85 ? "auto" : "none"
   );
 
+  // Sync the raw or smooth progress to the ref for the canvas renderer
   useEffect(() => {
-    return scrollYProgress.on("change", (value) => {
-      progressRef.current = value;
-      setIsReleased(value >= 1);
-      setIsInteractive(value > 0.88);
+    return smoothProgress.on("change", (value) => {
+      // Map global container progress (0..1) to animation progress (0..1)
+      // We want the animation to finish a bit before the end so the content can fade in
+      // Let's say animation runs from 0.0 to 0.8
+      const animationEnd = 0.8; 
+      const animationProgress = Math.min(1, Math.max(0, value / animationEnd));
+      
+      progressRef.current = animationProgress;
     });
-  }, [scrollYProgress]);
+  }, [smoothProgress]);
 
   return (
-    <>
-      <section className="azzle-hero-section" data-aos="none">
-        <div
-          ref={wrapperRef}
-          className="relative"
-          style={{ height: `${SCROLL_VH}vh` }}
-        >
-          <div
-            ref={fixedRef}
-            className={
-              isReleased
-                ? "absolute bottom-0 left-0 w-full h-screen bg-white z-0"
-                : "fixed top-0 left-0 w-full h-screen bg-white z-0"
-            }
-            style={{ pointerEvents: isInteractive ? "auto" : "none" }}
+    <section className="azzle-hero-section relative z-10" data-aos="none">
+      {/* 
+        This generic container defines the total scroll height. 
+        300vh = 3 screens worth of scrolling.
+      */}
+      <div 
+        ref={containerRef} 
+        style={{ height: "300vh" }} 
+        className="relative w-full"
+      >
+        {/* 
+          Sticky container: Sticks to the top while we scroll through the parent.
+          Contains the canvas and the overlay content.
+        */}
+        <div className="sticky top-0 left-0 w-full h-screen overflow-hidden bg-white">
+          
+          {/* Background Animation Canvas */}
+          <RecipeScrollSequence
+            progressRef={progressRef}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+
+          {/* Foreground Content */}
+          <motion.div
+            style={{
+              opacity: contentOpacity,
+              y: contentY,
+              pointerEvents: contentPointerEvents,
+            }}
+            className="relative z-10 h-full flex flex-col justify-center"
           >
-            <RecipeScrollSequence
-              progressRef={progressRef}
-              className="absolute inset-0 h-full w-full"
-            />
-            <motion.div
-              style={{
-                opacity: contentOpacity,
-                y: contentY,
-                pointerEvents: contentPointerEvents,
-              }}
-              className="relative z-10"
-            >
-              <div className="azzle-hero-shape">
-                <img src="assets/images/home1/hero-bg.png" alt="bg" />
+            {/* Shapes / Backgrounds Layered on top if needed */}
+            <div className="azzle-hero-shape absolute top-0 left-0 w-full h-full pointer-events-none">
+              <img src="assets/images/home1/hero-bg.png" alt="bg" className="w-full h-full object-cover opacity-50" />
+            </div>
+
+            <div className="container relative z-10 pt-20">
+              <div className="azzle-hero-content1 text-center max-w-4xl mx-auto">
+                <h1>{headline}</h1>
+                <p>{subheadline}</p>
+                <div className="azzle-hero-button mt-8 flex justify-center gap-4">
+                  <Link
+                    className="azzle-default-btn"
+                    href={primaryCtaHref}
+                    data-text={primaryCtaLabel}
+                  >
+                    <span className="button-wraper">{primaryCtaLabel}</span>
+                  </Link>
+                  <Link
+                    className="azzle-default-btn outline-btn"
+                    href={secondaryCtaHref}
+                    data-text={secondaryCtaLabel}
+                  >
+                    <span className="button-wraper">
+                      {secondaryCtaLabel}
+                    </span>
+                  </Link>
+                </div>
               </div>
-              <div
-                className="container"
-                style={{ position: "relative", zIndex: 10 }}
-              >
-                <div className="azzle-hero-content1">
-                  <h1>{headline}</h1>
-                  <p>{subheadline}</p>
-                  <div className="azzle-hero-button mt-50">
-                    <Link
-                      className="azzle-default-btn"
-                      href={primaryCtaHref}
-                      data-text={primaryCtaLabel}
-                    >
-                      <span className="button-wraper">{primaryCtaLabel}</span>
-                    </Link>
-                    <Link
-                      className="azzle-default-btn outline-btn"
-                      href={secondaryCtaHref}
-                      data-text={secondaryCtaLabel}
-                    >
-                      <span className="button-wraper">
-                        {secondaryCtaLabel}
-                      </span>
-                    </Link>
-                  </div>
-                </div>
-                <div className="azzle-hero-dashboard">
-                  <img src={heroImageSrc} alt={heroImageAlt} />
-                </div>
-                <div className="divider"></div>
-                <div className="azzle-brand-slider-wraper">
-                  <div className="azzle-brand-slider-title">
+
+              {/* Dashboard Image & Brands - simplified layout for sticky mode */}
+              <div className="azzle-hero-dashboard mt-12 px-4">
+                 <img src={heroImageSrc} alt={heroImageAlt} className="mx-auto shadow-2xl rounded-lg" />
+              </div>
+              
+              <div className="azzle-brand-slider-wraper mt-12 pb-12">
+                  <div className="azzle-brand-slider-title text-center mb-6">
                     <p>{brandLine}</p>
                   </div>
                   <Slider {...settings} className="azzle-brand-slider">
-                    <div className="azzle-logo-icon-item">
-                      <img src="assets/images/home1/icon1.svg" alt="Icon" />
-                    </div>
-                    <div className="azzle-logo-icon-item">
-                      <img src="assets/images/home1/icon2.svg" alt="Icon" />
-                    </div>
-                    <div className="azzle-logo-icon-item">
-                      <img src="assets/images/home1/icon3.svg" alt="Icon" />
-                    </div>
-                    <div className="azzle-logo-icon-item">
-                      <img src="assets/images/home1/icon4.svg" alt="Icon" />
-                    </div>
-                    <div className="azzle-logo-icon-item">
-                      <img src="assets/images/home1/icon5.svg" alt="Icon" />
-                    </div>
+                    <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon1.svg" alt="Icon" /></div>
+                    <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon2.svg" alt="Icon" /></div>
+                    <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon3.svg" alt="Icon" /></div>
+                    <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon4.svg" alt="Icon" /></div>
+                    <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon5.svg" alt="Icon" /></div>
                   </Slider>
-                </div>
               </div>
-            </motion.div>
-          </div>
-          <div aria-hidden="true" className="h-screen w-full" />
+            </div>
+          </motion.div>
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }
