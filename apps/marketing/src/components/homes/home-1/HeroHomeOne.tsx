@@ -87,7 +87,7 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
 
   return (
     <>
-      <section className="azzle-hero-section">
+      <section className="azzle-hero-section" data-aos="none">
         <div
           ref={wrapperRef}
           className="relative"
@@ -122,17 +122,11 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
                 style={{ position: "relative", zIndex: 10 }}
               >
                 <div className="azzle-hero-content1">
-                  <h1 data-aos="fade-left" data-aos-delay="500">
-                    {headline}
-                  </h1>
-                  <p data-aos="zoom-in" data-aos-delay="700">
-                    {subheadline}
-                  </p>
+                  <h1>{headline}</h1>
+                  <p>{subheadline}</p>
                   <div className="azzle-hero-button mt-50">
                     <Link
                       className="azzle-default-btn"
-                      data-aos="fade-up"
-                      data-aos-delay="900"
                       href={primaryCtaHref}
                       data-text={primaryCtaLabel}
                     >
@@ -140,8 +134,6 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
                     </Link>
                     <Link
                       className="azzle-default-btn outline-btn"
-                      data-aos="fade-up"
-                      data-aos-delay="1000"
                       href={secondaryCtaHref}
                       data-text={secondaryCtaLabel}
                     >
@@ -151,20 +143,12 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
                     </Link>
                   </div>
                 </div>
-                <div
-                  className="azzle-hero-dashboard"
-                  data-aos="fade-up"
-                  data-aos-delay=".7s"
-                >
+                <div className="azzle-hero-dashboard">
                   <img src={heroImageSrc} alt={heroImageAlt} />
                 </div>
                 <div className="divider"></div>
                 <div className="azzle-brand-slider-wraper">
-                  <div
-                    className="azzle-brand-slider-title"
-                    data-aos="fade-up"
-                    data-aos-delay=".9s"
-                  >
+                  <div className="azzle-brand-slider-title">
                     <p>{brandLine}</p>
                   </div>
                   <Slider {...settings} className="azzle-brand-slider">
