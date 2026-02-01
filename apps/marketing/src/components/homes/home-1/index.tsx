@@ -14,18 +14,14 @@ export default function HomeOne() {
   return (
     <Wrapper>
       <HeaderOne />
-      <div id="smooth-wrapper">
-        <div id="smooth-content">
-          <HeroHomeOne content={homeContent.hero} />
-          <FeaturesHomeOne content={homeContent.featureGrid} />
-          <AboutHomeOne content={homeContent.about} />
-          <VideoHomeOne content={homeContent.video} />
-          <PricingHomeOne content={homeContent.pricing} />
-          <FaqHomeOne content={homeContent.faq} />
-          <TestimonialHomeOne content={homeContent.testimonial} />
-          <FooterOne />
-        </div>
-      </div>
+      <HeroHomeOne content={homeContent.hero} />
+      <FeaturesHomeOne content={homeContent.featureGrid} />
+      <AboutHomeOne content={homeContent.about} />
+      <VideoHomeOne content={homeContent.video} />
+      <PricingHomeOne content={homeContent.pricing} />
+      <FaqHomeOne content={homeContent.faq} />
+      <TestimonialHomeOne content={homeContent.testimonial} />
+      <FooterOne />
     </Wrapper>
   );
 }
