@@ -18,3 +18,10 @@
 @import "../../public/assets/css/clashdisplay.css"; 
 @import "../../public/assets/css/main.css"; 
 @import "../../public/assets/css/app.min.css"; 
+
+#smooth-wrapper,
+#smooth-content {
+  overflow: visible;
+  transform: none;
+  will-change: auto;
+}

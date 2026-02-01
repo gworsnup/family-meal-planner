@@ -350,21 +350,5 @@ function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length)
       });
     }, 1500);
 
-    /*--------------------------------------------------------------
-    GSAP SCROLL SMOOTH JS INIT
-    --------------------------------------------------------------*/
-
-    gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
-
-    // Smooth scroll activate
-    ScrollSmoother.create({
-      wrapper: "#smooth-wrapper",
-      // outer wrapper
-      content: "#smooth-content",
-      // scrollable content
-      smooth: 1.5,
-      // scroll smoothness (default 0.8)
-      effects: true // enables data-speed and data-lag attributes for parallax
-    });
   });
 })(jQuery);
