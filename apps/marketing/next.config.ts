@@ -78,6 +78,19 @@ const nextConfig = {
       },
     ];
   },
+  async headers() {
+    return [
+      {
+        source: "/assets/recipe_animation/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
+  },
 
   eslint: {
     // Allow production builds to succeed even if there are ESLint errors

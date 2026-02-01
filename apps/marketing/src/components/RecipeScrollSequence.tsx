@@ -10,11 +10,18 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { useReducedMotion } from "framer-motion";
 
 const DEFAULT_FRAME_COUNT = 192;
+const KEYFRAME_STEP = 6;
+const CONCURRENCY = 6;
+const LOADER_HIDE_THRESHOLD = 0.3;
 const LOADER_BG = "rgba(255, 255, 255, 0.85)";
-const LOAD_CONCURRENCY = 6;
-const READY_THRESHOLD = 0.8;
 
 const frameSrc = (index: number) =>
+  `/assets/recipe_animation/frame_${String(index).padStart(
+    3,
+    "0",
+  )}_delay-0.042s.webp`;
+
+const frameSrcFallback = (index: number) =>
   `/assets/recipe_animation/frame_${String(index).padStart(
     3,
     "0",
@@ -24,8 +31,9 @@ const isUsableImage = (img?: HTMLImageElement) =>
   !!img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0;
 
 type LoaderState = {
-  progress: number;
-  isReady: boolean;
+  keyframeProgress: number;
+  isFrameReady: boolean;
+  showOverlay: boolean;
 };
 
 function useFramePreload({
@@ -39,68 +47,19 @@ function useFramePreload({
 }) {
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const [loader, setLoader] = useState<LoaderState>({
-    progress: 0,
-    isReady: false,
+    keyframeProgress: 0,
+    isFrameReady: false,
+    showOverlay: true,
   });
 
   useEffect(() => {
     let isMounted = true;
+    let idleHandle: number | null = null;
+    let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
-    const updateProgress = (loaded: number, total: number) => {
-      const progress = Math.min(100, Math.round((loaded / total) * 100));
-      if (!isMounted) return;
-      setLoader((prev) => {
-        const isReady =
-          prev.isReady ||
-          (isUsableImage(imagesRef.current[0]) &&
-            loaded >= Math.ceil(total * READY_THRESHOLD));
-        const nextState = {
-          progress,
-          isReady,
-        };
-        if (
-          prev.progress === nextState.progress &&
-          prev.isReady === nextState.isReady
-        ) {
-          return prev;
-        }
-        return nextState;
-      });
-    };
-
-    if (reducedMotion) {
+    const loadImage = async (src: string) => {
       const img = new Image();
-      img.src = frameSrc(staticFrameIndex);
-      let settled = false;
-      const finalize = () => {
-        if (settled) return;
-        settled = true;
-        if (!isMounted) return;
-        imagesRef.current = isUsableImage(img) ? [img] : [];
-        setLoader({ progress: 100, isReady: true });
-      };
-      img.onload = finalize;
-      img.onerror = finalize;
-      const decodePromise = img.decode?.();
-      if (decodePromise) {
-        decodePromise.then(finalize).catch(finalize);
-      }
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    let loadedCount = 0;
-    imagesRef.current = new Array(frameCount);
-    const failedIndices = new Set<number>();
-
-    const updateLoader = () => {
-      updateProgress(loadedCount, frameCount);
-    };
-
-    const loadFrame = async (index: number) => {
-      const img = new Image();
-      img.src = frameSrc(index);
+      img.src = src;
       const finalizePromise = new Promise<void>((resolve) => {
         const done = () => resolve();
         img.onload = done;
@@ -119,55 +78,179 @@ function useFramePreload({
       return img;
     };
 
+    const updateProgress = (loadedKeyframes: number, totalKeyframes: number) => {
+      if (!isMounted) return;
+      const safeTotal = Math.max(1, totalKeyframes);
+      const keyframeProgress = Math.min(
+        100,
+        Math.round((loadedKeyframes / safeTotal) * 100),
+      );
+      const isFrameReady = isUsableImage(imagesRef.current[0]);
+      const shouldHideOverlay =
+        isFrameReady &&
+        loadedKeyframes / safeTotal >= LOADER_HIDE_THRESHOLD;
+      setLoader((prev) => {
+        const showOverlay = prev.showOverlay && !shouldHideOverlay;
+        if (
+          prev.keyframeProgress === keyframeProgress &&
+          prev.isFrameReady === isFrameReady &&
+          prev.showOverlay === showOverlay
+        ) {
+          return prev;
+        }
+        return {
+          keyframeProgress,
+          isFrameReady,
+          showOverlay,
+        };
+      });
+    };
+
+    if (reducedMotion) {
+      const loadReducedFrame = async () => {
+        const preferred = await loadImage(frameSrc(staticFrameIndex));
+        if (!isMounted) return;
+        if (isUsableImage(preferred)) {
+          imagesRef.current = [preferred];
+          setLoader({
+            keyframeProgress: 100,
+            isFrameReady: true,
+            showOverlay: false,
+          });
+          return;
+        }
+        const fallback = await loadImage(frameSrcFallback(staticFrameIndex));
+        if (!isMounted) return;
+        imagesRef.current = isUsableImage(fallback) ? [fallback] : [];
+        setLoader({
+          keyframeProgress: 100,
+          isFrameReady: true,
+          showOverlay: false,
+        });
+      };
+      loadReducedFrame();
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const startIndex = 0;
+    const endIndex = frameCount - 1;
+    imagesRef.current = new Array(frameCount);
+    const failedIndices = new Set<number>();
+    const loadedIndices = new Set<number>();
+    const keyframeIndices = new Set<number>();
+    const loadedKeyframes = new Set<number>();
+
+    for (let i = startIndex; i <= endIndex; i += KEYFRAME_STEP) {
+      keyframeIndices.add(i);
+    }
+
+    const updateLoader = () => {
+      updateProgress(loadedKeyframes.size, keyframeIndices.size);
+    };
+
     const applyResult = (index: number, image: HTMLImageElement) => {
       if (isUsableImage(image)) {
         imagesRef.current[index] = image;
         failedIndices.delete(index);
+        loadedIndices.add(index);
+        if (keyframeIndices.has(index)) {
+          loadedKeyframes.add(index);
+        }
       } else {
         failedIndices.add(index);
       }
     };
 
-    const runQueue = async (
-      indices: number[],
-      options: { countCompletion: boolean },
-    ) => {
+    const runQueue = async (indices: number[]) => {
       let cursor = 0;
+      const queued = indices.filter((index) => !loadedIndices.has(index));
       const worker = async () => {
-        while (cursor < indices.length && isMounted) {
-          const current = indices[cursor];
+        while (cursor < queued.length && isMounted) {
+          const current = queued[cursor];
           cursor += 1;
-          const image = await loadFrame(current);
+          const image = await loadImage(frameSrc(current));
           if (!isMounted) return;
           applyResult(current, image);
-          if (options.countCompletion) {
-            loadedCount += 1;
-          }
           updateLoader();
         }
       };
 
       await Promise.all(
         Array.from(
-          { length: Math.min(LOAD_CONCURRENCY, indices.length) },
+          { length: Math.min(CONCURRENCY, queued.length) },
           () => worker(),
         ),
       );
     };
 
-    const loadAllFrames = async () => {
-      const indices = Array.from({ length: frameCount }, (_, i) => i);
-      await runQueue(indices, { countCompletion: true });
+    const loadTier0 = async () => {
+      const image = await loadImage(frameSrc(startIndex));
+      if (!isMounted) return;
+      applyResult(startIndex, image);
+      updateLoader();
+      if (endIndex !== startIndex) {
+        const endImage = await loadImage(frameSrc(endIndex));
+        if (!isMounted) return;
+        applyResult(endIndex, endImage);
+        updateLoader();
+      }
+    };
+
+    const loadTier1 = async () => {
+      const indices = Array.from(keyframeIndices);
+      await runQueue(indices);
+    };
+
+    const loadTier2 = async () => {
+      const indices = [];
+      for (let i = startIndex; i <= endIndex; i += 1) {
+        if (!keyframeIndices.has(i)) {
+          indices.push(i);
+        }
+      }
+      await runQueue(indices);
       if (!isMounted || failedIndices.size === 0) return;
       const retryIndices = Array.from(failedIndices);
-      await runQueue(retryIndices, { countCompletion: false });
+      await runQueue(retryIndices);
       updateLoader();
     };
 
-    loadAllFrames();
+    const scheduleTier2 = () => {
+      if (!isMounted) return;
+      if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+        idleHandle = window.requestIdleCallback(() => {
+          idleHandle = null;
+          if (!isMounted) return;
+          void loadTier2();
+        });
+      } else {
+        timeoutHandle = setTimeout(() => {
+          timeoutHandle = null;
+          if (!isMounted) return;
+          void loadTier2();
+        }, 0);
+      }
+    };
+
+    const loadFrames = async () => {
+      await loadTier0();
+      if (!isMounted) return;
+      await loadTier1();
+      scheduleTier2();
+    };
+
+    loadFrames();
 
     return () => {
       isMounted = false;
+      if (idleHandle !== null && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleHandle);
+      }
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+      }
     };
   }, [frameCount, reducedMotion, staticFrameIndex]);
 
@@ -323,7 +406,7 @@ function AnimatedSequence({
   }, []);
 
   useEffect(() => {
-    if (!loader.isReady) return;
+    if (!loader.isFrameReady) return;
     const initialIndex = resolveFrameIndex(progressRef.current ?? 0);
     const resolvedInitial = findNearestUsableFrame(initialIndex);
     if (resolvedInitial !== null) {
@@ -353,7 +436,7 @@ function AnimatedSequence({
       }
     };
   }, [
-    loader.isReady,
+    loader.isFrameReady,
     progressRef,
     resolvedEndIndex,
     resolvedStartIndex,
@@ -372,10 +455,10 @@ function AnimatedSequence({
             height: "100%",
             display: "block",
             backgroundColor: "#fff",
-            opacity: loader.isReady ? 1 : 0,
+            opacity: loader.isFrameReady ? 1 : 0,
           }}
         />
-        {!loader.isReady && (
+        {loader.showOverlay && (
           <div
             style={{
               position: "absolute",
@@ -400,7 +483,7 @@ function AnimatedSequence({
               >
                 <div
                   style={{
-                    width: `${loader.progress}%`,
+                    width: `${loader.keyframeProgress}%`,
                     height: "100%",
                     background: "#0f172a",
                     transition: "width 0.2s ease",
@@ -408,7 +491,7 @@ function AnimatedSequence({
                 />
               </div>
               <span style={{ fontSize: 12, color: "#0f172a" }}>
-                Loading {loader.progress}%
+                Loading {loader.keyframeProgress}%
               </span>
             </div>
           </div>
@@ -467,11 +550,11 @@ function ReducedMotionSequence({
             height: "100%",
             objectFit: "contain",
             display: "block",
-            opacity: loader.isReady ? 1 : 0,
+            opacity: loader.isFrameReady ? 1 : 0,
           }}
         />
       )}
-      {!loader.isReady && (
+      {loader.showOverlay && (
         <div
           style={{
             position: "absolute",
@@ -484,7 +567,7 @@ function ReducedMotionSequence({
           }}
         >
           <span style={{ fontSize: 12, color: "#0f172a" }}>
-            Loading {loader.progress}%
+            Loading {loader.keyframeProgress}%
           </span>
         </div>
       )}
