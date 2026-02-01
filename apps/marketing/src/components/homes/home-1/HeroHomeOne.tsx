@@ -74,10 +74,10 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
   // Map scroll progress to animation phases
   // 0.0 - 0.7: Play video animation (controlled by RecipeScrollSequence via progressRef)
   // 0.7 - 0.9: Fade in hero content
-  const contentOpacity = useTransform(smoothProgress, [0.75, 0.9], [0, 1]);
-  const contentY = useTransform(smoothProgress, [0.75, 0.9], [40, 0]);
+  const contentOpacity = useTransform(smoothProgress, [0.85, 0.95], [0, 1]);
+  const contentY = useTransform(smoothProgress, [0.85, 0.95], [40, 0]);
   const contentPointerEvents = useTransform(smoothProgress, (value) =>
-    value > 0.85 ? "auto" : "none"
+    value > 0.9 ? "auto" : "none"
   );
 
   // Sync the raw or smooth progress to the ref for the canvas renderer
@@ -86,9 +86,9 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
       // Map global container progress (0..1) to animation progress (0..1)
       // We want the animation to finish a bit before the end so the content can fade in
       // Let's say animation runs from 0.0 to 0.8
-      const animationEnd = 0.8; 
+      const animationEnd = 0.9;
       const animationProgress = Math.min(1, Math.max(0, value / animationEnd));
-      
+
       progressRef.current = animationProgress;
     });
   }, [smoothProgress]);
@@ -99,9 +99,9 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
         This generic container defines the total scroll height. 
         300vh = 3 screens worth of scrolling.
       */}
-      <div 
-        ref={containerRef} 
-        style={{ height: "300vh" }} 
+      <div
+        ref={containerRef}
+        style={{ height: "800vh" }}
         className="relative w-full"
       >
         {/* 
@@ -109,7 +109,7 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
           Contains the canvas and the overlay content.
         */}
         <div className="sticky top-0 left-0 w-full h-screen overflow-hidden bg-white">
-          
+
           {/* Background Animation Canvas */}
           <RecipeScrollSequence
             progressRef={progressRef}
@@ -156,20 +156,20 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
 
               {/* Dashboard Image & Brands - simplified layout for sticky mode */}
               <div className="azzle-hero-dashboard mt-12 px-4">
-                 <img src={heroImageSrc} alt={heroImageAlt} className="mx-auto shadow-2xl rounded-lg" />
+                <img src={heroImageSrc} alt={heroImageAlt} className="mx-auto shadow-2xl rounded-lg" />
               </div>
-              
+
               <div className="azzle-brand-slider-wraper mt-12 pb-12">
-                  <div className="azzle-brand-slider-title text-center mb-6">
-                    <p>{brandLine}</p>
-                  </div>
-                  <Slider {...settings} className="azzle-brand-slider">
-                    <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon1.svg" alt="Icon" /></div>
-                    <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon2.svg" alt="Icon" /></div>
-                    <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon3.svg" alt="Icon" /></div>
-                    <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon4.svg" alt="Icon" /></div>
-                    <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon5.svg" alt="Icon" /></div>
-                  </Slider>
+                <div className="azzle-brand-slider-title text-center mb-6">
+                  <p>{brandLine}</p>
+                </div>
+                <Slider {...settings} className="azzle-brand-slider">
+                  <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon1.svg" alt="Icon" /></div>
+                  <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon2.svg" alt="Icon" /></div>
+                  <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon3.svg" alt="Icon" /></div>
+                  <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon4.svg" alt="Icon" /></div>
+                  <div className="azzle-logo-icon-item mx-4"><img src="assets/images/home1/icon5.svg" alt="Icon" /></div>
+                </Slider>
               </div>
             </div>
           </motion.div>
