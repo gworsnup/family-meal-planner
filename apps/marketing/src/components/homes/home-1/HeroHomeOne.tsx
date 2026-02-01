@@ -82,8 +82,16 @@ export default function HeroHomeOne({ content }: HeroHomeOneProps) {
 
   return (
     <>
-      <section className="azzle-hero-section" style={{ position: "relative" }}>
-        <div ref={wrapperRef} style={{ height: `${SCROLL_VH}vh` }}>
+      <section
+        className="azzle-hero-section"
+        style={{ position: "relative", overflow: "visible" }}
+      >
+        {/* Sticky breaks if any ancestor has overflow hidden/auto or transform. Keep sticky wrapper at top-level. */}
+        <div
+          ref={wrapperRef}
+          className="relative overflow-visible"
+          style={{ height: `${SCROLL_VH}vh` }}
+        >
           <div className="sticky top-0 h-screen w-full overflow-hidden relative bg-white isolate">
             <RecipeScrollSequence
               progressRef={progressRef}
