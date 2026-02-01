@@ -265,10 +265,8 @@ function drawContain(
   const context = canvas.getContext("2d");
   if (!context) return;
 
-  // Use the logical width/height (buffer size / dpr) to avoid layout thrashing
-  // caused by reading clientWidth/clientHeight
-  const width = canvas.width / dpr;
-  const height = canvas.height / dpr;
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
 
   context.setTransform(dpr, 0, 0, dpr, 0, 0);
   context.clearRect(0, 0, width, height);
