@@ -49,6 +49,7 @@ import type { RecipeDetail } from "../cook/types";
 import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
 import { ModeSegmentedControl } from "./ModeSegmentedControl";
 import { buildWhatsAppShareUrl, openInNewTab } from "@/lib/whatsapp";
+import { formatMealEntry, getRecipeSourceUrl } from "@/lib/whatsappMealShare";
 
 type RecipeItem = {
   id: string;
@@ -215,38 +216,6 @@ function getWeekKey(dateISO: string) {
 
 function normalizeDateISO(dateISO: string) {
   return parseDateISO(dateISO) ?? getTodayUTC();
-}
-
-function normalizeUrl(url?: string | null) {
-  const trimmed = url?.trim();
-  if (!trimmed) return "";
-  if (/^www\./i.test(trimmed)) {
-    return `https://${trimmed}`;
-  }
-  return trimmed;
-}
-
-function formatMealEntry(dayLabel: string, recipeName: string, sourceUrl?: string | null) {
-  const normalizedSource = normalizeUrl(sourceUrl);
-  return `${dayLabel}: ${recipeName}\nSource: ${normalizedSource || "(no source link)"}`;
-}
-
-function getRecipeSourceUrl(recipe?: Partial<RecipeItem> | null) {
-  const candidateRecipe = recipe as
-    | (Partial<RecipeItem> & {
-        url?: string | null;
-        originalUrl?: string | null;
-        importUrl?: string | null;
-      })
-    | null
-    | undefined;
-  return (
-    candidateRecipe?.sourceUrl ??
-    candidateRecipe?.url ??
-    candidateRecipe?.originalUrl ??
-    candidateRecipe?.importUrl ??
-    null
-  );
 }
 
 function getMonthGridRangeFromISO(monthStartISO: string) {

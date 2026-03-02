@@ -13,6 +13,7 @@ import type { SmartListData } from "@/lib/smartListTypes";
 import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
 import { buildSmartListPath } from "@/lib/smartListLinks";
 import { buildWhatsAppShareUrl, openInNewTab } from "@/lib/whatsapp";
+import { formatMealEntry } from "@/lib/whatsappMealShare";
 
 type ShopClientProps = {
   workspaceId: string;
@@ -82,20 +83,6 @@ const SMART_CATEGORY_EMOJI: Record<string, string> = {
 function getSmartCategoryEmoji(label: string) {
   const key = label.trim().toLowerCase();
   return SMART_CATEGORY_EMOJI[key] ?? "🍽️";
-}
-
-function normalizeUrl(url?: string | null) {
-  const trimmed = url?.trim();
-  if (!trimmed) return "";
-  if (/^www\./i.test(trimmed)) {
-    return `https://${trimmed}`;
-  }
-  return trimmed;
-}
-
-function formatMealEntry(dayLabel: string, recipeName: string, sourceUrl?: string | null) {
-  const normalizedSource = normalizeUrl(sourceUrl);
-  return `${dayLabel}: ${recipeName}\nSource: ${normalizedSource || "(no source link)"}`;
 }
 
 function getDayLabel(dateISO?: string) {
