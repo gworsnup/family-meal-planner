@@ -71,7 +71,13 @@ export default async function ShoppingListPage({
         select: {
           id: true,
           title: true,
+          sourceUrl: true,
           photoUrl: true,
+          import: {
+            select: {
+              sourceUrl: true,
+            },
+          },
           ingredientLines: {
             orderBy: { position: "asc" },
             select: {
@@ -101,7 +107,10 @@ export default async function ShoppingListPage({
     const existing = weeks.get(weekStartISO);
     const recipeEntry = {
       id: item.recipe!.id,
+      dateISO: formatDateISO(item.date),
       title: item.recipe!.title,
+      sourceUrl: item.recipe!.sourceUrl,
+      importUrl: item.recipe!.import?.sourceUrl ?? null,
       photoUrl: item.recipe!.photoUrl,
       ingredientLines: item.recipe!.ingredientLines,
     };
@@ -243,7 +252,6 @@ export default async function ShoppingListPage({
       />
       <ShopClient
         workspaceId={workspace.id}
-        workspaceSlug={workspace.slug}
         workspaceName={workspace.name}
         weekLists={weekListsWithMeta}
       />

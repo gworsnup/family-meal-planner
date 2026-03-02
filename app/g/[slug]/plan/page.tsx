@@ -53,6 +53,11 @@ async function fetchRecipeDetail(recipeId: string, workspaceId: string) {
       description: true,
       sourceName: true,
       sourceUrl: true,
+      import: {
+        select: {
+          sourceUrl: true,
+        },
+      },
       photoUrl: true,
       prepTimeMinutes: true,
       cookTimeMinutes: true,
@@ -142,6 +147,11 @@ export default async function PlanPage({
       title: true,
       sourceName: true,
       sourceUrl: true,
+      import: {
+        select: {
+          sourceUrl: true,
+        },
+      },
       photoUrl: true,
       rating: true,
       updatedAt: true,
@@ -169,7 +179,13 @@ export default async function PlanPage({
   });
 
   const serializedRecipes = recipes.map((recipe) => ({
-    ...recipe,
+    id: recipe.id,
+    title: recipe.title,
+    sourceName: recipe.sourceName,
+    sourceUrl: recipe.sourceUrl,
+    importUrl: recipe.import?.sourceUrl ?? null,
+    photoUrl: recipe.photoUrl,
+    rating: recipe.rating,
     updatedAt: recipe.updatedAt.toISOString(),
   }));
 

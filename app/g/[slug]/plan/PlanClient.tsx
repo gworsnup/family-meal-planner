@@ -55,6 +55,9 @@ type RecipeItem = {
   title: string;
   sourceName: string | null;
   sourceUrl: string | null;
+  url?: string | null;
+  originalUrl?: string | null;
+  importUrl?: string | null;
   photoUrl: string | null;
   rating: number | null;
   updatedAt: string;
@@ -183,26 +186,6 @@ function getMonthLabel(date: Date) {
   }).format(date);
 }
 
-function formatWeekRangeLabel(startDate: Date) {
-  const endDate = addDays(startDate, 6);
-  const dayFormatter = new Intl.DateTimeFormat("en-US", {
-    day: "numeric",
-    timeZone: "UTC",
-  });
-  const monthFormatter = new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    timeZone: "UTC",
-  });
-  const startDay = dayFormatter.format(startDate);
-  const endDay = dayFormatter.format(endDate);
-  const startMonth = monthFormatter.format(startDate);
-  const endMonth = monthFormatter.format(endDate);
-  if (startMonth === endMonth) {
-    return `${startDay}–${endDay} ${startMonth}`;
-  }
-  return `${startDay} ${startMonth} – ${endDay} ${endMonth}`;
-}
-
 function addMonths(date: Date, amount: number) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + amount, date.getUTCDate()));
 }
@@ -215,6 +198,31 @@ function getWeekKey(dateISO: string) {
 
 function normalizeDateISO(dateISO: string) {
   return parseDateISO(dateISO) ?? getTodayUTC();
+}
+
+function normalizeShareUrl(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  if (/^www\./i.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+  return trimmed;
+}
+
+function getRecipeShareSourceUrl(recipe: RecipeItem | null | undefined) {
+  if (!recipe) return null;
+  const recipeRecord = recipe as Record<string, unknown>;
+  const candidates = [
+    recipe.sourceUrl,
+    typeof recipeRecord.url === "string" ? recipeRecord.url : null,
+    typeof recipeRecord.originalUrl === "string" ? recipeRecord.originalUrl : null,
+    typeof recipeRecord.importUrl === "string" ? recipeRecord.importUrl : null,
+  ];
+  for (const candidate of candidates) {
+    const normalized = normalizeShareUrl(candidate);
+    if (normalized) return normalized;
+  }
+  return null;
 }
 
 function getMonthGridRangeFromISO(monthStartISO: string) {
@@ -1010,23 +1018,23 @@ export default function PlanClient({
       .map((date, index) => {
         const dayItems = itemsByDate.get(formatDateISO(date)) ?? [];
         if (dayItems.length === 0) return null;
-        const titles = dayItems.map((item) => {
-          if (item.type === "TAKEAWAY") {
-            return "Takeaway Night 🍕";
-          }
-          return item.title;
+        const dayEntries = dayItems.flatMap((item) => {
+          const mealTitle = item.type === "TAKEAWAY" ? "Takeaway Night 🍕" : item.title;
+          const sourceUrl =
+            item.type === "RECIPE"
+              ? getRecipeShareSourceUrl(recipeMap.get(item.recipeId) ?? null)
+              : null;
+          return [`${weekdayLabels[index]}: ${mealTitle}`, `Source: ${sourceUrl ?? "(no source link)"}`];
         });
-        return titles.length > 0 ? `${weekdayLabels[index]}: ${titles.join(" + ")}` : null;
+        return dayEntries.length > 0 ? dayEntries.join("\n") : null;
       })
       .filter((line): line is string => Boolean(line));
-  }, [itemsByDate, shareWeekDates, shareWeekStartISO]);
+  }, [itemsByDate, recipeMap, shareWeekDates, shareWeekStartISO]);
 
   const shareWeekMessage = useMemo(() => {
     if (!shareWeekStartISO) return "";
     if (shareWeekLines.length === 0) return "";
-    const startDate = startOfWeek(normalizeDateISO(shareWeekStartISO));
-    const rangeLabel = formatWeekRangeLabel(startDate);
-    const header = `🍽️ Dinners this week (${rangeLabel})`;
+    const header = "Here are this week’s dinners 🍽️";
     return [header, "", ...shareWeekLines].join("\n").trim();
   }, [shareWeekLines, shareWeekStartISO]);
 
