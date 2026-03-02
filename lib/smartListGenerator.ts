@@ -351,6 +351,12 @@ export async function generateSmartListForWorkspace({
         select: {
           id: true,
           title: true,
+          sourceUrl: true,
+          import: {
+            select: {
+              sourceUrl: true,
+            },
+          },
           ingredientLines: {
             orderBy: { position: "asc" },
             select: {
@@ -378,7 +384,10 @@ export async function generateSmartListForWorkspace({
     title: "Shopping List",
     recipes: recipePlanItems.map((item) => ({
       id: item.recipe!.id,
+      dateISO: formatDateISO(item.date),
       title: item.recipe!.title,
+      sourceUrl: item.recipe!.sourceUrl ?? null,
+      importUrl: item.recipe!.import?.sourceUrl ?? null,
       photoUrl: null,
       ingredientLines: item.recipe!.ingredientLines,
     })),

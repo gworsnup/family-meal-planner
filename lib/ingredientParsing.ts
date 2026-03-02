@@ -14,7 +14,10 @@ export type WeekList = {
   smartList?: import("./smartListTypes").SmartListData | null;
   recipes: Array<{
     id: string;
+    dateISO: string;
     title: string;
+    sourceUrl: string | null;
+    importUrl: string | null;
     photoUrl: string | null;
     ingredientLines: Array<{ id: string; ingredient: string; position: number }>;
   }>;

@@ -10,12 +10,10 @@ import {
 } from "@/lib/ingredientParsing";
 import type { SmartListData } from "@/lib/smartListTypes";
 import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
-import { buildSmartListPath } from "@/lib/smartListLinks";
 import { buildWhatsAppShareUrl, openInNewTab } from "@/lib/whatsapp";
 
 type ShopClientProps = {
   workspaceId: string;
-  workspaceSlug: string;
   workspaceName: string;
   weekLists: WeekList[];
 };
@@ -83,9 +81,32 @@ function getSmartCategoryEmoji(label: string) {
   return SMART_CATEGORY_EMOJI[key] ?? "🍽️";
 }
 
+function normalizeShareUrl(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  if (/^www\./i.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+  return trimmed;
+}
+
+function getRecipeShareSourceUrl(recipe: WeekList["recipes"][number]) {
+  const recipeRecord = recipe as Record<string, unknown>;
+  const candidates = [
+    recipe.sourceUrl,
+    typeof recipeRecord.url === "string" ? recipeRecord.url : null,
+    typeof recipeRecord.originalUrl === "string" ? recipeRecord.originalUrl : null,
+    recipe.importUrl,
+  ];
+  for (const candidate of candidates) {
+    const normalized = normalizeShareUrl(candidate);
+    if (normalized) return normalized;
+  }
+  return null;
+}
+
 export default function ShopClient({
   workspaceId,
-  workspaceSlug,
   workspaceName,
   weekLists,
 }: ShopClientProps) {
@@ -193,24 +214,24 @@ export default function ShopClient({
     setErrorMessage(null);
   }, [selectedWeek?.weekId]);
 
-  const shareLink = useMemo(() => {
-    if (!currentSmartList?.id) return null;
-    return buildSmartListPath(workspaceSlug, currentSmartList.id);
-  }, [currentSmartList?.id, workspaceSlug]);
 
-  const shareLinkAbsolute = useMemo(() => {
-    if (!shareLink) return null;
-    if (typeof window === "undefined") return shareLink;
-    return new URL(shareLink, window.location.origin).toString();
-  }, [shareLink]);
-
-  const shareError =
-    selectedWeek && !shareLinkAbsolute ? "Unable to build share link." : null;
+  const hasShareableMeals = Boolean(selectedWeek && selectedWeek.recipes.length > 0);
+  const shareError = selectedWeek && !hasShareableMeals ? "No planned meals to share." : null;
 
   const handleWhatsAppShare = () => {
-    if (!shareLinkAbsolute) return;
-    const listTitle = selectedWeek?.title ?? "Shopping List";
-    const message = `🛒 Shopping List: ${listTitle}\n\nOpen the list:\n${shareLinkAbsolute}`.trim();
+    if (!selectedWeek || selectedWeek.recipes.length === 0) return;
+    const weekdayFormatter = new Intl.DateTimeFormat("en-US", {
+      weekday: "short",
+      timeZone: "UTC",
+    });
+    const mealLines = selectedWeek.recipes.flatMap((recipe) => {
+      const dayShort = weekdayFormatter
+        .format(new Date(`${recipe.dateISO}T00:00:00Z`))
+        .replace(".", "");
+      const sourceUrl = getRecipeShareSourceUrl(recipe);
+      return [`${dayShort}: ${recipe.title}`, `Source: ${sourceUrl ?? "(no source link)"}`];
+    });
+    const message = ["Here are this week’s dinners 🍽️", "", ...mealLines].join("\n").trim();
     openInNewTab(buildWhatsAppShareUrl(message));
   };
 
@@ -404,7 +425,7 @@ export default function ShopClient({
                 <WhatsAppShareButton
                   label="Share via WhatsApp"
                   onClick={handleWhatsAppShare}
-                  disabled={!shareLinkAbsolute}
+                  disabled={!hasShareableMeals}
                 />
               </div>
               {shareError ? (
