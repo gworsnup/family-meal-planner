@@ -76,6 +76,11 @@ const nextConfig = {
         destination: "https://app.familytable.me/",
         permanent: true,
       },
+      {
+        source: "/auth/:path*",
+        destination: "https://app.familytable.me/auth/:path*",
+        permanent: false,
+      },
     ];
   },
   async headers() {

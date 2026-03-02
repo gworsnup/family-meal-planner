@@ -3,6 +3,23 @@ import { NextRequest, NextResponse } from "next/server";
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 
+function getOAuthBaseUrl(request: NextRequest) {
+  const configured =
+    process.env.GOOGLE_OAUTH_REDIRECT_BASE_URL ?? process.env.APP_BASE_URL;
+
+  if (configured) return configured;
+
+  const isMarketingHost =
+    request.nextUrl.hostname === "www.familytable.me" ||
+    request.nextUrl.hostname === "familytable.me";
+
+  if (isMarketingHost && process.env.NODE_ENV === "production") {
+    return "https://app.familytable.me";
+  }
+
+  return request.nextUrl.origin;
+}
+
 function base64UrlEncode(buffer: Buffer) {
   return buffer
     .toString("base64")
@@ -29,7 +46,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const baseUrl = process.env.APP_BASE_URL ?? request.nextUrl.origin;
+  const baseUrl = getOAuthBaseUrl(request);
   const redirectUri = `${baseUrl}/auth/google/callback`;
 
   const state = crypto.randomBytes(16).toString("hex");
