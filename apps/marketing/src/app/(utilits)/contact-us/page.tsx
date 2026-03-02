@@ -1,4 +1,4 @@
-import Contactus from "@/components/contact-us";
+import Contactus from "../../../components/contact-us";
 
  
 export default function index() {

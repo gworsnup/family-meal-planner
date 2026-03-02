@@ -49,6 +49,7 @@ import type { RecipeDetail } from "../cook/types";
 import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
 import { ModeSegmentedControl } from "./ModeSegmentedControl";
 import { buildWhatsAppShareUrl, openInNewTab } from "@/lib/whatsapp";
+import { formatMealEntry, getRecipeSourceUrl } from "@/lib/whatsappMealShare";
 
 type RecipeItem = {
   id: string;
@@ -1010,23 +1011,24 @@ export default function PlanClient({
       .map((date, index) => {
         const dayItems = itemsByDate.get(formatDateISO(date)) ?? [];
         if (dayItems.length === 0) return null;
-        const titles = dayItems.map((item) => {
+        const entries = dayItems.map((item) => {
           if (item.type === "TAKEAWAY") {
-            return "Takeaway Night 🍕";
+            return formatMealEntry(weekdayLabels[index], "Takeaway Night 🍕", null);
           }
-          return item.title;
+          const sourceUrl = getRecipeSourceUrl(recipeMap.get(item.recipeId));
+          return formatMealEntry(weekdayLabels[index], item.title, sourceUrl);
         });
-        return titles.length > 0 ? `${weekdayLabels[index]}: ${titles.join(" + ")}` : null;
+        return entries.length > 0 ? entries.join("\n\n") : null;
       })
       .filter((line): line is string => Boolean(line));
-  }, [itemsByDate, shareWeekDates, shareWeekStartISO]);
+  }, [itemsByDate, recipeMap, shareWeekDates, shareWeekStartISO]);
 
   const shareWeekMessage = useMemo(() => {
     if (!shareWeekStartISO) return "";
     if (shareWeekLines.length === 0) return "";
     const startDate = startOfWeek(normalizeDateISO(shareWeekStartISO));
     const rangeLabel = formatWeekRangeLabel(startDate);
-    const header = `🍽️ Dinners this week (${rangeLabel})`;
+    const header = `Here are this week’s dinners 🍽️ (${rangeLabel})`;
     return [header, "", ...shareWeekLines].join("\n").trim();
   }, [shareWeekLines, shareWeekStartISO]);
 

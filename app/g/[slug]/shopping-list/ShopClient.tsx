@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { parseDateISO } from "@/lib/planDates";
 import {
   buildShoppingView,
   getCategoryOrder,
@@ -12,6 +13,7 @@ import type { SmartListData } from "@/lib/smartListTypes";
 import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
 import { buildSmartListPath } from "@/lib/smartListLinks";
 import { buildWhatsAppShareUrl, openInNewTab } from "@/lib/whatsapp";
+import { formatMealEntry } from "@/lib/whatsappMealShare";
 
 type ShopClientProps = {
   workspaceId: string;
@@ -81,6 +83,12 @@ const SMART_CATEGORY_EMOJI: Record<string, string> = {
 function getSmartCategoryEmoji(label: string) {
   const key = label.trim().toLowerCase();
   return SMART_CATEGORY_EMOJI[key] ?? "🍽️";
+}
+
+function getDayLabel(dateISO?: string) {
+  const date = dateISO ? parseDateISO(dateISO) : null;
+  if (!date) return "Meal";
+  return new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "UTC" }).format(date);
 }
 
 export default function ShopClient({
@@ -209,8 +217,24 @@ export default function ShopClient({
 
   const handleWhatsAppShare = () => {
     if (!shareLinkAbsolute) return;
-    const listTitle = selectedWeek?.title ?? "Shopping List";
-    const message = `🛒 Shopping List: ${listTitle}\n\nOpen the list:\n${shareLinkAbsolute}`.trim();
+    const recipes = selectedWeek?.recipes ?? [];
+    const weekEntries = recipes
+      .map((recipe) => {
+        const dayLabel = getDayLabel(recipe.dateISO);
+        return formatMealEntry(dayLabel, recipe.title, recipe.sourceUrl ?? null);
+      })
+      .join("\n\n");
+    const message = [
+      "Here are this week’s dinners 🍽️",
+      "",
+      weekEntries,
+      "",
+      "🛒 Open the shopping list:",
+      shareLinkAbsolute,
+    ]
+      .filter(Boolean)
+      .join("\n")
+      .trim();
     openInNewTab(buildWhatsAppShareUrl(message));
   };
 

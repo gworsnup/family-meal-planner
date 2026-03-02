@@ -1,4 +1,4 @@
-import ErrorPage from "@/components/error";
+import ErrorPage from "../../components/error";
 
 
 export default function index() {

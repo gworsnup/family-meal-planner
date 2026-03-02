@@ -1,4 +1,4 @@
-import SingleTeam from "@/components/single-team";
+import SingleTeam from "../../../components/single-team";
 
  
 

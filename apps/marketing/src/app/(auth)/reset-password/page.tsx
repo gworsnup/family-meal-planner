@@ -1,9 +1,5 @@
-import ResetPassword from "@/components/reset-password";
+import ResetPassword from "../../../components/reset-password";
 
- 
-
-export default function index() {
-  return (
-    <ResetPassword />
-  )
+export default function Page() {
+  return <ResetPassword />;
 }

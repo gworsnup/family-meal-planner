@@ -1,4 +1,4 @@
-import Faq from "@/components/faq";
+import Faq from "../../../components/faq";
 
  
 
