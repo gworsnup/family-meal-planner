@@ -1,9 +1,5 @@
-import Signin from "@/components/sign-in";
+import Signin from "../../../components/sign-in";
 
- 
-
-export default function index() {
-  return (
-    <Signin />
-  )
+export default function Page() {
+  return <Signin />;
 }

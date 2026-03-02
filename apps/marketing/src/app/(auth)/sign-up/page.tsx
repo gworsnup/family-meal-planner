@@ -1,9 +1,5 @@
-import Signup from "@/components/sign-up"; 
+import Signup from "../../../components/sign-up";
 
- 
-
-export default function index() {
-  return (
-    <Signup />
-  )
+export default function Page() {
+  return <Signup />;
 }
