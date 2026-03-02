@@ -19,7 +19,7 @@ type TokenResponse = {
 };
 
 function redirectWithError(request: NextRequest, message: string) {
-  const baseUrl = process.env.APP_BASE_URL ?? request.nextUrl.origin;
+  const baseUrl = request.nextUrl.origin;
   const url = new URL("/", baseUrl);
   url.searchParams.set("error", message);
   const response = NextResponse.redirect(url);
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     return redirectWithError(request, "Google sign-in failed. Try again.");
   }
 
-  const baseUrl = process.env.APP_BASE_URL ?? request.nextUrl.origin;
+  const baseUrl = request.nextUrl.origin;
   const redirectUri = `${baseUrl}/auth/google/callback`;
 
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
