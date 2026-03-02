@@ -1,4 +1,4 @@
-import Service from "@/components/service";
+import Service from "../../components/service";
 import { featuresContent } from "@/content/features";
 
 export default async function FeaturesPage() {

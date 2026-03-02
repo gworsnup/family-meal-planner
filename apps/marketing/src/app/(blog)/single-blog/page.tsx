@@ -1,4 +1,4 @@
-import SingleBlog from "@/components/single-blog";
+import SingleBlog from "../../../components/single-blog";
 
  
 

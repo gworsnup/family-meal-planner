@@ -1,4 +1,4 @@
-import Aboutus from "@/components/about-us";
+import Aboutus from "../../components/about-us";
 
  
 export default function index() {

@@ -1,4 +1,4 @@
-import Service from "@/components/service";
+import Service from "../../../components/service";
 
  
 export default function index() {

@@ -1,4 +1,4 @@
-import HomeThree from "@/components/homes/home-3";
+import HomeThree from "../../../components/homes/home-3";
 
  
 export default function index() {

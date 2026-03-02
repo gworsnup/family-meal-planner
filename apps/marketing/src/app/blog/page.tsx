@@ -1,4 +1,4 @@
-import Blog from "@/components/blog";
+import Blog from "../../components/blog";
 import { blogContent } from "@/content/blog";
 
 export default async function BlogPage() {

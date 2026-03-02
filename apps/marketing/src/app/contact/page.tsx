@@ -1,4 +1,4 @@
-import Contactus from "@/components/contact-us";
+import Contactus from "../../components/contact-us";
 import { contactContent } from "@/content/contact";
 
 export default async function ContactPage() {
