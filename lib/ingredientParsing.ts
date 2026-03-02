@@ -15,7 +15,9 @@ export type WeekList = {
   recipes: Array<{
     id: string;
     title: string;
+    dateISO?: string;
     photoUrl: string | null;
+    sourceUrl?: string | null;
     ingredientLines: Array<{ id: string; ingredient: string; position: number }>;
   }>;
 };

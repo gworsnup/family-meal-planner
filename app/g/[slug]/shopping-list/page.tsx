@@ -72,6 +72,7 @@ export default async function ShoppingListPage({
           id: true,
           title: true,
           photoUrl: true,
+          sourceUrl: true,
           ingredientLines: {
             orderBy: { position: "asc" },
             select: {
@@ -102,7 +103,9 @@ export default async function ShoppingListPage({
     const recipeEntry = {
       id: item.recipe!.id,
       title: item.recipe!.title,
+      dateISO: formatDateISO(item.date),
       photoUrl: item.recipe!.photoUrl,
+      sourceUrl: item.recipe!.sourceUrl,
       ingredientLines: item.recipe!.ingredientLines,
     };
     if (existing) {
