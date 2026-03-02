@@ -7,6 +7,11 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: "/app/login",
+        destination: "https://app.familytable.me/",
+        permanent: true,
+      },
+      {
         source: "/about-us",
         destination: "/about",
         permanent: true,

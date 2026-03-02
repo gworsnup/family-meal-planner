@@ -29,7 +29,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const baseUrl = process.env.APP_BASE_URL ?? request.nextUrl.origin;
+  const appBaseUrl = process.env.APP_BASE_URL;
+
+  if (process.env.NODE_ENV === "production" && appBaseUrl !== "https://app.familytable.me") {
+    console.error("Google OAuth start failed: APP_BASE_URL must be https://app.familytable.me in production.", {
+      appBaseUrl: appBaseUrl ?? null,
+    });
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    url.searchParams.set("error", "Sign-in is temporarily unavailable.");
+    return NextResponse.redirect(url);
+  }
+
+  const baseUrl = appBaseUrl ?? request.nextUrl.origin;
   const redirectUri = `${baseUrl}/auth/google/callback`;
 
   const state = crypto.randomBytes(16).toString("hex");

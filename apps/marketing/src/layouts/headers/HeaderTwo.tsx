@@ -35,7 +35,7 @@ export default function HeaderTwo() {
                 <div className="azzle-header-login-button button3">
                   <ul>
                     <li>
-                      <Link href="/sign-in">Login</Link>
+                      <Link href="https://app.familytable.me/">Login</Link>
                     </li>
                   </ul>
                 </div>
