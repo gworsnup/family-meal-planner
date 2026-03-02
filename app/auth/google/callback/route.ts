@@ -18,8 +18,25 @@ type TokenResponse = {
   id_token?: string;
 };
 
+function resolveAuthBaseUrl(request: NextRequest) {
+  const appBaseUrl = process.env.APP_BASE_URL;
+
+  if (process.env.NODE_ENV === "production") {
+    if (appBaseUrl !== "https://app.familytable.me") {
+      console.error(
+        "Google OAuth callback failed: APP_BASE_URL must be https://app.familytable.me in production.",
+        { appBaseUrl: appBaseUrl ?? null },
+      );
+      return null;
+    }
+    return appBaseUrl;
+  }
+
+  return appBaseUrl ?? request.nextUrl.origin;
+}
+
 function redirectWithError(request: NextRequest, message: string) {
-  const baseUrl = process.env.APP_BASE_URL ?? request.nextUrl.origin;
+  const baseUrl = resolveAuthBaseUrl(request) ?? request.nextUrl.origin;
   const url = new URL("/", baseUrl);
   url.searchParams.set("error", message);
   const response = NextResponse.redirect(url);
@@ -59,7 +76,13 @@ export async function GET(request: NextRequest) {
     return redirectWithError(request, "Google sign-in failed. Try again.");
   }
 
-  const baseUrl = process.env.APP_BASE_URL ?? request.nextUrl.origin;
+  const baseUrl = resolveAuthBaseUrl(request);
+  if (!baseUrl) {
+    return redirectWithError(
+      request,
+      "Sign-in is temporarily unavailable. Contact support.",
+    );
+  }
   const redirectUri = `${baseUrl}/auth/google/callback`;
 
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {

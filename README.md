@@ -38,3 +38,17 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Vercel Blob (TikTok thumbnails)
 
 TikTok recipe imports persist thumbnails to Vercel Blob to avoid expiring CDN URLs. Ensure `BLOB_READ_WRITE_TOKEN` is available in your environment (Vercel injects this automatically when the Blob integration is enabled). For local development, use `vercel env pull` or add the token to `.env.local`.
+
+## Auth deployment configuration
+
+For the **app** Vercel project (`app.familytable.me`), set:
+
+- `APP_BASE_URL=https://app.familytable.me`
+- `GOOGLE_CLIENT_ID=<your google client id>`
+- `GOOGLE_CLIENT_SECRET=<your google client secret>`
+
+Google OAuth redirect URI must be:
+
+- `https://app.familytable.me/auth/google/callback`
+
+`APP_BASE_URL` is validated in production for Google OAuth routes to prevent callbacks from using the marketing domain.

@@ -39,7 +39,7 @@ export default function HeaderOne() {
                 <div className="azzle-header-login-button button3">
                   <ul>
                     <li>
-                      <Link href={headerContent.links.login.href ?? "/sign-in"}>
+                      <Link href={headerContent.links.login.href ?? "https://app.familytable.me/"}>
                         {headerContent.links.login.label ?? "Login"}
                       </Link>
                     </li>

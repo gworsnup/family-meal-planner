@@ -12,7 +12,7 @@ const LONG_DESCRIPTION =
 const baseUrl =
   process.env.APP_BASE_URL ??
   process.env.NEXT_PUBLIC_APP_URL ??
-  "https://www.familytable.me";
+  "https://app.familytable.me";
 const resolvedBaseUrl = baseUrl.startsWith("http")
   ? baseUrl
   : `https://${baseUrl}`;

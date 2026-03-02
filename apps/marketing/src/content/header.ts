@@ -9,7 +9,7 @@ export const headerContent = {
   links: {
     login: {
       label: "Login",
-      href: `${appUrl}/login`,
+      href: `${appUrl}/`,
     },
     primaryCta: {
       label: "Sign up free",

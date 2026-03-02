@@ -2,11 +2,6 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: "/login",
-        destination: "https://app.familytable.me/",
-        permanent: true,
-      },
-      {
         source: "/about-us",
         destination: "/about",
         permanent: true,
@@ -90,11 +85,6 @@ const nextConfig = {
         ],
       },
     ];
-  },
-
-  eslint: {
-    // Allow production builds to succeed even if there are ESLint errors
-    ignoreDuringBuilds: true,
   },
   env: {
     SANITY_PROJECT_ID: process.env.SANITY_PROJECT_ID,
