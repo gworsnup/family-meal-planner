@@ -36,7 +36,7 @@ function getOAuthBaseUrl(request: NextRequest) {
 }
 
 function redirectWithError(request: NextRequest, message: string) {
-  const url = new URL("/", getOAuthBaseUrl(request));
+  const url = new URL("/", request.nextUrl.origin);
   url.searchParams.set("error", message);
   const response = NextResponse.redirect(url);
   response.cookies.delete("google_oauth_state");
@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
       ? "/onboarding/locked"
       : "/onboarding/household";
 
-  const response = NextResponse.redirect(new URL(redirectPath, getOAuthBaseUrl(request)));
+  const response = NextResponse.redirect(new URL(redirectPath, request.nextUrl.origin));
   response.cookies.set("session", token, sessionCookieOptions(expiresAt));
   response.cookies.delete("google_oauth_state");
   response.cookies.delete("google_oauth_code_verifier");
