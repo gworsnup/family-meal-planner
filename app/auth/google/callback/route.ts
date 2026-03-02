@@ -18,9 +18,16 @@ type TokenResponse = {
   id_token?: string;
 };
 
+function getOAuthBaseUrl(request: NextRequest) {
+  return (
+    process.env.GOOGLE_OAUTH_REDIRECT_BASE_URL ??
+    process.env.APP_BASE_URL ??
+    request.nextUrl.origin
+  );
+}
+
 function redirectWithError(request: NextRequest, message: string) {
-  const baseUrl = request.nextUrl.origin;
-  const url = new URL("/", baseUrl);
+  const url = new URL("/", request.nextUrl.origin);
   url.searchParams.set("error", message);
   const response = NextResponse.redirect(url);
   response.cookies.delete("google_oauth_state");
@@ -59,8 +66,8 @@ export async function GET(request: NextRequest) {
     return redirectWithError(request, "Google sign-in failed. Try again.");
   }
 
-  const baseUrl = request.nextUrl.origin;
-  const redirectUri = `${baseUrl}/auth/google/callback`;
+  const oauthBaseUrl = getOAuthBaseUrl(request);
+  const redirectUri = `${oauthBaseUrl}/auth/google/callback`;
 
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -182,7 +189,7 @@ export async function GET(request: NextRequest) {
       ? "/onboarding/locked"
       : "/onboarding/household";
 
-  const response = NextResponse.redirect(new URL(redirectPath, baseUrl));
+  const response = NextResponse.redirect(new URL(redirectPath, request.nextUrl.origin));
   response.cookies.set("session", token, sessionCookieOptions(expiresAt));
   response.cookies.delete("google_oauth_state");
   response.cookies.delete("google_oauth_code_verifier");
