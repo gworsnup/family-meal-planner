@@ -19,15 +19,24 @@ type TokenResponse = {
 };
 
 function getOAuthBaseUrl(request: NextRequest) {
-  return (
-    process.env.GOOGLE_OAUTH_REDIRECT_BASE_URL ??
-    process.env.APP_BASE_URL ??
-    request.nextUrl.origin
-  );
+  const configured =
+    process.env.GOOGLE_OAUTH_REDIRECT_BASE_URL ?? process.env.APP_BASE_URL;
+
+  if (configured) return configured;
+
+  const isMarketingHost =
+    request.nextUrl.hostname === "www.familytable.me" ||
+    request.nextUrl.hostname === "familytable.me";
+
+  if (isMarketingHost && process.env.NODE_ENV === "production") {
+    return "https://app.familytable.me";
+  }
+
+  return request.nextUrl.origin;
 }
 
 function redirectWithError(request: NextRequest, message: string) {
-  const url = new URL("/", request.nextUrl.origin);
+  const url = new URL("/", getOAuthBaseUrl(request));
   url.searchParams.set("error", message);
   const response = NextResponse.redirect(url);
   response.cookies.delete("google_oauth_state");
@@ -189,7 +198,7 @@ export async function GET(request: NextRequest) {
       ? "/onboarding/locked"
       : "/onboarding/household";
 
-  const response = NextResponse.redirect(new URL(redirectPath, request.nextUrl.origin));
+  const response = NextResponse.redirect(new URL(redirectPath, getOAuthBaseUrl(request)));
   response.cookies.set("session", token, sessionCookieOptions(expiresAt));
   response.cookies.delete("google_oauth_state");
   response.cookies.delete("google_oauth_code_verifier");
