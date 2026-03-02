@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const baseUrl = process.env.APP_BASE_URL ?? request.nextUrl.origin;
+  const baseUrl = request.nextUrl.origin;
   const redirectUri = `${baseUrl}/auth/google/callback`;
 
   const state = crypto.randomBytes(16).toString("hex");
