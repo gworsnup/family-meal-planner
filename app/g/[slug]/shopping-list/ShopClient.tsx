@@ -13,6 +13,8 @@ import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
 import { buildWhatsAppShareUrl, openInNewTab } from "@/lib/whatsapp";
 
 const SMART_LIST_READY_HIGHLIGHT_CLASS = "bg-slate-200";
+const INGREDIENT_ACTIVE_CARD_CLASS =
+  `${SMART_LIST_READY_HIGHLIGHT_CLASS} border-slate-300 text-slate-900`;
 
 type ShopClientProps = {
   workspaceId: string;
@@ -51,9 +53,9 @@ function CategorySection({
               onClick={() => toggleIngredientSelected(item.id)}
               className={`flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm transition-colors duration-150 ${
                 isSelectedIngredient
-                  ? `${SMART_LIST_READY_HIGHLIGHT_CLASS} border-slate-300 text-slate-900`
+                  ? INGREDIENT_ACTIVE_CARD_CLASS
                   : isHoverHighlighted
-                    ? `${SMART_LIST_READY_HIGHLIGHT_CLASS} border-slate-300 text-slate-900`
+                    ? INGREDIENT_ACTIVE_CARD_CLASS
                     : "bg-white text-slate-700 hover:border-slate-300"
               }`}
             >
@@ -624,9 +626,9 @@ export default function ShopClient({
                               onClick={() => toggleIngredientSelected(item.id)}
                               className={`flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm transition-colors duration-150 ${
                                 isSelectedIngredient
-                                  ? `${SMART_LIST_READY_HIGHLIGHT_CLASS} border-slate-300 text-slate-900`
+                                  ? INGREDIENT_ACTIVE_CARD_CLASS
                                   : isHoverHighlighted
-                                    ? `${SMART_LIST_READY_HIGHLIGHT_CLASS} border-slate-300 text-slate-900`
+                                    ? INGREDIENT_ACTIVE_CARD_CLASS
                                     : "bg-white text-slate-700 hover:border-slate-300"
                               }`}
                             >
