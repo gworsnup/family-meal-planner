@@ -641,11 +641,7 @@ export default function ShopClient({
                               />
                               <div className="flex-1 space-y-1">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span
-                                    className={`font-medium ${
-                                      isSelectedIngredient ? "text-white" : "text-slate-800"
-                                    }`}
-                                  >
+                                  <span className="font-medium !text-slate-800">
                                     {item.displayText}
                                   </span>
                                   {item.isEstimated ? (
@@ -660,16 +656,8 @@ export default function ShopClient({
                                   ) : null}
                                 </div>
                                 {item.provenance.length > 0 ? (
-                                  <details
-                                    className={`group relative text-xs ${
-                                      isSelectedIngredient ? "text-slate-200" : "text-slate-500"
-                                    }`}
-                                  >
-                                    <summary
-                                      className={`cursor-pointer select-none text-xs font-medium ${
-                                        isSelectedIngredient ? "text-slate-200" : "text-slate-500"
-                                      }`}
-                                    >
+                                  <details className="group relative text-xs !text-slate-500">
+                                    <summary className="cursor-pointer select-none text-xs font-medium !text-slate-500">
                                       Derived from {item.provenance.length} item
                                       {item.provenance.length === 1 ? "" : "s"}
                                     </summary>
