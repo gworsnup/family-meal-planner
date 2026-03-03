@@ -12,6 +12,10 @@ import type { SmartListData } from "@/lib/smartListTypes";
 import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
 import { buildWhatsAppShareUrl, openInNewTab } from "@/lib/whatsapp";
 
+const SMART_LIST_READY_HIGHLIGHT_CLASS = "bg-slate-200";
+const INGREDIENT_ACTIVE_CARD_CLASS =
+  `${SMART_LIST_READY_HIGHLIGHT_CLASS} border-slate-300 text-slate-900`;
+
 type ShopClientProps = {
   workspaceId: string;
   workspaceName: string;
@@ -20,14 +24,18 @@ type ShopClientProps = {
 
 function CategorySection({
   category,
-  hoverRecipeId,
+  hoverIngredientIds,
+  effectiveSelectedIngredientIds,
   checkedItems,
   toggleItem,
+  toggleIngredientSelected,
 }: {
   category: CategoryView;
-  hoverRecipeId: string | null;
+  hoverIngredientIds: Set<string>;
+  effectiveSelectedIngredientIds: Set<string>;
   checkedItems: Set<string>;
   toggleItem: (key: string) => void;
+  toggleIngredientSelected: (id: string) => void;
 }) {
   if (category.items.length === 0) return null;
   return (
@@ -35,25 +43,30 @@ function CategorySection({
       <h3 className="text-sm font-semibold text-slate-900">{category.label}</h3>
       <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {category.items.map((item) => {
-          const isHighlighted =
-            hoverRecipeId && item.recipeIds.includes(hoverRecipeId);
+          const isSelectedIngredient = effectiveSelectedIngredientIds.has(item.id);
+          const isHoverHighlighted =
+            !isSelectedIngredient && hoverIngredientIds.has(item.id);
           const isChecked = checkedItems.has(item.id);
           return (
             <li
               key={item.id}
-              className={`flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 transition ${
-                isHighlighted
-                  ? "border-black bg-[#fcfcfc]"
-                  : "bg-white hover:border-slate-300"
+              onClick={() => toggleIngredientSelected(item.id)}
+              className={`flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm transition-colors duration-150 ${
+                isSelectedIngredient
+                  ? INGREDIENT_ACTIVE_CARD_CLASS
+                  : isHoverHighlighted
+                    ? INGREDIENT_ACTIVE_CARD_CLASS
+                    : "bg-white text-slate-700 hover:border-slate-300"
               }`}
             >
               <input
                 type="checkbox"
                 checked={isChecked}
+                onClick={(event) => event.stopPropagation()}
                 onChange={() => toggleItem(item.id)}
                 className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
               />
-              <span className="flex-1">{item.display}</span>
+              <span className="flex-1 text-slate-800">{item.display}</span>
             </li>
           );
         })}
@@ -113,7 +126,14 @@ export default function ShopClient({
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const [hoverRecipeId, setHoverRecipeId] = useState<string | null>(null);
+  const [hoveredRecipeId, setHoveredRecipeId] = useState<string | null>(null);
+  const [selectedRecipeIds, setSelectedRecipeIds] = useState<Set<string>>(new Set());
+  const [manuallyDeselectedRecipeIds, setManuallyDeselectedRecipeIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedIngredientIds, setSelectedIngredientIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"aggregated" | "smart">("aggregated");
   const [hasManualViewSelection, setHasManualViewSelection] = useState(false);
@@ -170,6 +190,42 @@ export default function ShopClient({
     });
   };
 
+  const onRecipeHoverStart = (id: string) => setHoveredRecipeId(id);
+  const onRecipeHoverEnd = () => setHoveredRecipeId(null);
+
+  const toggleRecipeSelected = (id: string) => {
+    const isDirectlySelected = selectedRecipeIds.has(id);
+
+    if (isDirectlySelected) {
+      setSelectedRecipeIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      setManuallyDeselectedRecipeIds((prev) => new Set(prev).add(id));
+      return;
+    }
+
+    setSelectedRecipeIds((prev) => new Set(prev).add(id));
+    setManuallyDeselectedRecipeIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  const toggleIngredientSelected = (id: string) => {
+    setSelectedIngredientIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
   useEffect(() => {
     const nextMap: Record<string, SmartListData | null> = {};
     weekLists.forEach((week) => {
@@ -214,6 +270,88 @@ export default function ShopClient({
     setErrorMessage(null);
   }, [selectedWeek?.weekId]);
 
+  useEffect(() => {
+    setHoveredRecipeId(null);
+    setSelectedRecipeIds(new Set());
+    setManuallyDeselectedRecipeIds(new Set());
+    setSelectedIngredientIds(new Set());
+  }, [selectedWeek?.weekId, viewMode]);
+
+  const currentIngredients = useMemo(() => {
+    if (viewMode === "aggregated") {
+      return categoriesInOrder.flatMap((category) =>
+        category.items.map((item) => ({
+          ingredientId: item.id,
+          recipeIds: item.recipeIds,
+        })),
+      );
+    }
+
+    return currentSmartList
+      ? currentSmartList.categories.flatMap((category) =>
+          category.items.map((item) => ({
+            ingredientId: item.id,
+            recipeIds: item.provenance
+              .map((source) => source.sourceRecipeId)
+              .filter((id): id is string => Boolean(id)),
+          })),
+        )
+      : [];
+  }, [categoriesInOrder, currentSmartList, viewMode]);
+
+  const { recipeToIngredientIds, ingredientToRecipeIds } = useMemo(() => {
+    const nextRecipeToIngredientIds = new Map<string, Set<string>>();
+    const nextIngredientToRecipeIds = new Map<string, Set<string>>();
+
+    currentIngredients.forEach(({ ingredientId, recipeIds }) => {
+      if (!nextIngredientToRecipeIds.has(ingredientId)) {
+        nextIngredientToRecipeIds.set(ingredientId, new Set());
+      }
+      const recipeIdSet = nextIngredientToRecipeIds.get(ingredientId);
+      recipeIds.forEach((recipeId) => {
+        recipeIdSet?.add(recipeId);
+        if (!nextRecipeToIngredientIds.has(recipeId)) {
+          nextRecipeToIngredientIds.set(recipeId, new Set());
+        }
+        nextRecipeToIngredientIds.get(recipeId)?.add(ingredientId);
+      });
+    });
+
+    return {
+      recipeToIngredientIds: nextRecipeToIngredientIds,
+      ingredientToRecipeIds: nextIngredientToRecipeIds,
+    };
+  }, [currentIngredients]);
+
+  const hoverIngredientIds = useMemo(() => {
+    if (!hoveredRecipeId) return new Set<string>();
+    return recipeToIngredientIds.get(hoveredRecipeId) ?? new Set<string>();
+  }, [hoveredRecipeId, recipeToIngredientIds]);
+
+  const selectedIngredientIdsFromRecipes = useMemo(() => {
+    const ids = new Set<string>();
+    selectedRecipeIds.forEach((recipeId) => {
+      recipeToIngredientIds.get(recipeId)?.forEach((ingredientId) => {
+        ids.add(ingredientId);
+      });
+    });
+    return ids;
+  }, [selectedRecipeIds, recipeToIngredientIds]);
+
+  const selectedRecipeIdsFromIngredients = useMemo(() => {
+    const ids = new Set<string>();
+    selectedIngredientIds.forEach((ingredientId) => {
+      ingredientToRecipeIds.get(ingredientId)?.forEach((recipeId) => {
+        ids.add(recipeId);
+      });
+    });
+    return ids;
+  }, [selectedIngredientIds, ingredientToRecipeIds]);
+
+  const effectiveSelectedIngredientIds = useMemo(
+    () => new Set([...selectedIngredientIds, ...selectedIngredientIdsFromRecipes]),
+    [selectedIngredientIds, selectedIngredientIdsFromRecipes],
+  );
 
   const hasShareableMeals = Boolean(selectedWeek && selectedWeek.recipes.length > 0);
   const shareError = selectedWeek && !hasShareableMeals ? "No planned meals to share." : null;
@@ -311,12 +449,23 @@ export default function ShopClient({
                       </button>
                       {isSelected ? (
                         <div className="mt-3 space-y-2">
-                          {week.recipes.map((recipe, index) => (
+                          {week.recipes.map((recipe, index) => {
+                            const isSelectedRecipe =
+                              selectedRecipeIds.has(recipe.id) ||
+                              (selectedRecipeIdsFromIngredients.has(recipe.id) &&
+                                !manuallyDeselectedRecipeIds.has(recipe.id));
+
+                            return (
                             <div
                               key={`${recipe.id}-${index}`}
-                              onMouseEnter={() => setHoverRecipeId(recipe.id)}
-                              onMouseLeave={() => setHoverRecipeId(null)}
-                              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 transition hover:border-slate-300 hover:bg-[#fcfcfc]"
+                              onMouseEnter={() => onRecipeHoverStart(recipe.id)}
+                              onMouseLeave={onRecipeHoverEnd}
+                              onClick={() => toggleRecipeSelected(recipe.id)}
+                              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-2 py-1 text-xs transition-colors duration-150 ${
+                                isSelectedRecipe
+                                  ? "border-black bg-black text-white"
+                                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-[#fcfcfc]"
+                              }`}
                             >
                               {recipe.photoUrl ? (
                                 <img
@@ -331,7 +480,8 @@ export default function ShopClient({
                               )}
                               <span className="flex-1">{recipe.title}</span>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : null}
                     </div>
@@ -400,7 +550,7 @@ export default function ShopClient({
                   disabled={!selectedWeek || smartListReady || isGenerating}
                   className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition ${
                     smartListReady || !selectedWeek
-                      ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                      ? `cursor-not-allowed ${SMART_LIST_READY_HIGHLIGHT_CLASS} text-slate-700`
                       : "bg-slate-900 text-white hover:bg-slate-800"
                   }`}
                 >
@@ -446,9 +596,11 @@ export default function ShopClient({
                     <CategorySection
                       key={category.key}
                       category={category}
-                      hoverRecipeId={hoverRecipeId}
+                      hoverIngredientIds={hoverIngredientIds}
+                      effectiveSelectedIngredientIds={effectiveSelectedIngredientIds}
                       checkedItems={checkedItems}
                       toggleItem={toggleItem}
+                      toggleIngredientSelected={toggleIngredientSelected}
                     />
                   ))
                 ) : currentSmartList ? (
@@ -463,29 +615,33 @@ export default function ShopClient({
                       <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
                         {category.items.map((item) => {
                           const isChecked = checkedItems.has(item.id);
-                          const isHighlighted =
-                            hoverRecipeId &&
-                            item.provenance.some(
-                              (source) => source.sourceRecipeId === hoverRecipeId,
-                            );
+                          const isSelectedIngredient =
+                            selectedIngredientIds.has(item.id) ||
+                            selectedIngredientIdsFromRecipes.has(item.id);
+                          const isHoverHighlighted =
+                            !isSelectedIngredient && hoverIngredientIds.has(item.id);
                           return (
                             <li
                               key={item.id}
-                              className={`flex items-start gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 transition ${
-                                isHighlighted
-                                  ? "border-black bg-[#fcfcfc]"
-                                  : "bg-white hover:border-slate-300"
+                              onClick={() => toggleIngredientSelected(item.id)}
+                              className={`flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm transition-colors duration-150 ${
+                                isSelectedIngredient
+                                  ? INGREDIENT_ACTIVE_CARD_CLASS
+                                  : isHoverHighlighted
+                                    ? INGREDIENT_ACTIVE_CARD_CLASS
+                                    : "bg-white text-slate-700 hover:border-slate-300"
                               }`}
                             >
                               <input
                                 type="checkbox"
                                 checked={isChecked}
+                                onClick={(event) => event.stopPropagation()}
                                 onChange={() => toggleItem(item.id)}
                                 className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
                               />
                               <div className="flex-1 space-y-1">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span className="font-medium text-slate-800">
+                                  <span className="font-medium !text-slate-800">
                                     {item.displayText}
                                   </span>
                                   {item.isEstimated ? (
@@ -500,8 +656,8 @@ export default function ShopClient({
                                   ) : null}
                                 </div>
                                 {item.provenance.length > 0 ? (
-                                  <details className="group relative text-xs text-slate-500">
-                                    <summary className="cursor-pointer select-none text-xs font-medium text-slate-500">
+                                  <details className="group relative text-xs !text-slate-500">
+                                    <summary className="cursor-pointer select-none text-xs font-medium !text-slate-500">
                                       Derived from {item.provenance.length} item
                                       {item.provenance.length === 1 ? "" : "s"}
                                     </summary>
