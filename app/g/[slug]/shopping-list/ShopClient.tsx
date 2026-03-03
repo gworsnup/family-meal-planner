@@ -51,7 +51,7 @@ function CategorySection({
               onClick={() => toggleIngredientSelected(item.id)}
               className={`flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm transition-colors duration-150 ${
                 isSelectedIngredient
-                  ? "border-black bg-black text-white"
+                  ? `${SMART_LIST_READY_HIGHLIGHT_CLASS} border-slate-300 text-slate-900`
                   : isHoverHighlighted
                     ? `${SMART_LIST_READY_HIGHLIGHT_CLASS} border-slate-300 text-slate-900`
                     : "bg-white text-slate-700 hover:border-slate-300"
@@ -126,6 +126,9 @@ export default function ShopClient({
   const pathname = usePathname();
   const [hoveredRecipeId, setHoveredRecipeId] = useState<string | null>(null);
   const [selectedRecipeIds, setSelectedRecipeIds] = useState<Set<string>>(new Set());
+  const [manuallyDeselectedRecipeIds, setManuallyDeselectedRecipeIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [selectedIngredientIds, setSelectedIngredientIds] = useState<Set<string>>(
     new Set(),
   );
@@ -189,13 +192,22 @@ export default function ShopClient({
   const onRecipeHoverEnd = () => setHoveredRecipeId(null);
 
   const toggleRecipeSelected = (id: string) => {
-    setSelectedRecipeIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
+    const isDirectlySelected = selectedRecipeIds.has(id);
+
+    if (isDirectlySelected) {
+      setSelectedRecipeIds((prev) => {
+        const next = new Set(prev);
         next.delete(id);
-      } else {
-        next.add(id);
-      }
+        return next;
+      });
+      setManuallyDeselectedRecipeIds((prev) => new Set(prev).add(id));
+      return;
+    }
+
+    setSelectedRecipeIds((prev) => new Set(prev).add(id));
+    setManuallyDeselectedRecipeIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
       return next;
     });
   };
@@ -259,6 +271,7 @@ export default function ShopClient({
   useEffect(() => {
     setHoveredRecipeId(null);
     setSelectedRecipeIds(new Set());
+    setManuallyDeselectedRecipeIds(new Set());
     setSelectedIngredientIds(new Set());
   }, [selectedWeek?.weekId, viewMode]);
 
@@ -437,7 +450,8 @@ export default function ShopClient({
                           {week.recipes.map((recipe, index) => {
                             const isSelectedRecipe =
                               selectedRecipeIds.has(recipe.id) ||
-                              selectedRecipeIdsFromIngredients.has(recipe.id);
+                              (selectedRecipeIdsFromIngredients.has(recipe.id) &&
+                                !manuallyDeselectedRecipeIds.has(recipe.id));
 
                             return (
                             <div
@@ -610,7 +624,7 @@ export default function ShopClient({
                               onClick={() => toggleIngredientSelected(item.id)}
                               className={`flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm transition-colors duration-150 ${
                                 isSelectedIngredient
-                                  ? "border-black bg-black text-white"
+                                  ? `${SMART_LIST_READY_HIGHLIGHT_CLASS} border-slate-300 text-slate-900`
                                   : isHoverHighlighted
                                     ? `${SMART_LIST_READY_HIGHLIGHT_CLASS} border-slate-300 text-slate-900`
                                     : "bg-white text-slate-700 hover:border-slate-300"
