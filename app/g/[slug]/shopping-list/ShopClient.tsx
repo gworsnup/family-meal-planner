@@ -66,7 +66,7 @@ function CategorySection({
                 onChange={() => toggleItem(item.id)}
                 className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
               />
-              <span className="flex-1">{item.display}</span>
+              <span className="flex-1 text-slate-800">{item.display}</span>
             </li>
           );
         })}
