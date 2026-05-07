@@ -44,6 +44,7 @@ export async function POST(request: Request) {
     orderBy: { updatedAt: "desc" },
     take: 200,
   });
+  type RecipeRow = (typeof recipes)[number];
 
   if (recipes.length < 7) {
     return NextResponse.json({ error: "Add at least 7 recipes to your library before generating a weekly plan." }, { status: 400 });
@@ -53,11 +54,13 @@ export async function POST(request: Request) {
     const plan = await generateWeeklyPlan({
       workspaceSlug: workspace.slug,
       prompt,
-      recipes: recipes.map((recipe) => ({
+      recipes: recipes.map((recipe: RecipeRow) => ({
         id: recipe.id,
         title: recipe.title,
-        tags: recipe.recipeTags.map((x) => x.tag.name),
-        ingredients: recipe.ingredientLines.slice(0, 12).map((x) => x.ingredient),
+        tags: recipe.recipeTags.map((tagRow: RecipeRow["recipeTags"][number]) => tagRow.tag.name),
+        ingredients: recipe.ingredientLines
+          .slice(0, 12)
+          .map((line: RecipeRow["ingredientLines"][number]) => line.ingredient),
         servings: recipe.servings,
         prepTimeMinutes: recipe.prepTimeMinutes,
         cookTimeMinutes: recipe.cookTimeMinutes,
