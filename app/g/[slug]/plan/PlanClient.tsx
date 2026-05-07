@@ -2185,10 +2185,27 @@ export default function PlanClient({
             {weeklyStep === "preview" && generatedPlan ? (
               <div className="mt-4 space-y-2 text-sm text-slate-700">
                 {generatedPlan.days.map((day) => (
-                  <div key={day.day}>
-                    <span className="font-semibold capitalize">{day.day}</span> —{" "}
-                    {recipes.find((recipe) => recipe.id === day.recipeId)?.title ?? "Unknown recipe"}
-                    {day.reason ? <span className="text-slate-500"> · {day.reason}</span> : null}
+                  <div key={day.day} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                    {recipes.find((recipe) => recipe.id === day.recipeId)?.photoUrl ? (
+                      <img
+                        src={recipes.find((recipe) => recipe.id === day.recipeId)?.photoUrl ?? ""}
+                        alt={recipes.find((recipe) => recipe.id === day.recipeId)?.title ?? "Recipe"}
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        className="h-12 w-12 flex-none rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 flex-none items-center justify-center rounded-lg bg-slate-100 text-[10px] font-semibold text-slate-400">
+                        No photo
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-semibold capitalize text-slate-900">
+                        {day.day} —{" "}
+                        {recipes.find((recipe) => recipe.id === day.recipeId)?.title ?? "Unknown recipe"}
+                      </p>
+                      {day.reason ? <p className="text-xs text-slate-500">{day.reason}</p> : null}
+                    </div>
                   </div>
                 ))}
               </div>
