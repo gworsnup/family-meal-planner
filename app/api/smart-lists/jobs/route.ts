@@ -33,6 +33,9 @@ export async function GET(request: Request) {
       smartListId: true,
       updatedAt: true,
       error: true,
+      week: {
+        select: { weekStart: true },
+      },
     },
   });
 

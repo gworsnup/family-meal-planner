@@ -140,7 +140,7 @@ export default function ShopClient({
   const [smartListByWeek, setSmartListByWeek] = useState<
     Record<string, SmartListData | null>
   >({});
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingWeekId, setGeneratingWeekId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const weekParam = searchParams.get("week");
@@ -374,8 +374,8 @@ export default function ShopClient({
   };
 
   const handleGenerateSmartList = async () => {
-    if (!selectedWeek?.weekId || isGenerating || smartListReady) return;
-    setIsGenerating(true);
+    if (!selectedWeek?.weekId || generatingWeekId === selectedWeek.weekId || smartListReady) return;
+    setGeneratingWeekId(selectedWeek.weekId);
     setErrorMessage(null);
     try {
       const response = await fetch("/api/smart-lists/generate", {
@@ -398,7 +398,7 @@ export default function ShopClient({
         error instanceof Error ? error.message : "Couldn’t generate smart list.",
       );
     } finally {
-      setIsGenerating(false);
+      setGeneratingWeekId(null);
     }
   };
 
@@ -547,14 +547,14 @@ export default function ShopClient({
                 <button
                   type="button"
                   onClick={handleGenerateSmartList}
-                  disabled={!selectedWeek || smartListReady || isGenerating}
+                  disabled={!selectedWeek || smartListReady || (selectedWeek ? generatingWeekId === selectedWeek.weekId : false)}
                   className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition ${
-                    smartListReady || !selectedWeek
+                    smartListReady || !selectedWeek || (selectedWeek ? generatingWeekId === selectedWeek.weekId : false)
                       ? `cursor-not-allowed ${SMART_LIST_READY_HIGHLIGHT_CLASS} text-slate-700`
                       : "bg-slate-900 text-white hover:bg-slate-800"
                   }`}
                 >
-                  {isGenerating ? (
+                  {selectedWeek && generatingWeekId === selectedWeek.weekId ? (
                     <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                   ) : null}
                   <span className="flex h-4 w-4 items-center justify-center">
@@ -568,8 +568,8 @@ export default function ShopClient({
                   </span>
                   {smartListReady
                     ? "Smart List Ready"
-                    : isGenerating
-                    ? "Generating..."
+                    : selectedWeek && generatingWeekId === selectedWeek.weekId
+                    ? "Generating Smart List…"
                     : "Generate Smart List"}
                 </button>
                 <WhatsAppShareButton

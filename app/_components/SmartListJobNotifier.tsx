@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { buildSmartListPath } from "@/lib/smartListLinks";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  buildShoppingListWeekUrl,
+  isCurrentShoppingListWeek,
+} from "@/lib/smartListLinks";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -16,6 +19,9 @@ type JobSummary = {
   smartListId: string | null;
   updatedAt: string;
   error: string | null;
+  week: {
+    weekStart: string;
+  };
 };
 
 type Notification = {
@@ -23,6 +29,7 @@ type Notification = {
   type: "success" | "failure" | "progress";
   message: string;
   smartListId?: string | null;
+  weekStart?: string;
   error?: string | null;
 };
 
@@ -50,6 +57,8 @@ export default function SmartListJobNotifier({
   workspaceSlug: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [queue, setQueue] = useState<Notification[]>([]);
 
   const active = queue[0] ?? null;
@@ -104,6 +113,7 @@ export default function SmartListJobNotifier({
                   type: "success",
                   message: `Smart List for ${job.shoppingListName} has been successfully generated.`,
                   smartListId: job.smartListId,
+                  weekStart: job.week.weekStart.slice(0, 10),
                 });
               }
             }
@@ -141,6 +151,20 @@ export default function SmartListJobNotifier({
 
   if (!active) return null;
 
+  const successWeekUrl =
+    active.type === "success" && active.weekStart
+      ? buildShoppingListWeekUrl(workspaceSlug, active.weekStart)
+      : null;
+  const isOnTargetWeek =
+    active.type === "success" && active.weekStart
+      ? isCurrentShoppingListWeek(
+          pathname,
+          new URLSearchParams(searchParams.toString()),
+          workspaceSlug,
+          active.weekStart,
+        )
+      : false;
+
   return (
     <div className="pointer-events-none fixed bottom-6 right-6 z-50 flex w-[90vw] max-w-sm flex-col gap-3">
       <div className="pointer-events-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
@@ -169,18 +193,37 @@ export default function SmartListJobNotifier({
         {active.type === "failure" && active.error ? (
           <p className="mt-2 text-xs text-rose-600">{active.error}</p>
         ) : null}
+        {active.type === "progress" ? (
+          <div className="mt-3 space-y-2">
+            <div
+              className="h-2 w-full overflow-hidden rounded-full bg-slate-200"
+              role="progressbar"
+              aria-label="Generating smart list"
+              aria-valuetext="In progress"
+            >
+              <div className="h-full w-1/2 animate-[smart-list-progress_1.4s_ease-in-out_infinite] rounded-full bg-slate-900" />
+            </div>
+            <p className="text-[11px] text-slate-500">
+              This can take a couple of minutes. You can continue using FamilyTable while we prepare your list.
+            </p>
+          </div>
+        ) : null}
         <div className="mt-3 flex items-center gap-2">
-          {active.type === "success" && active.smartListId ? (
+          {active.type === "success" && successWeekUrl ? (
             <button
               type="button"
               onClick={() => {
-                if (!active.smartListId) return;
                 setQueue((current) => current.slice(1));
-                router.push(buildSmartListPath(workspaceSlug, active.smartListId));
+                if (isOnTargetWeek) {
+                  router.replace(successWeekUrl, { scroll: false });
+                  router.refresh();
+                  return;
+                }
+                router.push(successWeekUrl);
               }}
               className="inline-flex items-center justify-center rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
             >
-              View List
+              {isOnTargetWeek ? "Refresh List" : "View Smart List"}
             </button>
           ) : null}
           <button
@@ -195,6 +238,12 @@ export default function SmartListJobNotifier({
           ) : null}
         </div>
       </div>
+      <style jsx>{`
+        @keyframes smart-list-progress {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(220%); }
+        }
+      `}</style>
     </div>
   );
 }
