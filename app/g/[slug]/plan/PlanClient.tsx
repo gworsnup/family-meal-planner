@@ -1828,7 +1828,7 @@ export default function PlanClient({
                     setWeeklyError(null);
                     setWeeklyStep("prompt");
                   }}
-                  className="mb-2 inline-flex h-8 items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white transition hover:bg-slate-800"
+                  className="inline-flex h-8 items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white transition hover:bg-slate-800"
                 >
                   <span className="flex h-4 w-4 items-center justify-center">
                     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
@@ -2139,6 +2139,11 @@ export default function PlanClient({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 px-4">
           <div className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl">
             <h2 className="text-base font-semibold text-slate-900">Generate Weekly Plan</h2>
+            {weeklyLoading ? (
+              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full w-1/3 animate-[pulse_1s_ease-in-out_infinite] rounded-full bg-slate-900" />
+              </div>
+            ) : null}
             {weeklyStep === "prompt" ? (
               <>
                 <p className="mt-1 text-sm text-slate-600">
@@ -2214,8 +2219,13 @@ export default function PlanClient({
                   type="button"
                   onClick={() => void handleGenerateWeeklyPlan()}
                   disabled={weeklyLoading || !weeklyPrompt.trim()}
-                  className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
+                  <span className="flex h-4 w-4 items-center justify-center">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
+                      <path d="M12 2l1.4 4.2L18 7.6l-4.2 1.4L12 13.2l-1.4-4.2L6.4 7.6l4.2-1.4L12 2zm7 10l.9 2.7 2.7.9-2.7.9L19 19l-.9-2.7-2.7-.9 2.7-.9L19 12zm-14 1l.9 2.7 2.7.9-2.7.9L5 20l-.9-2.7-2.7-.9 2.7-.9L5 13z" />
+                    </svg>
+                  </span>
                   {weeklyLoading ? "Generating Plan…" : "Generate Plan"}
                 </button>
               ) : null}

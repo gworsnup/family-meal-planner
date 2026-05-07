@@ -48,6 +48,17 @@ function extractText(payload: any): string {
   return text || "";
 }
 
+function parseJsonResponse(text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) throw new Error("OpenAI response was empty");
+  const cleaned = trimmed
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  return JSON.parse(cleaned);
+}
+
 function validateWeeklyPlan(data: unknown, validIds: Set<string>, allowDuplicates: boolean) {
   const parsed = responseSchema.safeParse(data);
   if (!parsed.success) {
@@ -135,7 +146,7 @@ No markdown.`;
     const payload = await response.json();
     const text = extractText(payload);
     if (!text) throw new Error("OpenAI response missing output text");
-    return JSON.parse(text);
+    return parseJsonResponse(text);
   };
 
   const validIds = new Set(recipes.map((r) => r.id));
