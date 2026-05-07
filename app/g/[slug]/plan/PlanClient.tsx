@@ -96,6 +96,11 @@ type PlanClientProps = {
   selectedRecipe: RecipeDetail | null;
   selectedCookingRecipe: RecipeDetail | null;
 };
+type WeeklyPlanDay = {
+  day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+  recipeId: string;
+  reason?: string;
+};
 
 const sourceOptions = [
   { value: "all", label: "All sources" },
@@ -847,6 +852,15 @@ export default function PlanClient({
   const [templateName, setTemplateName] = useState("");
   const [templateError, setTemplateError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [weeklyPlanOpen, setWeeklyPlanOpen] = useState(false);
+  const [weeklyStep, setWeeklyStep] = useState<"prompt" | "preview" | "week">("prompt");
+  const [weeklyPrompt, setWeeklyPrompt] = useState("");
+  const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const [weeklyError, setWeeklyError] = useState<string | null>(null);
+  const [weeklyWarning, setWeeklyWarning] = useState<string | null>(null);
+  const [generatedPlan, setGeneratedPlan] = useState<{ days: WeeklyPlanDay[]; summary?: string } | null>(null);
+  const [selectedWeekISO, setSelectedWeekISO] = useState("");
+  const [replaceWeekConfirm, setReplaceWeekConfirm] = useState(false);
   const [confirmPopover, setConfirmPopover] = useState<{
     templateId: string;
     target: TemplateTarget;
@@ -977,6 +991,108 @@ export default function PlanClient({
     }
     return list;
   }, [start, end]);
+
+  const weekOptions = useMemo(() => {
+    if (view === "week") return [formatDateISO(startOfWeek(focusedDate))];
+    const { rangeStart, rangeEnd } = getMonthGridRangeFromISO(formatDateISO(startOfMonth(focusedDate)));
+    const weeks: string[] = [];
+    for (let cursor = rangeStart; cursor <= rangeEnd; cursor = addDays(cursor, 7)) {
+      weeks.push(formatDateISO(cursor));
+    }
+    return weeks;
+  }, [focusedDate, view]);
+
+  useEffect(() => {
+    if (!selectedWeekISO && weekOptions[0]) {
+      setSelectedWeekISO(weekOptions[0]);
+    }
+  }, [selectedWeekISO, weekOptions]);
+
+  const presetPrompts = [
+    "Balanced Family Week",
+    "Cheap Week",
+    "Quick Midweek Meals",
+    "High Protein",
+    "Vegetarian Week",
+    "Comfort Food Week",
+  ];
+
+  const handleGenerateWeeklyPlan = useCallback(async () => {
+    if (!weeklyPrompt.trim()) return;
+    setWeeklyLoading(true);
+    setWeeklyError(null);
+    setReplaceWeekConfirm(false);
+    try {
+      const response = await fetch("/api/weekly-plan/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug, prompt: weeklyPrompt.trim() }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Could not generate weekly plan.");
+      }
+      setGeneratedPlan(payload.plan);
+      setWeeklyWarning(payload.warning ?? null);
+      setWeeklyStep("preview");
+    } catch (error) {
+      setWeeklyError(error instanceof Error ? error.message : "Could not generate weekly plan.");
+    } finally {
+      setWeeklyLoading(false);
+    }
+  }, [slug, weeklyPrompt]);
+
+  const handleApplyGeneratedWeek = useCallback(async () => {
+    if (!generatedPlan || !selectedWeekISO) return;
+    const weekStart = parseDateISO(selectedWeekISO);
+    if (!weekStart) return;
+    const targetDays = Array.from({ length: 7 }, (_, index) => formatDateISO(addDays(weekStart, index)));
+    const existingItems = items.filter((item) => targetDays.includes(item.dateISO));
+    if (existingItems.length > 0 && !replaceWeekConfirm) {
+      setReplaceWeekConfirm(true);
+      return;
+    }
+    setWeeklyLoading(true);
+    setWeeklyError(null);
+    try {
+      for (const item of existingItems) {
+        await removeMealPlanItem({ slug, itemId: item.id });
+      }
+      const byDay = Object.fromEntries(generatedPlan.days.map((day) => [day.day, day.recipeId]));
+      const orderedDays: WeeklyPlanDay["day"][] = [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+      ];
+      const created: PlanItem[] = [];
+      for (let index = 0; index < orderedDays.length; index += 1) {
+        const result = await addMealPlanItem({
+          slug,
+          dateISO: targetDays[index],
+          recipeId: byDay[orderedDays[index]],
+          type: "RECIPE",
+        });
+        if (result.item) {
+          created.push(normalizePlanItem(result.item));
+        }
+      }
+      setItems((prev) => [...prev.filter((item) => !targetDays.includes(item.dateISO)), ...created]);
+      setWeeklyPlanOpen(false);
+      setWeeklyStep("prompt");
+      setGeneratedPlan(null);
+      setReplaceWeekConfirm(false);
+      const label = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", timeZone: "UTC" }).format(weekStart);
+      setToastMessage(`Weekly plan added to week commencing ${label}.`);
+    } catch {
+      setWeeklyError("Sorry, FamilyTable couldn’t generate a plan this time. Try simplifying your prompt or adding more recipes.");
+    } finally {
+      setWeeklyLoading(false);
+    }
+  }, [generatedPlan, items, replaceWeekConfirm, selectedWeekISO, slug]);
 
   const weeks = useMemo(() => {
     const rows: Date[][] = [];
@@ -1705,6 +1821,22 @@ export default function PlanClient({
                 </div>
               ) : null}
               <div ref={shareMenuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWeeklyPlanOpen(true);
+                    setWeeklyError(null);
+                    setWeeklyStep("prompt");
+                  }}
+                  className="inline-flex h-8 items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white transition hover:bg-slate-800"
+                >
+                  <span className="flex h-4 w-4 items-center justify-center">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
+                      <path d="M12 2l1.4 4.2L18 7.6l-4.2 1.4L12 13.2l-1.4-4.2L6.4 7.6l4.2-1.4L12 2zm7 10l.9 2.7 2.7.9-2.7.9L19 19l-.9-2.7-2.7-.9 2.7-.9L19 12zm-14 1l.9 2.7 2.7.9-2.7.9L5 20l-.9-2.7-2.7-.9 2.7-.9L5 13z" />
+                    </svg>
+                  </span>
+                  Generate Weekly Plan
+                </button>
                 <WhatsAppShareButton
                   label="Share via WhatsApp"
                   className="h-8 px-3 py-1"
@@ -1998,6 +2130,118 @@ export default function PlanClient({
               >
                 {isTemplatePending ? "Saving..." : "Save"}
               </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {weeklyPlanOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 px-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl">
+            <h2 className="text-base font-semibold text-slate-900">Generate Weekly Plan</h2>
+            {weeklyLoading ? (
+              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full w-1/3 animate-[pulse_1s_ease-in-out_infinite] rounded-full bg-slate-900" />
+              </div>
+            ) : null}
+            {weeklyStep === "prompt" ? (
+              <>
+                <p className="mt-1 text-sm text-slate-600">
+                  Describe the kind of week you want and FamilyTable will suggest meals from your recipe library.
+                </p>
+                <textarea
+                  value={weeklyPrompt}
+                  onChange={(event) => setWeeklyPrompt(event.target.value)}
+                  placeholder="e.g. Balanced family week with 1 chicken, 1 fish, 1 pasta, 1 veggie meal and something hearty for the weekend."
+                  className="mt-4 min-h-28 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {presetPrompts.map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setWeeklyPrompt((prev) => (prev ? `${prev} ${preset}` : preset))}
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-slate-300"
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : null}
+            {weeklyStep === "preview" && generatedPlan ? (
+              <div className="mt-4 space-y-2 text-sm text-slate-700">
+                {generatedPlan.days.map((day) => (
+                  <div key={day.day}>
+                    <span className="font-semibold capitalize">{day.day}</span> —{" "}
+                    {recipes.find((recipe) => recipe.id === day.recipeId)?.title ?? "Unknown recipe"}
+                    {day.reason ? <span className="text-slate-500"> · {day.reason}</span> : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {weeklyStep === "week" ? (
+              <div className="mt-4">
+                <label className="text-xs font-semibold text-slate-600">Select week</label>
+                <select
+                  value={selectedWeekISO}
+                  onChange={(event) => setSelectedWeekISO(event.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  {weekOptions.map((weekISO) => (
+                    <option key={weekISO} value={weekISO}>
+                      Week commencing{" "}
+                      {new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", timeZone: "UTC" }).format(
+                        parseDateISO(weekISO) ?? getTodayUTC(),
+                      )}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+            {replaceWeekConfirm ? (
+              <p className="mt-3 text-xs font-semibold text-amber-700">
+                This week already has meals planned. Do you want to replace them with this generated plan?
+              </p>
+            ) : null}
+            {weeklyWarning ? <p className="mt-2 text-xs text-amber-600">{weeklyWarning}</p> : null}
+            {weeklyError ? <p className="mt-2 text-xs text-rose-600">{weeklyError}</p> : null}
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setWeeklyPlanOpen(false)}
+                className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:border-slate-300"
+              >
+                Cancel
+              </button>
+              {weeklyStep === "prompt" ? (
+                <button
+                  type="button"
+                  onClick={() => void handleGenerateWeeklyPlan()}
+                  disabled={weeklyLoading || !weeklyPrompt.trim()}
+                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <span className="flex h-4 w-4 items-center justify-center">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
+                      <path d="M12 2l1.4 4.2L18 7.6l-4.2 1.4L12 13.2l-1.4-4.2L6.4 7.6l4.2-1.4L12 2zm7 10l.9 2.7 2.7.9-2.7.9L19 19l-.9-2.7-2.7-.9 2.7-.9L19 12zm-14 1l.9 2.7 2.7.9-2.7.9L5 20l-.9-2.7-2.7-.9 2.7-.9L5 13z" />
+                    </svg>
+                  </span>
+                  {weeklyLoading ? "Generating Plan…" : "Generate Plan"}
+                </button>
+              ) : null}
+              {weeklyStep === "preview" ? (
+                <>
+                  <button type="button" onClick={() => setWeeklyStep("prompt")} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600">Back</button>
+                  <button type="button" onClick={() => void handleGenerateWeeklyPlan()} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600">Regenerate</button>
+                  <button type="button" onClick={() => setWeeklyStep("week")} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">Choose Week</button>
+                </>
+              ) : null}
+              {weeklyStep === "week" ? (
+                <>
+                  <button type="button" onClick={() => setWeeklyStep("preview")} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600">Back to Preview</button>
+                  <button type="button" onClick={() => void handleApplyGeneratedWeek()} disabled={weeklyLoading} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">{replaceWeekConfirm ? "Replace Week" : "Apply to Selected Week"}</button>
+                </>
+              ) : null}
             </div>
           </div>
         </div>
