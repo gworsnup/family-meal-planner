@@ -22,6 +22,15 @@ const responseSchema = z.object({
   days: z.array(daySchema).length(7),
   summary: z.string().trim().max(240).optional().default(""),
 });
+const weekdayMapSchema = z.object({
+  Monday: z.string().min(1),
+  Tuesday: z.string().min(1),
+  Wednesday: z.string().min(1),
+  Thursday: z.string().min(1),
+  Friday: z.string().min(1),
+  Saturday: z.string().min(1),
+  Sunday: z.string().min(1),
+});
 
 export type WeeklyPlanRecipeContext = {
   id: string;
@@ -60,7 +69,23 @@ function parseJsonResponse(text: string) {
 }
 
 function validateWeeklyPlan(data: unknown, validIds: Set<string>, allowDuplicates: boolean) {
-  const parsed = responseSchema.safeParse(data);
+  const normalizedData = (() => {
+    const daysObject = weekdayMapSchema.safeParse(data);
+    if (!daysObject.success) return data;
+    return {
+      days: [
+        { day: "monday", recipeId: daysObject.data.Monday },
+        { day: "tuesday", recipeId: daysObject.data.Tuesday },
+        { day: "wednesday", recipeId: daysObject.data.Wednesday },
+        { day: "thursday", recipeId: daysObject.data.Thursday },
+        { day: "friday", recipeId: daysObject.data.Friday },
+        { day: "saturday", recipeId: daysObject.data.Saturday },
+        { day: "sunday", recipeId: daysObject.data.Sunday },
+      ],
+      summary: "",
+    };
+  })();
+  const parsed = responseSchema.safeParse(normalizedData);
   if (!parsed.success) {
     throw new Error("Invalid plan shape");
   }

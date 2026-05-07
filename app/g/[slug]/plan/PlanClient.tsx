@@ -1828,7 +1828,7 @@ export default function PlanClient({
                     setWeeklyError(null);
                     setWeeklyStep("prompt");
                   }}
-                  className="inline-flex h-8 items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white transition hover:bg-slate-800"
+                  className="mr-2 inline-flex h-8 items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white transition hover:bg-slate-800"
                 >
                   <span className="flex h-4 w-4 items-center justify-center">
                     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
@@ -2141,9 +2141,22 @@ export default function PlanClient({
             <h2 className="text-base font-semibold text-slate-900">Generate Weekly Plan</h2>
             {weeklyLoading ? (
               <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                <div className="h-full w-1/3 animate-[pulse_1s_ease-in-out_infinite] rounded-full bg-slate-900" />
+                <div className="h-full w-1/3 rounded-full bg-slate-900 weekly-plan-loading-bar" />
               </div>
             ) : null}
+            <style jsx>{`
+              .weekly-plan-loading-bar {
+                animation: weeklyPlanLoadingBar 1.2s linear infinite;
+              }
+              @keyframes weeklyPlanLoadingBar {
+                0% {
+                  transform: translateX(-120%);
+                }
+                100% {
+                  transform: translateX(320%);
+                }
+              }
+            `}</style>
             {weeklyStep === "prompt" ? (
               <>
                 <p className="mt-1 text-sm text-slate-600">
