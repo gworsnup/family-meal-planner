@@ -1,0 +1,7 @@
+{
+  "name": "familytable-marketing",
+  "private": true,
+  "scripts": {
+    "build": "mkdir -p dist && cp -R *.html *.css *.js assets uploads dist/ 2>/dev/null || true"
+  }
+}
