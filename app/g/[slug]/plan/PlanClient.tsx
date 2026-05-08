@@ -2305,13 +2305,10 @@ export default function PlanClient({
           slug={slug}
           recipe={overlayRecipe}
           onClose={() => setOverlayRecipe(null)}
-          onOpenCookingView={() =>
-            updateParams({
-              cookRecipeId: overlayRecipe.id,
-              cookView: "1",
-              recipeId: null,
-            })
-          }
+          onOpenCookingView={() => {
+            setOverlayRecipe(null);
+            void openCookingOverlay(overlayRecipe.id);
+          }}
           onSaved={() => router.refresh()}
           onDeleted={() => {
             setOverlayRecipe(null);

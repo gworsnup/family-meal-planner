@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
 
 type WorkspaceHeaderProps = {
@@ -29,10 +33,17 @@ export default function WorkspaceHeader({
   current = "recipes",
   showLogout = true,
 }: WorkspaceHeaderProps) {
+  const router = useRouter();
   const activeNav =
     navItems.find((item) => item.key === current) ?? navItems[0];
 
   const workspaceHref = (targetSlug: string) => activeNav.href(targetSlug);
+
+  useEffect(() => {
+    const routes = navItems.map((item) => item.href(slug));
+    routes.forEach((route) => router.prefetch(route));
+    console.info("[perf] nav:prefetch:complete", { slug, routes, at: Date.now() });
+  }, [router, slug]);
 
   return (
     <header className="border-b border-slate-200 bg-white">
@@ -55,6 +66,8 @@ export default function WorkspaceHeader({
               <Link
                 key={item.key}
                 href={item.href(slug)}
+                prefetch
+                onClick={() => console.info("[perf] nav:route-click", { to: item.href(slug), at: Date.now() })}
                 aria-current={isActive ? "page" : undefined}
                 className={`rounded-full px-4 py-2 transition ${
                   isActive
@@ -149,6 +162,8 @@ export default function WorkspaceHeader({
               <Link
                 key={item.key}
                 href={item.href(slug)}
+                prefetch
+                onClick={() => console.info("[perf] nav:route-click", { to: item.href(slug), at: Date.now() })}
                 aria-current={isActive ? "page" : undefined}
                 className={`whitespace-nowrap rounded-full px-3 py-1.5 transition ${
                   isActive
