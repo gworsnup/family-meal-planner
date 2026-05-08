@@ -1,0 +1,174 @@
+---
+
+# **FamilyTable – Product Overview**
+
+## **What the application is**
+
+FamilyTable is a **shared household meal planning platform** that helps families organise everything related to food in one place — from collecting recipes to planning meals and generating shopping lists.
+
+It is designed to remove the daily friction of:
+
+* “What’s for dinner?”
+* Repetitive meal decisions
+* Disorganised recipes across apps, notes, and bookmarks
+* Inefficient grocery shopping
+
+The product is inspired by tools like Plan to Eat but modernised with a more intuitive UI, automation, and AI-assisted features.
+
+---
+
+## **Core Value Proposition**
+
+FamilyTable simplifies the entire food workflow into **three connected steps**:
+
+> **Collect recipes → Plan meals → Shop efficiently**
+
+Everything is built around making this process:
+
+* Faster
+* More organised
+* Collaborative (for a household)
+* Repeatable week-to-week
+
+---
+
+## **Key Product Areas**
+
+### **1. Recipe Management (“Cook”)**
+
+A central recipe library where users can store and organise meals.
+
+**Capabilities:**
+
+* Import recipes from any website via URL
+* Save recipes manually
+* Store images and ingredients
+* View recipes in clean, step-by-step cooking mode
+* Build a personal, reusable recipe collection
+
+**Goal:**
+Eliminate scattered recipes across notes, screenshots, TikTok, and websites.
+
+---
+
+### **2. Meal Planning (“Plan”)**
+
+A visual calendar-based planner for organising meals across days, weeks, or months.
+
+**Capabilities:**
+
+* Drag-and-drop recipes into a calendar
+* Plan entire weeks or months in advance
+* Adjust serving sizes dynamically
+* Reuse saved “meal templates” (e.g. weekly plans)
+* Mark non-cooking days (e.g. takeaway nights)
+
+**Goal:**
+Provide structure and remove daily decision fatigue.
+
+---
+
+### **3. Smart Shopping List (“Shop”)**
+
+An automatically generated grocery list based on planned meals.
+
+**Capabilities:**
+
+* Aggregates ingredients across all planned recipes
+* Groups items by category (e.g. dairy, veg, pantry)
+* Merges duplicates intelligently (e.g. “2 onions” + “1 onion” → “3 onions”)
+* Normalises units where possible
+* Links ingredients back to recipes for context
+
+**Goal:**
+Make grocery shopping faster, clearer, and more efficient.
+
+---
+
+## **AI-Powered Features (Smart Layer)**
+
+FamilyTable introduces a “Smart List” system that enhances the shopping experience:
+
+* Ingredient merging and deduplication
+* Unit normalisation (where sensible)
+* Intelligent grouping and categorisation
+* Clean, human-readable output
+
+Future direction includes:
+
+* Smart meal plan generation (e.g. “high protein week”)
+* Automated meal templates based on user habits
+* Ingredient substitution suggestions
+
+---
+
+## **Collaboration Model**
+
+* Designed for **one household workspace**
+* Shared access via simple login (no complex multi-user setup)
+* Everyone contributes to:
+
+  * Recipes
+  * Meal plans
+  * Shopping lists
+
+---
+
+## **User Experience Philosophy**
+
+* **Visual-first**: clean, modern UI with clear states
+* **Low friction**: minimal setup, fast actions
+* **Practical over complex**: built for real family usage, not power users
+* **Mobile-friendly**: designed for kitchen and shopping use
+
+---
+
+## **Primary User Benefits**
+
+### **Time Saving**
+
+* No daily meal decisions
+* No manual shopping list writing
+
+### **Organisation**
+
+* All recipes in one place
+* Structured weekly planning
+
+### **Efficiency**
+
+* Smarter shopping trips
+* Reduced food waste
+
+### **Mental Load Reduction**
+
+* Removes constant “what should we eat?” decisions
+
+---
+
+## **Typical User Flow**
+
+1. User imports or saves recipes
+2. User plans meals for the week/month
+3. App generates a smart shopping list
+4. User shops using the list
+5. User cooks using step-by-step recipe view
+
+---
+
+## **Positioning Statement**
+
+FamilyTable is a **modern meal planning and grocery optimisation tool** for families who want to simplify food planning without overcomplicating the process.
+
+---
+
+## **Tone for Marketing**
+
+* Practical, not gimmicky
+* Family-focused
+* Time-saving and stress-reducing
+* Clean and premium feel
+
+---
+
+If you want next step: I can turn this into **homepage wireframe sections (hero, features, CTA, etc.)** tailored for your Claude Design mockups.

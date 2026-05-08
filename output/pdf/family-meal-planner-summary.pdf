@@ -1,0 +1,49 @@
+%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
+3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj
+4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj
+5 0 obj << /Length 3251 >> stream
+BT /F1 18 Tf 54.00 742.00 Td (Family Meal Planner - App Summary) Tj ET
+BT /F1 9 Tf 54.00 724.00 Td (Repository evidence snapshot) Tj ET
+BT /F1 13 Tf 54.00 705.00 Td (What it is) Tj ET
+BT /F1 10 Tf 54.00 690.00 Td (A Next.js web app called FamilyTable for shared household meal planning and shopping.) Tj ET
+BT /F1 10 Tf 54.00 678.00 Td (It lets users import recipes from TikTok, Instagram, and websites, then plan meals and generate shopping lists.) Tj ET
+BT /F1 13 Tf 54.00 660.00 Td (Who it is for) Tj ET
+BT /F1 10 Tf 54.00 645.00 Td (Primary persona: household members planning meals and shopping together \(inferred from onboarding and UI copy\).) Tj ET
+BT /F1 13 Tf 54.00 627.00 Td (What it does) Tj ET
+BT /F1 10 Tf 62.00 612.00 Td (- Recipe library with search/sort/filter, ratings, tags, and recipe editing.) Tj ET
+BT /F1 10 Tf 62.00 600.00 Td (- Recipe import pipeline from URL with JSON-LD/HTML parsing and Playwright fallback when needed.) Tj ET
+BT /F1 10 Tf 62.00 588.00 Td (- Social-caption parsing for Instagram/TikTok recipes, with optional OpenAI extraction.) Tj ET
+BT /F1 10 Tf 62.00 576.00 Td (- Week/month meal planner with recipe entries plus takeaway nights.) Tj ET
+BT /F1 10 Tf 62.00 564.00 Td (- Template support for reusable meal plans \(weekly/monthly\).) Tj ET
+BT /F1 10 Tf 62.00 552.00 Td (- Shopping-list builder from planned meals, plus Smart List normalization and merge jobs.) Tj ET
+BT /F1 10 Tf 62.00 540.00 Td (- Multi-workspace auth flow with admin workspace/user management and optional Google OAuth.) Tj ET
+BT /F1 13 Tf 54.00 522.00 Td (How it works \(repo evidence\)) Tj ET
+BT /F1 10 Tf 62.00 507.00 Td (- UI: Next.js App Router pages under app/, with server/client components and Server Actions.) Tj ET
+BT /F1 10 Tf 62.00 495.00 Td (- Data: Prisma ORM to PostgreSQL \(workspace, user/session, recipes, plan items, shopping list, smart list jobs\).) Tj ET
+BT /F1 10 Tf 62.00 483.00 Td (- Auth: cookie sessions and password login in lib/auth.ts; Google OAuth routes under app/auth/google/.) Tj ET
+BT /F1 10 Tf 62.00 471.00 Td (- Import flow: app/api/import/* triggers lib/scrape/runRecipeImport.ts and lib/scrape/scrapeUrl.ts.) Tj ET
+BT /F1 10 Tf 62.00 459.00 Td (- Smart list flow: app/api/smart-lists/generate queues jobs; app/api/smart-lists/run executes normalization.) Tj ET
+BT /F1 10 Tf 62.00 447.00 Td (- Integrations: OpenAI Responses API for caption/smart-list parsing and Vercel Blob for social image persistence.) Tj ET
+BT /F1 10 Tf 62.00 435.00 Td (- Background worker service: Not found in repo \(jobs are kicked off via internal API fetch\).) Tj ET
+BT /F1 13 Tf 54.00 417.00 Td (How to run \(minimal\)) Tj ET
+BT /F1 10 Tf 54.00 402.00 Td (1. Install deps: pnpm install) Tj ET
+BT /F1 10 Tf 54.00 390.00 Td (2. Set env vars at minimum: DATABASE_URL \(required\); OPENAI_API_KEY and BLOB_READ_WRITE_TOKEN are optional features.) Tj ET
+BT /F1 10 Tf 54.00 378.00 Td (3. Prepare DB schema: pnpm prisma migrate deploy \(or local equivalent\).) Tj ET
+BT /F1 10 Tf 54.00 366.00 Td (4. Start app: pnpm dev) Tj ET
+BT /F1 10 Tf 54.00 354.00 Td (5. Open http://localhost:3000) Tj ET
+BT /F1 10 Tf 54.00 342.00 Td (Initial database provisioning instructions and sample env file for this app: Not found in repo.) Tj ET
+endstream endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer << /Size 6 /Root 1 0 R >>
+startxref
+3614
+%%EOF

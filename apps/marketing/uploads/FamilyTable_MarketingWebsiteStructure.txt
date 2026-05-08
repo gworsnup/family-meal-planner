@@ -1,0 +1,369 @@
+
+
+# **FamilyTable – Marketing Website Structure**
+
+## **Overall Goal**
+
+The marketing site should:
+
+* Clearly explain the product in seconds
+* Visually demonstrate how it works (not just tell)
+* Build trust and desirability
+* Drive users to **start using the app immediately**
+
+---
+
+# **Core Site Map**
+
+### 1. **Home**
+
+### 2. **Features**
+
+### 3. **Pricing**
+
+### 4. **Blog**
+
+### 5. **About**
+
+### 6. **Contact**
+
+---
+
+# **1. Home Page (Primary Conversion Page)**
+
+## **Purpose**
+
+* Instantly communicate value
+* Show the product in action
+* Drive sign-ups
+
+## **Structure**
+
+### **Hero Section**
+
+* Headline:
+  *“No more ‘what’s for dinner?’”*
+* Subheadline:
+  *“Collect recipes. Plan meals. Streamline shopping.”*
+* CTA:
+  **“Get Started”**
+* Visual:
+
+  * Scroll-driven animation (recipe → plan → shopping flow)
+  * Or product UI in motion
+
+---
+
+### **How It Works (3-Step System)**
+
+A simple visual flow:
+
+1. **Collect Recipes**
+2. **Plan Meals**
+3. **Shop Smarter**
+
+Each step includes:
+
+* Short description
+* UI screenshot or animation
+
+---
+
+### **Product Deep Dive Sections**
+
+Alternating left/right layout:
+
+* Recipe Import (from anywhere)
+* Calendar Meal Planning
+* Smart Shopping List
+
+Focus on:
+
+* Real UI
+* Real interactions
+* Minimal text
+
+---
+
+### **“Designed for Real Life” Section**
+
+Highlights:
+
+* Families
+* Busy schedules
+* Reducing mental load
+
+---
+
+### **Social Proof / Future Placeholder**
+
+* Testimonials (later)
+* Or “Built for families like yours”
+
+---
+
+### **Final CTA Section**
+
+* Reinforce value
+* Strong CTA:
+
+  * “Start Planning Your Week”
+  * “Try FamilyTable”
+
+---
+
+# **2. Features Page**
+
+## **Purpose**
+
+Deep dive into functionality for more analytical users.
+
+## **Structure**
+
+### **Intro**
+
+* “Everything you need to manage meals in one place”
+
+---
+
+### **Feature Groups**
+
+#### **Recipe Management**
+
+* Import from any website
+* Store and organise recipes
+* Step-by-step cooking mode
+
+---
+
+#### **Meal Planning**
+
+* Drag & drop calendar
+* Weekly & monthly planning
+* Templates
+
+---
+
+#### **Shopping List**
+
+* Auto-generated from plans
+* Smart merging
+* Categorised items
+
+---
+
+#### **Smart Features**
+
+* AI-powered ingredient merging
+* Smart templates (future)
+* Automation
+
+---
+
+### **Visual Approach**
+
+* Clean UI screenshots
+* Subtle motion (hover, transitions)
+
+---
+
+# **3. Pricing Page**
+
+## **Purpose**
+
+Simple and clear — no friction.
+
+## **Structure**
+
+### **Headline**
+
+* “Simple pricing for your household”
+
+---
+
+### **Pricing Model**
+
+* Single plan (initially)
+* Household access included
+
+---
+
+### **Example Layout**
+
+* Monthly price
+* Annual discount option (optional)
+
+---
+
+### **What’s Included**
+
+* Unlimited recipes
+* Meal planning
+* Smart shopping lists
+* Household sharing
+
+---
+
+### **CTA**
+
+* “Start Free” or “Get Started”
+
+---
+
+# **4. Blog**
+
+## **Purpose**
+
+* SEO
+* Thought leadership
+* Product education
+
+## **Content Types**
+
+* Meal planning tips
+* “How to save time cooking”
+* Feature announcements
+* Family-focused content
+
+---
+
+## **Structure**
+
+* Grid of posts
+* Category filtering (optional)
+* Individual article pages
+
+---
+
+# **5. About Page**
+
+## **Purpose**
+
+Humanise the product and build trust.
+
+## **Content**
+
+### **Story**
+
+* Why FamilyTable was created
+* Problem it solves (real-life frustration)
+
+---
+
+### **Philosophy**
+
+* Simple > complex
+* Built for real families
+* Reduce mental load
+
+---
+
+### **Optional**
+
+* Founder section
+* Product journey
+
+---
+
+# **6. Contact Page**
+
+## **Purpose**
+
+Provide a simple way to reach out.
+
+## **Content**
+
+* Contact form
+* Email address
+* Optional:
+
+  * Feedback
+  * Feature requests
+
+---
+
+# **Navigation Structure**
+
+### **Header**
+
+* Logo
+* Features
+* Pricing
+* Blog
+* About
+* CTA: **Get Started**
+
+---
+
+### **Footer**
+
+* Links to all pages
+* Legal (later)
+* Social links (optional)
+
+---
+
+# **Design Direction**
+
+## **Style**
+
+* Clean, modern, minimal
+* Premium but approachable
+* Soft colours, lots of whitespace
+
+---
+
+## **Visual Strategy**
+
+* UI-first (show product constantly)
+* Subtle animations
+* Scroll-based storytelling
+
+---
+
+## **Key Differentiator**
+
+Unlike generic SaaS sites:
+
+* Focus on **real-life usage**
+* Show **entire workflow**, not isolated features
+* Emphasise **simplicity and clarity**
+
+---
+
+# **Conversion Strategy**
+
+### **Primary CTA**
+
+* “Get Started”
+
+### **Secondary CTA Ideas**
+
+* “Start Planning Your Week”
+* “Try It Free”
+
+---
+
+### **User Journey**
+
+1. Land on homepage
+2. Understand value in <10 seconds
+3. See product in action
+4. Scroll through workflow
+5. Click CTA → app
+
+---
+
+# **Optional Future Pages**
+
+* **Templates Page** (meal plan examples)
+* **Integrations Page** (recipe sources, etc.)
+* **Smart Features / AI Page**
+* **Customer Stories**
+
+---
+
+If you want next step, I can turn this into:
+
+* A **Claude-ready prompt for generating the full UI mockups**
+* Or a **section-by-section homepage copy + layout spec** that matches your animation idea perfectly

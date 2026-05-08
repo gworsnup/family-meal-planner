@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FamilyTable — No more "what's for dinner?"</title>
+<meta name="description" content="Collect recipes, plan meals, and streamline shopping — all in one shared household workspace.">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="home.css">
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<!-- ============================================================
+     1. HERO  — scroll-driven video, text reveals as it advances
+     ============================================================ -->
+<section class="hero" id="hero">
+  <div class="hero-sticky">
+    <video class="hero-video" id="hero-video" src="assets/hero.mp4" muted autoplay playsinline preload="auto"></video>
+    <div class="hero-overlay" aria-hidden="true"></div>
+
+    <div class="hero-chrome">
+      <div class="hero-eyebrow">
+        <span class="dot"></span>
+        <span>Meet FamilyTable</span>
+      </div>
+    </div>
+
+    <div class="hero-text" style="font-family: Caveat">
+      <h1 class="hero-title">
+        <span class="line" style="font-family: system-ui"><span class="word">No</span> <span class="word">more</span></span>
+        <span class="line" style="color: rgb(196, 99, 61)">
+          <span class="word"><em class="script-em" style="color: rgb(247, 201, 168)">"what's</em></span>
+          <span class="word"><em class="script-em">for</em></span>
+          <span class="word"><em class="script-em">dinner?"</em></span>
+        </span>
+      </h1>
+      <p class="hero-sub">Collect recipes. Plan meals. Streamline shopping.<br>
+        One quiet little app. One household, fed.</p>
+      <div class="hero-actions">
+        <a class="btn btn-terra btn-xl" href="#get-started">Get Started <span class="arrow">→</span></a>
+        <a class="btn btn-light btn-xl" href="#how">See how it works</a>
+      </div>
+    </div>
+
+    <div class="hero-scroll-cue" aria-hidden="true">
+      <span>Scroll</span>
+      <svg width="14" height="22" viewBox="0 0 14 22"><rect x="0.5" y="0.5" width="13" height="21" rx="6.5" fill="none" stroke="currentColor"/><circle cx="7" cy="7" r="2" fill="currentColor"><animate attributeName="cy" values="7;14;7" dur="2s" repeatCount="indefinite"/></circle></svg>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     2. PROOF STRIP — small reassurance row
+     ============================================================ -->
+<section class="proof">
+  <div class="container proof-row">
+    <div class="proof-stat">
+      <div class="big">3 hrs</div>
+      <div class="lbl">saved each week,<br>on average</div>
+    </div>
+    <div class="proof-quote">
+      <svg width="24" height="18" viewBox="0 0 24 18" fill="none"><path d="M0 18V11.5C0 5 3.6 1 9.6 0L10.4 2.5C7.2 3.5 5.5 5.7 5.5 9H10V18H0ZM13.6 18V11.5C13.6 5 17.2 1 23.2 0L24 2.5C20.8 3.5 19.1 5.7 19.1 9H23.6V18H13.6Z" fill="currentColor"/></svg>
+      <p>"It's the first meal-planning thing in our house that actually <em>stuck.</em> The shopping list alone pays for itself."</p>
+      <div class="who">— Mara &amp; Tom · Household of 4 · using since '25</div>
+    </div>
+    <div class="proof-logos">
+      <div class="lbl">As featured in</div>
+      <div class="logos">
+        <span class="placeholder-logo">Bon Appétit</span>
+        <span class="placeholder-logo serif">The Kitchn</span>
+        <span class="placeholder-logo">Apartment Therapy</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     3. HOW IT WORKS — 3 steps with mini product UI
+     ============================================================ -->
+<section class="section" id="how">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow"><span class="dot"></span>How it works</div>
+        <h2 style="margin-top:18px;">Three small steps. <br><em class="script-em">A whole week, sorted.</em></h2>
+      </div>
+      <p class="lede">FamilyTable connects the only three things that matter at dinner: the recipes you love, the week ahead, and the trip to the shop.</p>
+    </div>
+
+    <ol class="how-grid">
+      <li class="how-card" style="--accent: var(--terra);">
+        <div class="how-num">01</div>
+        <div class="how-mock how-mock-collect">
+          <div class="mock-browser">
+            <div class="mock-url"><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span><span class="url">smittenkitchen.com/braised-chickpeas</span></div>
+            <div class="mock-page">
+              <div class="mock-page-img"></div>
+              <div class="mock-line w70"></div>
+              <div class="mock-line w90"></div>
+              <div class="mock-line w50"></div>
+            </div>
+          </div>
+          <div class="mock-clip">
+            <span class="clip-icon">+</span>
+            <span>Save to FamilyTable</span>
+          </div>
+          <div class="mock-toast">
+            <span class="check">✓</span>
+            <div>
+              <strong>Braised Chickpeas with Lemon</strong>
+              <span>Added · 4 servings · 35 min</span>
+            </div>
+          </div>
+        </div>
+        <h3>Collect recipes</h3>
+        <p>Clip from any website with one tap. Paste a link. Snap a photo of grandma's recipe card. They all land in the same tidy library.</p>
+      </li>
+
+      <li class="how-card" style="--accent: var(--sage);">
+        <div class="how-num">02</div>
+        <div class="how-mock how-mock-plan">
+          <div class="mock-cal">
+            <div class="cal-head">
+              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            </div>
+            <div class="cal-row">
+              <div class="meal m1"><span>Chickpeas</span></div>
+              <div class="meal m2"><span>Sheet pan salmon</span></div>
+              <div class="meal m3"><span>Pasta night</span></div>
+              <div class="meal ghost"><span>+ add</span></div>
+              <div class="meal m4"><span>Tacos</span></div>
+              <div class="meal m5"><span>Roast chicken</span></div>
+              <div class="meal off"><span>Takeaway</span></div>
+            </div>
+          </div>
+          <div class="mock-drag">
+            <span>Tofu stir-fry</span>
+            <span class="grip">⋮⋮</span>
+          </div>
+        </div>
+        <h3>Plan the week</h3>
+        <p>Drag recipes onto a calendar built for real life. Reuse last month's plan. Mark Friday "takeaway" and move on with your day.</p>
+      </li>
+
+      <li class="how-card" style="--accent: var(--terra);">
+        <div class="how-num">03</div>
+        <div class="how-mock how-mock-shop">
+          <div class="mock-list">
+            <div class="list-head">
+              <strong>Shopping list</strong>
+              <span class="badge">Smart-merged</span>
+            </div>
+            <div class="list-section">Produce</div>
+            <div class="list-item"><span class="check-box">✓</span><span>Yellow onions</span><span class="qty">3</span></div>
+            <div class="list-item"><span class="check-box">✓</span><span>Lemons</span><span class="qty">4</span></div>
+            <div class="list-item done"><span class="check-box on">✓</span><span>Garlic</span><span class="qty">1 head</span></div>
+            <div class="list-section">Pantry</div>
+            <div class="list-item"><span class="check-box">✓</span><span>Chickpeas</span><span class="qty">2 tins</span></div>
+            <div class="list-item"><span class="check-box">✓</span><span>Olive oil</span><span class="qty">500 ml</span></div>
+          </div>
+        </div>
+        <h3>Shop smarter</h3>
+        <p>Your plan becomes one neat list, sorted by aisle. Duplicates merged, units normalised, and check it off in the shop.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============================================================
+     4. PRODUCT DEEP-DIVE — alternating sections
+     ============================================================ -->
+<section class="section feature-band" id="recipes">
+  <div class="container feature-row">
+    <div class="feature-copy">
+      <div class="eyebrow"><span class="dot"></span>Recipe library</div>
+      <h2>One home for every recipe you've ever <em class="script-em">half-saved.</em></h2>
+      <p class="lede">Bookmarks. Screenshots. That printout from 2019. FamilyTable pulls them all into a clean, searchable library you'll actually use.</p>
+      <ul class="check-list">
+        <li><span class="ck">✓</span>Import from any URL — instructions, ingredients, photo, all parsed automatically</li>
+        <li><span class="ck">✓</span>Tag by cuisine, season, who-likes-it — find the kid-approved pasta in two seconds</li>
+        <li><span class="ck">✓</span>Step-by-step cooking mode that keeps your phone awake while you stir</li>
+      </ul>
+      <a class="btn btn-ghost" href="features.html#recipes">Explore recipes <span class="arrow">→</span></a>
+    </div>
+    <div class="feature-visual">
+      <div class="app-frame frame-recipes">
+        <div class="rl-topbar">
+          <div class="rl-search"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor"/><path d="M9.5 9.5l3 3" stroke="currentColor" stroke-linecap="round"/></svg><span>Search 184 recipes</span></div>
+          <div class="rl-tabs"><span class="on">All</span><span>Weeknight</span><span>Slow</span><span>Veg</span><span>Kids</span></div>
+        </div>
+        <div class="rl-grid">
+          <div class="rl-card">
+            <div class="rl-img" style="background-image:linear-gradient(135deg,#E8B596,#C77A4F)"></div>
+            <div class="rl-meta"><strong>Braised chickpeas, lemon</strong><span>35 min · 4</span></div>
+          </div>
+          <div class="rl-card">
+            <div class="rl-img" style="background-image:linear-gradient(135deg,#A6BD8E,#5C6B4F)"></div>
+            <div class="rl-meta"><strong>Charred broccoli pasta</strong><span>20 min · 4</span></div>
+          </div>
+          <div class="rl-card">
+            <div class="rl-img" style="background-image:linear-gradient(135deg,#E5C77B,#B8923D)"></div>
+            <div class="rl-meta"><strong>Sheet-pan miso salmon</strong><span>25 min · 4</span></div>
+          </div>
+          <div class="rl-card">
+            <div class="rl-img" style="background-image:linear-gradient(135deg,#D7AC8E,#8E5E3F)"></div>
+            <div class="rl-meta"><strong>Buttered tomato rice</strong><span>30 min · 6</span></div>
+          </div>
+          <div class="rl-card">
+            <div class="rl-img" style="background-image:linear-gradient(135deg,#B7C3A3,#7A8B6A)"></div>
+            <div class="rl-meta"><strong>Spring soup with herbs</strong><span>45 min · 4</span></div>
+          </div>
+          <div class="rl-card">
+            <div class="rl-img" style="background-image:linear-gradient(135deg,#E0A89B,#A24F2C)"></div>
+            <div class="rl-meta"><strong>Saturday lasagna</strong><span>2 hr · 8</span></div>
+          </div>
+        </div>
+        <div class="rl-import">
+          <span class="rl-import-icon">⤴</span>
+          <span>Pasted: <strong>nytimes.com/cooking/...</strong></span>
+          <span class="rl-import-status">Importing → 89%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section feature-band band-cream" id="planner">
+  <div class="container feature-row reverse">
+    <div class="feature-copy">
+      <div class="eyebrow"><span class="dot"></span>Meal planner</div>
+      <h2>A calendar that <em class="script-em">thinks</em> in dinners, not meetings.</h2>
+      <p class="lede">Drag a recipe onto Tuesday. Copy last week. Mark Friday "takeaway" guilt-free. Plan the whole month or just tonight.</p>
+      <ul class="check-list">
+        <li><span class="ck">✓</span>Drag-and-drop calendar — week, fortnight, or month at a glance</li>
+        <li><span class="ck">✓</span>Reusable templates for "school nights" and "slow Sundays"</li>
+        <li><span class="ck">✓</span>Adjust servings on the fly — the shopping list updates with you</li>
+      </ul>
+      <a class="btn btn-ghost" href="features.html#planner">Explore planning <span class="arrow">→</span></a>
+    </div>
+    <div class="feature-visual">
+      <div class="app-frame frame-planner">
+        <div class="pl-topbar">
+          <div><strong>Week of Apr 27</strong><span class="muted-text"> · 6 meals planned</span></div>
+          <div class="pl-pills"><span class="on">Week</span><span>Month</span></div>
+        </div>
+        <div class="pl-cal">
+          <div class="pl-day"><div class="pl-dlabel">Mon 27</div><div class="pl-meal terra"><span class="thumb"></span><span>Braised chickpeas</span></div></div>
+          <div class="pl-day"><div class="pl-dlabel">Tue 28</div><div class="pl-meal sage"><span class="thumb t-sage"></span><span>Sheet-pan salmon</span></div></div>
+          <div class="pl-day"><div class="pl-dlabel">Wed 29</div><div class="pl-meal cream"><span class="thumb t-cream"></span><span>Pasta night</span></div></div>
+          <div class="pl-day pl-day-ghost"><div class="pl-dlabel">Thu 30</div><div class="pl-drop">Drop a recipe</div></div>
+          <div class="pl-day"><div class="pl-dlabel">Fri 1</div><div class="pl-meal off">Takeaway</div></div>
+          <div class="pl-day"><div class="pl-dlabel">Sat 2</div><div class="pl-meal terra"><span class="thumb"></span><span>Tacos</span></div></div>
+          <div class="pl-day"><div class="pl-dlabel">Sun 3</div><div class="pl-meal sage"><span class="thumb t-sage"></span><span>Roast chicken</span></div></div>
+        </div>
+        <div class="pl-drag-floater">
+          <span class="thumb t-cream"></span>
+          <span><strong>Tofu stir-fry</strong><br><span class="muted-text">Drag onto a day</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section feature-band" id="shopping">
+  <div class="container feature-row">
+    <div class="feature-copy">
+      <div class="eyebrow"><span class="dot"></span>Smart shopping list</div>
+      <h2>The list <em class="script-em">writes itself.</em></h2>
+      <p class="lede">FamilyTable reads your plan, merges duplicates, normalises units, and groups everything by aisle. You bring the trolley.</p>
+      <ul class="check-list">
+        <li><span class="ck">✓</span>"2 onions" + "1 onion" become 3 onions, automatically</li>
+        <li><span class="ck">✓</span>Tap an item to see which recipe it's for</li>
+        <li><span class="ck">✓</span>Share with the household — anyone can tick off as they shop</li>
+      </ul>
+      <a class="btn btn-ghost" href="features.html#shopping">Explore shopping <span class="arrow">→</span></a>
+    </div>
+    <div class="feature-visual">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="ph-top">
+            <span class="time">8:42</span>
+            <span class="ph-title">Shopping</span>
+            <span class="ph-action">···</span>
+          </div>
+          <div class="ph-summary">
+            <strong>22 items</strong>
+            <span>· merged from 6 recipes</span>
+          </div>
+          <div class="ph-section">
+            <span>Produce</span><span class="ph-count">7</span>
+          </div>
+          <div class="ph-item"><span class="ph-check"></span><span>Yellow onions</span><span class="ph-qty">3</span></div>
+          <div class="ph-item merge">
+            <span class="ph-check"></span>
+            <span>Lemons <em>(2 + 1 + 1)</em></span><span class="ph-qty">4</span>
+          </div>
+          <div class="ph-item done"><span class="ph-check on">✓</span><span>Garlic</span><span class="ph-qty">1 head</span></div>
+          <div class="ph-item"><span class="ph-check"></span><span>Flat-leaf parsley</span><span class="ph-qty">1 bunch</span></div>
+          <div class="ph-item"><span class="ph-check"></span><span>Cherry tomatoes</span><span class="ph-qty">500g</span></div>
+          <div class="ph-section">
+            <span>Pantry</span><span class="ph-count">8</span>
+          </div>
+          <div class="ph-item"><span class="ph-check"></span><span>Chickpeas (tinned)</span><span class="ph-qty">2</span></div>
+          <div class="ph-item"><span class="ph-check"></span><span>Olive oil</span><span class="ph-qty">500ml</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     5. DESIGNED FOR REAL LIFE
+     ============================================================ -->
+<section class="section real-life">
+  <div class="container">
+    <div class="real-grid">
+      <figure class="real-photo">
+        <img src="assets/family-1.png" alt="A family eating dinner around a wooden table">
+        <figcaption><em class="script">"Tuesday, somewhere normal."</em></figcaption>
+      </figure>
+      <div class="real-copy">
+        <div class="eyebrow"><span class="dot"></span>Designed for real life</div>
+        <h2>Built for the <em class="script-em">5pm question</em>, not the cookbook shelf.</h2>
+        <p class="lede">FamilyTable isn't trying to turn you into a chef. It's trying to give you back the twenty minutes you lose every evening to "I don't know — what do you want?"</p>
+
+        <div class="real-stats">
+          <div>
+            <div class="big-num">~3 hrs</div>
+            <div class="lbl">saved per week, on planning &amp; shopping</div>
+          </div>
+          <div>
+            <div class="big-num">−40%</div>
+            <div class="lbl">food waste reported by households after one month</div>
+          </div>
+          <div>
+            <div class="big-num">1 list</div>
+            <div class="lbl">instead of three half-finished ones in the kitchen drawer</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     6. PRINCIPLES STRIP
+     ============================================================ -->
+<section class="section-tight principles">
+  <div class="container">
+    <div class="principles-grid">
+      <div>
+        <div class="principle-num">01</div>
+        <h3>Practical, not gimmicky</h3>
+        <p>No streaks, no badges, no AI mascot. Just the boring stuff that saves you time, done well.</p>
+      </div>
+      <div>
+        <div class="principle-num">02</div>
+        <h3>One household, one workspace</h3>
+        <p>You and your partner, your flatmates, your in-laws — all in the same plan, all in the same list.</p>
+      </div>
+      <div>
+        <div class="principle-num">03</div>
+        <h3>Built for the kitchen</h3>
+        <p>Big tap targets, screen-stays-awake cooking mode, and a shopping list that works one-handed in the dairy aisle.</p>
+      </div>
+      <div>
+        <div class="principle-num">04</div>
+        <h3>Yours forever</h3>
+        <p>Export your recipes any time. No lock-in. No syncing your dinners to a marketing department.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     7. FINAL CTA
+     ============================================================ -->
+<section class="section final-cta" id="get-started">
+  <div class="container final-cta-inner">
+    <img class="final-photo" src="assets/family-3.jpg" alt="">
+    <div class="final-content">
+      <div class="eyebrow on-light"><span class="dot"></span>Get started — free</div>
+      <h2 class="final-title">Start planning <br><em class="script-em">your week.</em></h2>
+      <p class="lede" style="color:rgba(255,255,255,0.78); max-width:520px;">Free for the first month, no card required. Cancel any time — your recipes are always yours to keep.</p>
+      <div class="final-actions">
+        <a class="btn btn-light btn-xl" href="#">Get Started <span class="arrow">→</span></a>
+        <a class="btn btn-ghost-on-dark btn-xl" href="features.html">Tour the features</a>
+      </div>
+      <div class="final-meta">
+        <span>✓ Free for 30 days</span>
+        <span>✓ Whole household included</span>
+        <span>✓ Cancel anytime</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="chrome.js"></script>
+<script src="shared.js"></script>
+<script>
+  FT.renderHeader({ active: '', onDark: true });
+  FT.renderFooter();
+</script>
+<script src="hero-scroll.js"></script>
+</body>
+</html>

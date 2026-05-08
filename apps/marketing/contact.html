@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contact — FamilyTable</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="home.css">
+<link rel="stylesheet" href="pages.css">
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<section class="page-hero" style="padding-bottom:0; border-bottom:0;">
+  <div class="container">
+    <div class="eyebrow"><span class="dot"></span>Contact</div>
+    <h1 style="margin-top:18px;">Drop us <em class="script-em">a line.</em></h1>
+    <p class="lede">A real person reads everything that comes through here, usually within a day. Faster on weekdays, slower if dinner is going badly.</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:60px;">
+  <div class="container">
+    <div class="contact-grid">
+      <form class="contact-form" onsubmit="return handleSubmit(event)">
+        <div class="cf-row">
+          <label>
+            <span>Your name</span>
+            <input type="text" placeholder="Anya Patel" required>
+          </label>
+          <label>
+            <span>Email</span>
+            <input type="email" placeholder="you@yourtable.com" required>
+          </label>
+        </div>
+        <label>
+          <span>What's this about?</span>
+          <select>
+            <option>General question</option>
+            <option>Feature request</option>
+            <option>Bug report</option>
+            <option>Press &amp; partnerships</option>
+            <option>Schools, charities &amp; community kitchens</option>
+            <option>Something else</option>
+          </select>
+        </label>
+        <label>
+          <span>Tell us more</span>
+          <textarea rows="6" placeholder="What's on your mind?" required></textarea>
+        </label>
+        <label class="cf-check">
+          <input type="checkbox">
+          <span>It's OK to follow up by email about my message.</span>
+        </label>
+        <button class="btn btn-terra btn-xl" type="submit">Send message <span class="arrow">→</span></button>
+        <p class="cf-fine">By sending this you agree to our <a href="#">privacy policy</a>. We don't share your message with anyone outside the team.</p>
+      </form>
+
+      <aside class="contact-aside">
+        <div class="ca-block">
+          <div class="eyebrow"><span class="dot"></span>Email</div>
+          <h3 style="margin:10px 0 6px;">hello@familytable.app</h3>
+          <p>For general queries, feedback, and the occasional thank-you note.</p>
+        </div>
+        <div class="ca-block">
+          <div class="eyebrow"><span class="dot"></span>Support</div>
+          <h3 style="margin:10px 0 6px;">help@familytable.app</h3>
+          <p>Stuck on something? Mira will get back to you within a working day.</p>
+        </div>
+        <div class="ca-block">
+          <div class="eyebrow"><span class="dot"></span>Press</div>
+          <h3 style="margin:10px 0 6px;">press@familytable.app</h3>
+          <p>Logos, photos, founder bios — all in our press kit, link on request.</p>
+        </div>
+        <div class="ca-block ca-card">
+          <h4 style="margin:0 0 10px;">Office hours</h4>
+          <p style="margin:0; font-size:14.5px; color:var(--muted); line-height:1.6;">Mon–Fri, 09:00–18:00 GMT.<br>Closed on weekends &amp; the second week of August.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="chrome.js"></script>
+<script src="shared.js"></script>
+<script>
+  FT.renderHeader({active:'contact',solid:true}); FT.renderFooter();
+  function handleSubmit(e) {
+    e.preventDefault();
+    const f = e.target;
+    f.innerHTML = '<div class="cf-success"><div class="cf-success-icon">✓</div><h3>Thanks — we got your message.</h3><p>You\'ll hear back within a working day. In the meantime, your dinner is not going to plan itself, so you may as well <a href="index.html">try the app</a>.</p></div>';
+    return false;
+  }
+</script>
+</body>
+</html>
