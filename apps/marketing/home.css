@@ -29,7 +29,10 @@
   background:
     linear-gradient(180deg, rgba(26,22,18,0.55) 0%, rgba(26,22,18,0.25) 30%, rgba(26,22,18,0.15) 55%, rgba(26,22,18,0.65) 100%);
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.9s ease;
 }
+.hero-overlay.in { opacity: 1; }
 
 .hero-chrome {
   position: absolute;

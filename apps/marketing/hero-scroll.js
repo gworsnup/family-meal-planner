@@ -17,12 +17,16 @@
   // Reveal text at this fraction of total video duration. The clip is ~8s
   // and the ingredients-flying portion settles in around the 60% mark.
   const TEXT_REVEAL_AT = 0.62;
+  // Fade the darkening overlay in slightly before the text so the headline
+  // has a readable backdrop the moment it appears.
+  const OVERLAY_FADE_AT = 0.5;
 
   const hero = document.getElementById('hero');
   const video = document.getElementById('hero-video');
   const titleEl = document.querySelector('.hero-title');
   const textEl = document.querySelector('.hero-text');
   const chromeEl = document.querySelector('.hero-chrome');
+  const overlayEl = document.querySelector('.hero-overlay');
   const cueEl = document.querySelector('.hero-scroll-cue');
   if (!hero || !video) return;
 
@@ -38,12 +42,20 @@
     if (chromeEl) chromeEl.style.setProperty('--hero-chrome-op', '0');
   }
 
+  let overlayShown = false;
+  function showOverlay() {
+    if (overlayShown) return;
+    overlayShown = true;
+    overlayEl && overlayEl.classList.add('in');
+  }
+
   if (reduced) {
     // Skip the clip entirely — pause on the last frame and reveal text.
     video.autoplay = false;
     video.addEventListener('loadedmetadata', () => {
       try { video.currentTime = video.duration - 0.05; } catch (e) {}
       video.pause();
+      showOverlay();
       revealText();
     }, { once: true });
   } else {
@@ -58,6 +70,7 @@
         chromeEl.style.setProperty('--hero-chrome-op', String(Math.max(0, 1 - t * 1.6)));
       }
 
+      if (!overlayShown && t >= OVERLAY_FADE_AT) showOverlay();
       if (!textRevealed && t >= TEXT_REVEAL_AT) revealText();
     });
 
@@ -70,7 +83,7 @@
     const playPromise = video.play();
     if (playPromise && typeof playPromise.catch === 'function') {
       playPromise.catch(() => {
-        setTimeout(revealText, 1200);
+        setTimeout(() => { showOverlay(); revealText(); }, 1200);
       });
     }
   }
