@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { fetchRecipeDetailWithTiming } from "@/lib/recipeDetail";
 import WorkspaceHeader from "../_components/WorkspaceHeader";
 import PlanClient from "./PlanClient";
 import {
@@ -230,12 +231,12 @@ export default async function PlanPage({
 
   let selectedRecipe: RecipeDetail | null = null;
   if (recipeId) {
-    selectedRecipe = await fetchRecipeDetail(recipeId, workspace.id);
+    selectedRecipe = await fetchRecipeDetailWithTiming(recipeId, workspace.id);
   }
 
   let selectedCookingRecipe: RecipeDetail | null = null;
   if (cookView && cookRecipeId) {
-    selectedCookingRecipe = await fetchRecipeDetail(cookRecipeId, workspace.id);
+    selectedCookingRecipe = await fetchRecipeDetailWithTiming(cookRecipeId, workspace.id);
   }
 
   return (

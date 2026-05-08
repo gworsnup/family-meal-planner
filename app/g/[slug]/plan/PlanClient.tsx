@@ -817,6 +817,37 @@ export default function PlanClient({
 }: PlanClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const recipeCacheRef = useRef(new Map<string, RecipeDetail>());
+  const [overlayRecipe, setOverlayRecipe] = useState<RecipeDetail | null>(selectedRecipe);
+  const [cookingOverlayRecipe, setCookingOverlayRecipe] = useState<RecipeDetail | null>(selectedCookingRecipe);
+  const [isOverlayLoading, setIsOverlayLoading] = useState(false);
+
+  const fetchRecipeDetail = useCallback(async (recipeId: string) => {
+    const cached = recipeCacheRef.current.get(recipeId);
+    if (cached) return cached;
+    console.info("[perf] ui:planFetchRecipe:start", { recipeId, at: Date.now() });
+    const start = performance.now();
+    const response = await fetch(`/api/recipes/${recipeId}`, { method: "GET", cache: "force-cache" });
+    const data = await response.json();
+    console.info("[perf] ui:planFetchRecipe:end", { recipeId, elapsedMs: Math.round(performance.now()-start), ok: response.ok });
+    if (!response.ok || !data?.recipe) throw new Error("Failed to fetch recipe");
+    recipeCacheRef.current.set(recipeId, data.recipe);
+    return data.recipe as RecipeDetail;
+  }, []);
+
+  const openRecipeOverlay = useCallback(async (recipeId: string) => {
+    console.info("[perf] ui:planOpenRecipe:click", { recipeId, at: Date.now() });
+    setIsOverlayLoading(true);
+    setOverlayRecipe(recipeCacheRef.current.get(recipeId) ?? null);
+    try { setOverlayRecipe(await fetchRecipeDetail(recipeId)); } finally { setIsOverlayLoading(false); }
+  }, [fetchRecipeDetail]);
+
+  const openCookingOverlay = useCallback(async (recipeId: string) => {
+    console.info("[perf] ui:planOpenCooking:click", { recipeId, at: Date.now() });
+    setIsOverlayLoading(true);
+    setCookingOverlayRecipe(recipeCacheRef.current.get(recipeId) ?? null);
+    try { setCookingOverlayRecipe(await fetchRecipeDetail(recipeId)); } finally { setIsOverlayLoading(false); }
+  }, [fetchRecipeDetail]);
   const [isPending, startTransition] = useTransition();
   const [isTemplatePending, startTemplateTransition] = useTransition();
   const [items, setItems] = useState<PlanItem[]>(planItems);
@@ -1455,11 +1486,7 @@ export default function PlanClient({
     ? templates.find((template) => template.id === activeTemplateId) ?? null
     : null;
   const isActiveTakeaway = isDraggingTakeaway || activePlanItem?.type === "TAKEAWAY";
-  const currentRecipeId = searchParams.get("recipeId") ?? selectedRecipe?.id ?? null;
-  const currentCookRecipeId =
-    searchParams.get("cookRecipeId") ?? selectedCookingRecipe?.id ?? null;
-  const isCookingView = searchParams.get("cookView") === "1";
-
+  
   return (
     <DndContext
       sensors={sensors}
@@ -1987,16 +2014,8 @@ export default function PlanClient({
                             view={view}
                             items={dayItems}
                             onRemove={handleRemoveItem}
-                            onViewRecipe={(recipeId) =>
-                              updateParams({ recipeId, cookRecipeId: null, cookView: null })
-                            }
-                            onCookingView={(recipeId) =>
-                              updateParams({
-                                cookRecipeId: recipeId,
-                                cookView: "1",
-                                recipeId: null,
-                              })
-                            }
+                            onViewRecipe={(recipeId) => { void openRecipeOverlay(recipeId); }}
+                            onCookingView={(recipeId) => { void openCookingOverlay(recipeId); }}
                           />
                         );
                       })}
@@ -2008,6 +2027,10 @@ export default function PlanClient({
           </div>
         </section>
       </main>
+
+      {isOverlayLoading && !overlayRecipe && !cookingOverlayRecipe ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"><div className="w-full max-w-2xl animate-pulse rounded-2xl bg-white p-6"><div className="h-6 w-1/2 rounded bg-slate-200" /><div className="mt-4 h-4 w-full rounded bg-slate-100" /></div></div>
+      ) : null}
 
       {toastMessage ? (
         <div className="fixed bottom-6 right-6 z-40 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 shadow-lg">
@@ -2277,32 +2300,30 @@ export default function PlanClient({
         </div>
       ) : null}
 
-      {selectedRecipe && currentRecipeId === selectedRecipe.id && !isCookingView && (
+      {overlayRecipe && (
         <RecipeOverlay
           slug={slug}
-          recipe={selectedRecipe}
-          onClose={() => updateParams({ recipeId: null })}
+          recipe={overlayRecipe}
+          onClose={() => setOverlayRecipe(null)}
           onOpenCookingView={() =>
             updateParams({
-              cookRecipeId: selectedRecipe.id,
+              cookRecipeId: overlayRecipe.id,
               cookView: "1",
               recipeId: null,
             })
           }
           onSaved={() => router.refresh()}
           onDeleted={() => {
-            updateParams({ recipeId: null });
+            setOverlayRecipe(null);
             router.refresh();
           }}
         />
       )}
 
-      {selectedCookingRecipe &&
-        currentCookRecipeId === selectedCookingRecipe.id &&
-        isCookingView && (
+      {cookingOverlayRecipe && (
           <CookingViewOverlay
-            recipe={selectedCookingRecipe}
-            onClose={() => updateParams({ cookRecipeId: null, cookView: null })}
+            recipe={cookingOverlayRecipe}
+            onClose={() => setCookingOverlayRecipe(null)}
           />
         )}
 
