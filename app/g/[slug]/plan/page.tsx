@@ -111,8 +111,10 @@ export default async function PlanPage({
 }) {
   const { slug } = await params;
   const resolvedSearchParams = await searchParams;
-
-  const workspace = await prisma.workspace.findUnique({ where: { slug } });
+  const workspace = await prisma.workspace.findUnique({
+    where: { slug },
+    select: { id: true, name: true },
+  });
   if (!workspace) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-10 text-slate-700">
@@ -140,44 +142,22 @@ export default async function PlanPage({
   const { start, end } = getViewRange(view, focusedDate);
   const endExclusive = addDays(end, 1);
 
-  const recipes = await prisma.recipe.findMany({
+  const recipesPromise = prisma.recipe.findMany({
     where: { workspaceId: workspace.id },
     orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      sourceName: true,
-      sourceUrl: true,
-      import: {
-        select: {
-          sourceUrl: true,
-        },
-      },
-      photoUrl: true,
-      rating: true,
-      updatedAt: true,
-    },
+    select: { id: true, title: true, sourceName: true, sourceUrl: true, import: { select: { sourceUrl: true } }, photoUrl: true, rating: true, updatedAt: true },
   });
-
-  const planItems = await prisma.mealPlanItem.findMany({
-    where: {
-      workspaceId: workspace.id,
-      date: {
-        gte: start,
-        lt: endExclusive,
-      },
-    },
+  const planItemsPromise = prisma.mealPlanItem.findMany({
+    where: { workspaceId: workspace.id, date: { gte: start, lt: endExclusive } },
     orderBy: [{ date: "asc" }, { createdAt: "asc" }],
-    include: {
-      recipe: {
-        select: {
-          id: true,
-          title: true,
-          photoUrl: true,
-        },
-      },
-    },
+    include: { recipe: { select: { id: true, title: true, photoUrl: true } } },
   });
+  const templatesPromise = prisma.mealTemplate.findMany({
+    where: { workspaceId: workspace.id },
+    orderBy: { updatedAt: "desc" },
+    select: { id: true, name: true, scope: true, _count: { select: { items: true } } },
+  });
+  const [recipes, planItems, templates] = await Promise.all([recipesPromise, planItemsPromise, templatesPromise]);
 
   const serializedRecipes = recipes.map((recipe) => ({
     id: recipe.id,
@@ -209,17 +189,6 @@ export default async function PlanPage({
       title: item.recipe?.title ?? item.title ?? "Recipe",
       photoUrl: item.recipe?.photoUrl ?? null,
     };
-  });
-
-  const templates = await prisma.mealTemplate.findMany({
-    where: { workspaceId: workspace.id },
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      scope: true,
-      _count: { select: { items: true } },
-    },
   });
 
   const serializedTemplates = templates.map((template) => ({

@@ -154,8 +154,7 @@ export default async function CookPage({
 }) {
   const { slug } = await params;
   const resolvedSearchParams = await searchParams;
-
-  const workspace = await prisma.workspace.findUnique({ where: { slug } });
+  const workspace = await prisma.workspace.findUnique({ where: { slug }, select: { id: true, name: true } });
   if (!workspace) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-10 text-slate-700">
