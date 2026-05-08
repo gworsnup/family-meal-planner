@@ -235,6 +235,25 @@ export default function CookClient({
 
   const [searchText, setSearchText] = useState(currentParams.get("q") ?? q);
 
+  const recipeCacheRef = useRef(new Map<string, RecipeDetail>());
+  const [overlayRecipe, setOverlayRecipe] = useState<RecipeDetail | null>(selectedRecipe);
+  const [cookingOverlayRecipe, setCookingOverlayRecipe] = useState<RecipeDetail | null>(selectedCookingRecipe);
+  const [isOverlayLoading, setIsOverlayLoading] = useState(false);
+
+  const fetchRecipeDetail = useCallback(async (recipeId: string) => {
+    const cached = recipeCacheRef.current.get(recipeId);
+    if (cached) return cached;
+    const fetchStart = performance.now();
+    console.info("[perf] ui:fetchRecipe:start", { recipeId, at: Date.now() });
+    const response = await fetch(`/api/recipes/${recipeId}`, { method: "GET", cache: "force-cache" });
+    const data = await response.json();
+    console.info("[perf] ui:fetchRecipe:end", { recipeId, elapsedMs: Math.round(performance.now()-fetchStart), ok: response.ok });
+    if (!response.ok || !data?.recipe) throw new Error("Failed to load recipe");
+    recipeCacheRef.current.set(recipeId, data.recipe);
+    return data.recipe as RecipeDetail;
+  }, []);
+
+
   const handleInspirationClose = useCallback(
     (options?: { selectInput?: boolean }) => {
       setInspirationOpen(false);
@@ -399,12 +418,29 @@ export default function CookClient({
     [router, slug, startRatingTransition],
   );
 
-  const openRecipe = (recipeId: string) => {
-    updateParams({ recipeId, cookRecipeId: null, cookView: null });
+  const openRecipe = async (recipeId: string) => {
+    console.info("[perf] ui:openRecipe:click", { recipeId, at: Date.now() });
+    setIsOverlayLoading(true);
+    setOverlayRecipe(recipeCacheRef.current.get(recipeId) ?? null);
+    try {
+      const detail = await fetchRecipeDetail(recipeId);
+      setOverlayRecipe(detail);
+      console.info("[perf] ui:openRecipe:render-ready", { recipeId, at: Date.now() });
+    } finally {
+      setIsOverlayLoading(false);
+    }
   };
 
-  const openCookingView = (recipeId: string) => {
-    updateParams({ cookRecipeId: recipeId, cookView: "1", recipeId: null });
+  const openCookingView = async (recipeId: string) => {
+    console.info("[perf] ui:openCookingView:click", { recipeId, at: Date.now() });
+    setIsOverlayLoading(true);
+    setCookingOverlayRecipe(recipeCacheRef.current.get(recipeId) ?? null);
+    try {
+      const detail = await fetchRecipeDetail(recipeId);
+      setCookingOverlayRecipe(detail);
+    } finally {
+      setIsOverlayLoading(false);
+    }
   };
 
   const handleViewChange = (nextView: ViewMode) => {
@@ -942,7 +978,8 @@ export default function CookClient({
                 <tr
                   key={recipe.id}
                   className="cursor-pointer border-t border-slate-100 text-slate-700 transition hover:bg-[#fcfcfc]"
-                  onClick={() => openRecipe(recipe.id)}
+                  onMouseEnter={() => { void fetchRecipeDetail(recipe.id); }}
+                    onClick={() => { void openRecipe(recipe.id); }}
                 >
                   <td className="px-4 py-3">{renderTableThumbnail(recipe)}</td>
                   <td className="px-4 py-3">
@@ -990,7 +1027,8 @@ export default function CookClient({
               role="button"
               tabIndex={0}
               className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-sm"
-              onClick={() => openRecipe(recipe.id)}
+              onMouseEnter={() => { void fetchRecipeDetail(recipe.id); }}
+                    onClick={() => { void openRecipe(recipe.id); }}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
@@ -1031,28 +1069,36 @@ export default function CookClient({
         </div>
       )}
 
-      {selectedRecipe && currentRecipeId === selectedRecipe.id && !isCookingView && (
+      {overlayRecipe && (
         <RecipeOverlay
           slug={slug}
-          recipe={selectedRecipe}
-          onClose={() => updateParams({ recipeId: null })}
-          onOpenCookingView={() => openCookingView(selectedRecipe.id)}
+          recipe={overlayRecipe}
+          onClose={() => setOverlayRecipe(null)}
+          onOpenCookingView={() => openCookingView(overlayRecipe.id)}
           onSaved={() => router.refresh()}
           onDeleted={() => {
-            updateParams({ recipeId: null });
+            setOverlayRecipe(null);
             router.refresh();
           }}
         />
       )}
 
-      {selectedCookingRecipe &&
-        currentCookRecipeId === selectedCookingRecipe.id &&
-        isCookingView && (
+      {cookingOverlayRecipe && (
           <CookingViewOverlay
-            recipe={selectedCookingRecipe}
-            onClose={() => updateParams({ cookRecipeId: null, cookView: null })}
+            recipe={cookingOverlayRecipe}
+            onClose={() => setCookingOverlayRecipe(null)}
           />
         )}
+
+      {isOverlayLoading && !overlayRecipe && !cookingOverlayRecipe ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-2xl animate-pulse rounded-2xl bg-white p-6">
+            <div className="h-6 w-1/2 rounded bg-slate-200" />
+            <div className="mt-4 h-4 w-full rounded bg-slate-100" />
+            <div className="mt-2 h-4 w-5/6 rounded bg-slate-100" />
+          </div>
+        </div>
+      ) : null}
 
       {inspirationOpen &&
         typeof document !== "undefined" &&

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { fetchRecipeDetailWithTiming } from "@/lib/recipeDetail";
 import WorkspaceHeader from "../_components/WorkspaceHeader";
 import CookClient from "./CookClient";
 import { RecipeDetail } from "./types";
@@ -144,58 +145,6 @@ function buildSourceOptions(
   return [{ label: "All sources", value: "all" }, ...options];
 }
 
-async function fetchRecipeDetail(recipeId: string, workspaceId: string) {
-  const recipe = await prisma.recipe.findFirst({
-    where: { id: recipeId, workspaceId },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      sourceName: true,
-      sourceUrl: true,
-      photoUrl: true,
-      prepTimeMinutes: true,
-      cookTimeMinutes: true,
-      totalTimeMinutes: true,
-      servings: true,
-      yields: true,
-      rating: true,
-      directions: true,
-      isPrivate: true,
-      createdAt: true,
-      updatedAt: true,
-      recipeTags: {
-        orderBy: { tag: { name: "asc" } },
-        select: {
-          tag: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      },
-      ingredientLines: {
-        orderBy: { position: "asc" },
-        select: {
-          id: true,
-          ingredient: true,
-          position: true,
-        },
-      },
-    },
-  });
-
-  if (!recipe) return null;
-
-  return {
-    ...recipe,
-    tags: recipe.recipeTags.map((recipeTag) => recipeTag.tag),
-    createdAt: recipe.createdAt.toISOString(),
-    updatedAt: recipe.updatedAt.toISOString(),
-  };
-}
-
 export default async function CookPage({
   params,
   searchParams,
@@ -333,12 +282,12 @@ export default async function CookPage({
 
   let selectedRecipe: RecipeDetail | null = null;
   if (recipeId) {
-    selectedRecipe = await fetchRecipeDetail(recipeId, workspace.id);
+    selectedRecipe = await fetchRecipeDetailWithTiming(recipeId, workspace.id);
   }
 
   let selectedCookingRecipe: RecipeDetail | null = null;
   if (cookView && cookRecipeId) {
-    selectedCookingRecipe = await fetchRecipeDetail(cookRecipeId, workspace.id);
+    selectedCookingRecipe = await fetchRecipeDetailWithTiming(cookRecipeId, workspace.id);
   }
 
   return (
