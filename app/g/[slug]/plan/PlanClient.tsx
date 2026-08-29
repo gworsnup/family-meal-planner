@@ -1596,7 +1596,7 @@ export default function PlanClient({
       }}
     >
       <main className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-6 py-6 lg:flex-row">
-        <section className="flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 lg:h-[calc(100vh-200px)] lg:min-w-[260px] lg:max-w-[320px] lg:flex-[0_0_20%]">
+        <section className="flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 lg:sticky lg:top-6 lg:h-[calc(100vh-200px)] lg:min-w-[260px] lg:max-w-[320px] lg:flex-[0_0_20%] lg:self-start">
           <div>
             <h1 className="text-lg font-semibold text-slate-900">{workspaceName}</h1>
             <p className="text-xs text-slate-500">Plan meals for the week ahead.</p>
