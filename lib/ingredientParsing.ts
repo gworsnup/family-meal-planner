@@ -53,7 +53,7 @@ export type CategoryView = {
 };
 
 export type AggregatedSourceItem = IngredientDisplayItem & {
-  sources: Array<{ recipeId: string; sourceText: string }>;
+  sources: Array<{ sourceId: string; recipeId: string; sourceText: string }>;
 };
 
 export type AggregatedSourceCategoryView = {
@@ -559,7 +559,7 @@ export function buildAggregatedSourceView(
 
   const itemMap = new Map<string, AggregatedSourceItem>();
 
-  week.recipes.forEach((recipe) => {
+  week.recipes.forEach((recipe, recipeIndex) => {
     recipe.ingredientLines.forEach((line) => {
       const parsed = parseIngredientLine(line.ingredient);
       const category = categorizeIngredient(parsed.name);
@@ -586,7 +586,11 @@ export function buildAggregatedSourceView(
           unit: existing.unit,
           notes: existing.notes,
         });
-        existing.sources.push({ recipeId: recipe.id, sourceText: parsed.raw });
+        existing.sources.push({
+          sourceId: `${recipeIndex}:${line.id}`,
+          recipeId: recipe.id,
+          sourceText: parsed.raw,
+        });
         return;
       }
 
@@ -604,7 +608,13 @@ export function buildAggregatedSourceView(
           notes: parsed.notes,
         }),
         recipeIds: [recipe.id],
-        sources: [{ recipeId: recipe.id, sourceText: parsed.raw }],
+        sources: [
+          {
+            sourceId: `${recipeIndex}:${line.id}`,
+            recipeId: recipe.id,
+            sourceText: parsed.raw,
+          },
+        ],
       };
 
       itemMap.set(key, displayItem);
