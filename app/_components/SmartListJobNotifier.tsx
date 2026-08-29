@@ -8,15 +8,19 @@ import {
 } from "@/lib/smartListLinks";
 
 const POLL_INTERVAL_MS = 4000;
+const ACTIVE_JOB_MAX_AGE_MS = 10 * 60 * 1000;
 
 // Dev note: enqueue a smart list job and wait for this notifier to surface success/failure.
 type JobStatus = "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED";
 
 type JobSummary = {
   id: string;
+  weekId: string;
   status: JobStatus;
   shoppingListName: string;
   smartListId: string | null;
+  createdAt: string;
+  startedAt: string | null;
   updatedAt: string;
   error: string | null;
   week: {
@@ -31,7 +35,14 @@ type Notification = {
   smartListId?: string | null;
   weekStart?: string;
   error?: string | null;
+  estimatedDurationSeconds?: number;
 };
+
+function formatDuration(seconds: number) {
+  if (seconds < 60) return `${seconds} seconds`;
+  const minutes = Math.max(1, Math.round(seconds / 60));
+  return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+}
 
 function loadSeenMap(workspaceId: string) {
   if (typeof window === "undefined") return {} as Record<string, JobStatus>;
@@ -77,9 +88,10 @@ export default function SmartListJobNotifier({
         const response = await fetch(fetchUrl, { cache: "no-store" });
         if (!response.ok) return;
         const payload = (await response.json().catch(() => null)) as
-          | { jobs?: JobSummary[] }
+          | { jobs?: JobSummary[]; estimatedDurationSeconds?: number }
           | null;
         const jobs = payload?.jobs ?? [];
+        const estimatedDurationSeconds = payload?.estimatedDurationSeconds ?? 60;
         if (cancelled) return;
 
         const seen = loadSeenMap(workspaceId);
@@ -91,12 +103,13 @@ export default function SmartListJobNotifier({
           if (previousStatus !== job.status) {
             if (
               (job.status === "QUEUED" || job.status === "RUNNING") &&
-              !previousStatus
+              Date.now() - new Date(job.updatedAt).getTime() < ACTIVE_JOB_MAX_AGE_MS
             ) {
               notifications.push({
                 id: job.id,
                 type: "progress",
                 message: `Generating Smart List for ${job.shoppingListName}…`,
+                estimatedDurationSeconds,
               });
             }
             if (job.status === "SUCCEEDED") {
@@ -132,7 +145,20 @@ export default function SmartListJobNotifier({
         });
 
         if (notifications.length > 0) {
-          setQueue((current) => [...current, ...notifications]);
+          setQueue((current) => {
+            const next = [...current];
+            notifications.forEach((notification) => {
+              const existingIndex = next.findIndex(
+                (currentNotification) => currentNotification.id === notification.id,
+              );
+              if (existingIndex >= 0) {
+                next[existingIndex] = notification;
+              } else {
+                next.push(notification);
+              }
+            });
+            return next;
+          });
         }
 
         saveSeenMap(workspaceId, nextSeen);
@@ -204,7 +230,8 @@ export default function SmartListJobNotifier({
               <div className="h-full w-1/2 animate-[smart-list-progress_1.4s_ease-in-out_infinite] rounded-full bg-slate-900" />
             </div>
             <p className="text-[11px] text-slate-500">
-              This can take a couple of minutes. You can continue using FamilyTable while we prepare your list.
+              Usually ready in about {formatDuration(active.estimatedDurationSeconds ?? 60)}.
+              You can continue using FamilyTable while we prepare your list.
             </p>
           </div>
         ) : null}

@@ -4,8 +4,10 @@ import { headers } from "next/headers";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatWeekTitle } from "@/lib/shoppingList";
+import { getEstimatedSmartListDurationSeconds } from "@/lib/smartListJobEstimate";
 
 export const dynamic = "force-dynamic";
+const ACTIVE_JOB_MAX_AGE_MS = 10 * 60 * 1000;
 
 async function getBaseUrl() {
   const headersList = await headers();
@@ -42,6 +44,39 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Shopping list not found" }, { status: 404 });
   }
 
+  const existingJob = await prisma.smartListJob.findFirst({
+    where: {
+      workspaceId,
+      weekId,
+      status: { in: ["QUEUED", "RUNNING"] },
+      updatedAt: {
+        gte: new Date(Date.now() - ACTIVE_JOB_MAX_AGE_MS),
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      weekId: true,
+      status: true,
+      smartListId: true,
+      createdAt: true,
+      updatedAt: true,
+      startedAt: true,
+      finishedAt: true,
+      error: true,
+    },
+  });
+  const estimatedDurationSeconds =
+    await getEstimatedSmartListDurationSeconds(workspaceId);
+
+  if (existingJob) {
+    return NextResponse.json({
+      job: existingJob,
+      estimatedDurationSeconds,
+      deduplicated: true,
+    });
+  }
+
   const job = await prisma.smartListJob.create({
     data: {
       workspaceId,
@@ -50,7 +85,17 @@ export async function POST(request: Request) {
       shoppingListName: formatWeekTitle(week.weekStart),
       status: "QUEUED",
     },
-    select: { id: true, status: true },
+    select: {
+      id: true,
+      weekId: true,
+      status: true,
+      smartListId: true,
+      createdAt: true,
+      updatedAt: true,
+      startedAt: true,
+      finishedAt: true,
+      error: true,
+    },
   });
 
   const origin = await getBaseUrl();
@@ -60,5 +105,5 @@ export async function POST(request: Request) {
     body: JSON.stringify({ jobId: job.id }),
   }).catch(() => null);
 
-  return NextResponse.json({ jobId: job.id, status: job.status });
+  return NextResponse.json({ job, estimatedDurationSeconds, deduplicated: false });
 }

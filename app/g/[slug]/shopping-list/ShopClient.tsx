@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   buildShoppingView,
@@ -15,6 +15,28 @@ import { buildWhatsAppShareUrl, openInNewTab } from "@/lib/whatsapp";
 const SMART_LIST_READY_HIGHLIGHT_CLASS = "bg-slate-200";
 const INGREDIENT_ACTIVE_CARD_CLASS =
   `${SMART_LIST_READY_HIGHLIGHT_CLASS} border-slate-300 text-slate-900`;
+const SMART_LIST_JOB_POLL_INTERVAL_MS = 2500;
+const ACTIVE_SMART_LIST_JOB_MAX_AGE_MS = 10 * 60 * 1000;
+
+type SmartListJobStatus = "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED";
+
+type SmartListJobSummary = {
+  id: string;
+  weekId: string;
+  status: SmartListJobStatus;
+  smartListId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+};
+
+function formatEstimatedDuration(seconds: number) {
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.max(1, Math.round(seconds / 60));
+  return `${minutes} min`;
+}
 
 type ShopClientProps = {
   workspaceId: string;
@@ -140,7 +162,12 @@ export default function ShopClient({
   const [smartListByWeek, setSmartListByWeek] = useState<
     Record<string, SmartListData | null>
   >({});
-  const [generatingWeekId, setGeneratingWeekId] = useState<string | null>(null);
+  const [enqueueingWeekId, setEnqueueingWeekId] = useState<string | null>(null);
+  const [activeSmartListJob, setActiveSmartListJob] =
+    useState<SmartListJobSummary | null>(null);
+  const [estimatedDurationSeconds, setEstimatedDurationSeconds] = useState(60);
+  const [progressNow, setProgressNow] = useState(() => Date.now());
+  const activeJobIdRef = useRef<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const weekParam = searchParams.get("week");
@@ -271,6 +298,68 @@ export default function ShopClient({
   }, [selectedWeek?.weekId]);
 
   useEffect(() => {
+    const weekId = selectedWeek?.weekId;
+    if (!weekId) {
+      activeJobIdRef.current = null;
+      return;
+    }
+
+    let cancelled = false;
+
+    const pollJob = async () => {
+      try {
+        const params = new URLSearchParams({ workspaceId, weekId });
+        const response = await fetch(`/api/smart-lists/jobs?${params.toString()}`, {
+          cache: "no-store",
+        });
+        if (!response.ok) return;
+        const payload = (await response.json().catch(() => null)) as
+          | {
+              jobs?: SmartListJobSummary[];
+              estimatedDurationSeconds?: number;
+            }
+          | null;
+        if (cancelled) return;
+
+        setEstimatedDurationSeconds(payload?.estimatedDurationSeconds ?? 60);
+        const jobs = payload?.jobs ?? [];
+        const activeJob = jobs.find(
+          (job) =>
+            (job.status === "QUEUED" || job.status === "RUNNING") &&
+            Date.now() - new Date(job.updatedAt).getTime() <
+              ACTIVE_SMART_LIST_JOB_MAX_AGE_MS,
+        );
+
+        if (activeJob) {
+          activeJobIdRef.current = activeJob.id;
+          setActiveSmartListJob(activeJob);
+          return;
+        }
+
+        const completedJob = jobs.find((job) => job.id === activeJobIdRef.current);
+        setActiveSmartListJob(null);
+        if (!completedJob) return;
+
+        activeJobIdRef.current = null;
+        if (completedJob.status === "SUCCEEDED") {
+          router.refresh();
+        } else if (completedJob.status === "FAILED") {
+          setErrorMessage(completedJob.error || "Couldn’t generate smart list.");
+        }
+      } catch {
+        // The next poll will retry transient failures.
+      }
+    };
+
+    void pollJob();
+    const interval = window.setInterval(pollJob, SMART_LIST_JOB_POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [router, selectedWeek?.weekId, workspaceId]);
+
+  useEffect(() => {
     setHoveredRecipeId(null);
     setSelectedRecipeIds(new Set());
     setManuallyDeselectedRecipeIds(new Set());
@@ -355,6 +444,31 @@ export default function ShopClient({
 
   const hasShareableMeals = Boolean(selectedWeek && selectedWeek.recipes.length > 0);
   const shareError = selectedWeek && !hasShareableMeals ? "No planned meals to share." : null;
+  const isSmartListGenerating = Boolean(
+    selectedWeek?.weekId &&
+      (enqueueingWeekId === selectedWeek.weekId ||
+        (activeSmartListJob?.weekId === selectedWeek.weekId &&
+          (activeSmartListJob.status === "QUEUED" ||
+            activeSmartListJob.status === "RUNNING"))),
+  );
+  const jobStartedAt = activeSmartListJob
+    ? new Date(activeSmartListJob.startedAt ?? activeSmartListJob.createdAt).getTime()
+    : progressNow;
+  const elapsedSeconds = Math.max(0, Math.floor((progressNow - jobStartedAt) / 1000));
+  const estimatedRemainingSeconds = Math.max(
+    0,
+    estimatedDurationSeconds - elapsedSeconds,
+  );
+  const estimatedProgress = Math.min(
+    95,
+    Math.max(5, Math.round((elapsedSeconds / estimatedDurationSeconds) * 100)),
+  );
+
+  useEffect(() => {
+    if (!isSmartListGenerating) return;
+    const interval = window.setInterval(() => setProgressNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [isSmartListGenerating]);
 
   const handleWhatsAppShare = () => {
     if (!selectedWeek || selectedWeek.recipes.length === 0) return;
@@ -374,8 +488,8 @@ export default function ShopClient({
   };
 
   const handleGenerateSmartList = async () => {
-    if (!selectedWeek?.weekId || generatingWeekId === selectedWeek.weekId || smartListReady) return;
-    setGeneratingWeekId(selectedWeek.weekId);
+    if (!selectedWeek?.weekId || isSmartListGenerating || smartListReady) return;
+    setEnqueueingWeekId(selectedWeek.weekId);
     setErrorMessage(null);
     try {
       const response = await fetch("/api/smart-lists/generate", {
@@ -388,17 +502,28 @@ export default function ShopClient({
         }),
       });
       const payload = (await response.json().catch(() => null)) as
-        | { error?: string }
+        | {
+            error?: string;
+            job?: SmartListJobSummary;
+            estimatedDurationSeconds?: number;
+          }
         | null;
       if (!response.ok) {
         throw new Error(payload?.error || "Couldn’t generate smart list.");
       }
+      if (!payload?.job) {
+        throw new Error("Smart List job was not created.");
+      }
+      activeJobIdRef.current = payload.job.id;
+      setActiveSmartListJob(payload.job);
+      setEstimatedDurationSeconds(payload.estimatedDurationSeconds ?? 60);
+      setProgressNow(Date.now());
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Couldn’t generate smart list.",
       );
     } finally {
-      setGeneratingWeekId(null);
+      setEnqueueingWeekId(null);
     }
   };
 
@@ -547,15 +672,15 @@ export default function ShopClient({
                 <button
                   type="button"
                   onClick={handleGenerateSmartList}
-                  disabled={!selectedWeek || smartListReady || (selectedWeek ? generatingWeekId === selectedWeek.weekId : false)}
+                  disabled={!selectedWeek || smartListReady || isSmartListGenerating}
                   className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition ${
-                    smartListReady || !selectedWeek || (selectedWeek ? generatingWeekId === selectedWeek.weekId : false)
+                    smartListReady || !selectedWeek || isSmartListGenerating
                       ? `cursor-not-allowed ${SMART_LIST_READY_HIGHLIGHT_CLASS} text-slate-700`
                       : "bg-slate-900 text-white hover:bg-slate-800"
                   }`}
                 >
-                  {selectedWeek && generatingWeekId === selectedWeek.weekId ? (
-                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  {isSmartListGenerating ? (
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-slate-700" />
                   ) : null}
                   <span className="flex h-4 w-4 items-center justify-center">
                     <svg
@@ -568,7 +693,7 @@ export default function ShopClient({
                   </span>
                   {smartListReady
                     ? "Smart List Ready"
-                    : selectedWeek && generatingWeekId === selectedWeek.weekId
+                    : isSmartListGenerating
                     ? "Generating Smart List…"
                     : "Generate Smart List"}
                 </button>
@@ -578,6 +703,31 @@ export default function ShopClient({
                   disabled={!hasShareableMeals}
                 />
               </div>
+              {isSmartListGenerating ? (
+                <div className="mt-1 w-full max-w-sm space-y-1" aria-live="polite">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span>
+                      {estimatedRemainingSeconds > 0
+                        ? `About ${formatEstimatedDuration(estimatedRemainingSeconds)} remaining`
+                        : "Finishing up…"}
+                    </span>
+                    <span>Estimate based on recent Smart Lists</span>
+                  </div>
+                  <div
+                    className="h-1.5 overflow-hidden rounded-full bg-slate-200"
+                    role="progressbar"
+                    aria-label="Smart List generation progress estimate"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={estimatedProgress}
+                  >
+                    <div
+                      className="h-full rounded-full bg-slate-700 transition-[width] duration-1000 ease-linear"
+                      style={{ width: `${estimatedProgress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : null}
               {shareError ? (
                 <p className="text-[11px] font-semibold text-rose-500">{shareError}</p>
               ) : null}
@@ -588,7 +738,7 @@ export default function ShopClient({
               <div className="space-y-8">
                 {errorMessage ? (
                   <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
-                    Couldn’t generate smart list. Try again.
+                    {errorMessage}
                   </div>
                 ) : null}
                 {viewMode === "aggregated" ? (
