@@ -96,8 +96,8 @@ type PlanClientProps = {
   selectedRecipe: RecipeDetail | null;
   selectedCookingRecipe: RecipeDetail | null;
 };
-type WeeklyPlanDay = {
-  day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+type GeneratedPlanDay = {
+  dayIndex: number;
   recipeId: string;
   reason?: string;
 };
@@ -884,13 +884,15 @@ export default function PlanClient({
   const [templateError, setTemplateError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [weeklyPlanOpen, setWeeklyPlanOpen] = useState(false);
-  const [weeklyStep, setWeeklyStep] = useState<"prompt" | "preview" | "week">("prompt");
+  const [weeklyStep, setWeeklyStep] = useState<"prompt" | "preview">("prompt");
+  const [planScope, setPlanScope] = useState<"week" | "month">("week");
   const [weeklyPrompt, setWeeklyPrompt] = useState("");
   const [weeklyLoading, setWeeklyLoading] = useState(false);
   const [weeklyError, setWeeklyError] = useState<string | null>(null);
   const [weeklyWarning, setWeeklyWarning] = useState<string | null>(null);
-  const [generatedPlan, setGeneratedPlan] = useState<{ days: WeeklyPlanDay[]; summary?: string } | null>(null);
+  const [generatedPlan, setGeneratedPlan] = useState<{ days: GeneratedPlanDay[]; summary?: string } | null>(null);
   const [selectedWeekISO, setSelectedWeekISO] = useState("");
+  const [selectedMonthISO, setSelectedMonthISO] = useState("");
   const [replaceWeekConfirm, setReplaceWeekConfirm] = useState(false);
   const [confirmPopover, setConfirmPopover] = useState<{
     templateId: string;
@@ -1033,19 +1035,28 @@ export default function PlanClient({
     return weeks;
   }, [focusedDate, view]);
 
+  const monthOptions = useMemo(() => {
+    const first = startOfMonth(focusedDate);
+    return Array.from({ length: 12 }, (_, index) => formatDateISO(addMonths(first, index)));
+  }, [focusedDate]);
+
   useEffect(() => {
-    if (!selectedWeekISO && weekOptions[0]) {
+    if (weekOptions[0] && !weekOptions.includes(selectedWeekISO)) {
       setSelectedWeekISO(weekOptions[0]);
     }
   }, [selectedWeekISO, weekOptions]);
 
+  useEffect(() => {
+    if (monthOptions[0] && !monthOptions.includes(selectedMonthISO)) setSelectedMonthISO(monthOptions[0]);
+  }, [monthOptions, selectedMonthISO]);
+
   const presetPrompts = [
-    "Balanced Family Week",
-    "Cheap Week",
+    `Balanced Family ${planScope === "month" ? "Month" : "Week"}`,
+    `Cheap ${planScope === "month" ? "Month" : "Week"}`,
     "Quick Midweek Meals",
     "High Protein",
-    "Vegetarian Week",
-    "Comfort Food Week",
+    `Vegetarian ${planScope === "month" ? "Month" : "Week"}`,
+    `Comfort Food ${planScope === "month" ? "Month" : "Week"}`,
   ];
 
   const handleGenerateWeeklyPlan = useCallback(async () => {
@@ -1057,27 +1068,33 @@ export default function PlanClient({
       const response = await fetch("/api/weekly-plan/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ slug, prompt: weeklyPrompt.trim() }),
+        body: JSON.stringify({
+          slug,
+          prompt: weeklyPrompt.trim(),
+          scope: planScope,
+          targetStartISO: planScope === "month" ? selectedMonthISO : selectedWeekISO,
+        }),
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error(payload?.error ?? "Could not generate weekly plan.");
+        throw new Error(payload?.error ?? "Could not generate plan.");
       }
       setGeneratedPlan(payload.plan);
       setWeeklyWarning(payload.warning ?? null);
       setWeeklyStep("preview");
     } catch (error) {
-      setWeeklyError(error instanceof Error ? error.message : "Could not generate weekly plan.");
+      setWeeklyError(error instanceof Error ? error.message : "Could not generate plan.");
     } finally {
       setWeeklyLoading(false);
     }
-  }, [slug, weeklyPrompt]);
+  }, [planScope, selectedMonthISO, selectedWeekISO, slug, weeklyPrompt]);
 
-  const handleApplyGeneratedWeek = useCallback(async () => {
-    if (!generatedPlan || !selectedWeekISO) return;
-    const weekStart = parseDateISO(selectedWeekISO);
-    if (!weekStart) return;
-    const targetDays = Array.from({ length: 7 }, (_, index) => formatDateISO(addDays(weekStart, index)));
+  const handleApplyGeneratedPlan = useCallback(async () => {
+    const targetStartISO = planScope === "month" ? selectedMonthISO : selectedWeekISO;
+    if (!generatedPlan || !targetStartISO) return;
+    const targetStart = parseDateISO(targetStartISO);
+    if (!targetStart) return;
+    const targetDays = generatedPlan.days.map((day) => formatDateISO(addDays(targetStart, day.dayIndex - 1)));
     const existingItems = items.filter((item) => targetDays.includes(item.dateISO));
     if (existingItems.length > 0 && !replaceWeekConfirm) {
       setReplaceWeekConfirm(true);
@@ -1089,22 +1106,12 @@ export default function PlanClient({
       for (const item of existingItems) {
         await removeMealPlanItem({ slug, itemId: item.id });
       }
-      const byDay = Object.fromEntries(generatedPlan.days.map((day) => [day.day, day.recipeId]));
-      const orderedDays: WeeklyPlanDay["day"][] = [
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-        "sunday",
-      ];
       const created: PlanItem[] = [];
-      for (let index = 0; index < orderedDays.length; index += 1) {
+      for (const day of generatedPlan.days) {
         const result = await addMealPlanItem({
           slug,
-          dateISO: targetDays[index],
-          recipeId: byDay[orderedDays[index]],
+          dateISO: targetDays[day.dayIndex - 1],
+          recipeId: day.recipeId,
           type: "RECIPE",
         });
         if (result.item) {
@@ -1116,14 +1123,20 @@ export default function PlanClient({
       setWeeklyStep("prompt");
       setGeneratedPlan(null);
       setReplaceWeekConfirm(false);
-      const label = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", timeZone: "UTC" }).format(weekStart);
-      setToastMessage(`Weekly plan added to week commencing ${label}.`);
+      const label = planScope === "month"
+        ? getMonthLabel(targetStart)
+        : new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", timeZone: "UTC" }).format(targetStart);
+      setToastMessage(
+        planScope === "month"
+          ? `Monthly plan added to ${label}.`
+          : `Weekly plan added to week commencing ${label}.`,
+      );
     } catch {
       setWeeklyError("Sorry, FamilyTable couldn’t generate a plan this time. Try simplifying your prompt or adding more recipes.");
     } finally {
       setWeeklyLoading(false);
     }
-  }, [generatedPlan, items, replaceWeekConfirm, selectedWeekISO, slug]);
+  }, [generatedPlan, items, planScope, replaceWeekConfirm, selectedMonthISO, selectedWeekISO, slug]);
 
   const weeks = useMemo(() => {
     const rows: Date[][] = [];
@@ -1854,6 +1867,8 @@ export default function PlanClient({
                     setWeeklyPlanOpen(true);
                     setWeeklyError(null);
                     setWeeklyStep("prompt");
+                    setGeneratedPlan(null);
+                    setReplaceWeekConfirm(false);
                   }}
                   className="mr-2 inline-flex h-8 items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white transition hover:bg-slate-800"
                 >
@@ -1862,7 +1877,7 @@ export default function PlanClient({
                       <path d="M12 2l1.4 4.2L18 7.6l-4.2 1.4L12 13.2l-1.4-4.2L6.4 7.6l4.2-1.4L12 2zm7 10l.9 2.7 2.7.9-2.7.9L19 19l-.9-2.7-2.7-.9 2.7-.9L19 12zm-14 1l.9 2.7 2.7.9-2.7.9L5 20l-.9-2.7-2.7-.9 2.7-.9L5 13z" />
                     </svg>
                   </span>
-                  Generate Weekly Plan
+                  Generate Plan
                 </button>
                 <WhatsAppShareButton
                   label="Share via WhatsApp"
@@ -2161,7 +2176,7 @@ export default function PlanClient({
       {weeklyPlanOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 px-4">
           <div className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl">
-            <h2 className="text-base font-semibold text-slate-900">Generate Weekly Plan</h2>
+            <h2 className="text-base font-semibold text-slate-900">Generate Plan</h2>
             {weeklyLoading ? (
               <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                 <div className="h-full w-1/3 rounded-full bg-slate-900 weekly-plan-loading-bar" />
@@ -2183,12 +2198,58 @@ export default function PlanClient({
             {weeklyStep === "prompt" ? (
               <>
                 <p className="mt-1 text-sm text-slate-600">
-                  Describe the kind of week you want and FamilyTable will suggest meals from your recipe library.
+                  Choose a week or month, then describe how FamilyTable should select meals from your recipe library.
                 </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <span className="text-xs font-semibold text-slate-600">Plan length</span>
+                    <div className="mt-2 flex rounded-xl bg-slate-100 p-1">
+                      {(["week", "month"] as const).map((scope) => (
+                        <button
+                          key={scope}
+                          type="button"
+                          onClick={() => {
+                            setPlanScope(scope);
+                            setGeneratedPlan(null);
+                            setReplaceWeekConfirm(false);
+                          }}
+                          className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold capitalize transition ${
+                            planScope === scope ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+                          }`}
+                        >
+                          {scope}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    {planScope === "month" ? "Select month" : "Select week"}
+                    <select
+                      value={planScope === "month" ? selectedMonthISO : selectedWeekISO}
+                      onChange={(event) => {
+                        if (planScope === "month") setSelectedMonthISO(event.target.value);
+                        else setSelectedWeekISO(event.target.value);
+                      }}
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-700"
+                    >
+                      {(planScope === "month" ? monthOptions : weekOptions).map((dateISO) => (
+                        <option key={dateISO} value={dateISO}>
+                          {planScope === "month"
+                            ? getMonthLabel(parseDateISO(dateISO) ?? getTodayUTC())
+                            : `Week commencing ${new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", timeZone: "UTC" }).format(parseDateISO(dateISO) ?? getTodayUTC())}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
                 <textarea
                   value={weeklyPrompt}
                   onChange={(event) => setWeeklyPrompt(event.target.value)}
-                  placeholder="e.g. Balanced family week with 1 chicken, 1 fish, 1 pasta, 1 veggie meal and something hearty for the weekend."
+                  placeholder={
+                    planScope === "month"
+                      ? "e.g. Give me a balanced month with plenty of variety. Add a Family Favourite to each weekend and keep weekday meals quick."
+                      : "e.g. Balanced family week with chicken, fish, pasta, a veggie meal and something hearty for the weekend."
+                  }
                   className="mt-4 min-h-28 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 />
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -2206,9 +2267,14 @@ export default function PlanClient({
               </>
             ) : null}
             {weeklyStep === "preview" && generatedPlan ? (
-              <div className="mt-4 space-y-2 text-sm text-slate-700">
+              <div className="mt-4 max-h-[60vh] space-y-2 overflow-y-auto pr-1 text-sm text-slate-700">
+                {generatedPlan.summary ? (
+                  <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                    {generatedPlan.summary}
+                  </p>
+                ) : null}
                 {generatedPlan.days.map((day) => (
-                  <div key={day.day} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                  <div key={day.dayIndex} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
                     {recipes.find((recipe) => recipe.id === day.recipeId)?.photoUrl ? (
                       <img
                         src={recipes.find((recipe) => recipe.id === day.recipeId)?.photoUrl ?? ""}
@@ -2223,8 +2289,18 @@ export default function PlanClient({
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="font-semibold capitalize text-slate-900">
-                        {day.day} —{" "}
+                      <p className="font-semibold text-slate-900">
+                        {new Intl.DateTimeFormat("en-GB", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                          timeZone: "UTC",
+                        }).format(
+                          addDays(
+                            parseDateISO(planScope === "month" ? selectedMonthISO : selectedWeekISO) ?? getTodayUTC(),
+                            day.dayIndex - 1,
+                          ),
+                        )} —{" "}
                         {recipes.find((recipe) => recipe.id === day.recipeId)?.title ?? "Unknown recipe"}
                       </p>
                       {day.reason ? <p className="text-xs text-slate-500">{day.reason}</p> : null}
@@ -2233,28 +2309,9 @@ export default function PlanClient({
                 ))}
               </div>
             ) : null}
-            {weeklyStep === "week" ? (
-              <div className="mt-4">
-                <label className="text-xs font-semibold text-slate-600">Select week</label>
-                <select
-                  value={selectedWeekISO}
-                  onChange={(event) => setSelectedWeekISO(event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                >
-                  {weekOptions.map((weekISO) => (
-                    <option key={weekISO} value={weekISO}>
-                      Week commencing{" "}
-                      {new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", timeZone: "UTC" }).format(
-                        parseDateISO(weekISO) ?? getTodayUTC(),
-                      )}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
             {replaceWeekConfirm ? (
               <p className="mt-3 text-xs font-semibold text-amber-700">
-                This week already has meals planned. Do you want to replace them with this generated plan?
+                This {planScope} already has meals planned. Do you want to replace them with this generated plan?
               </p>
             ) : null}
             {weeklyWarning ? <p className="mt-2 text-xs text-amber-600">{weeklyWarning}</p> : null}
@@ -2286,13 +2343,11 @@ export default function PlanClient({
                 <>
                   <button type="button" onClick={() => setWeeklyStep("prompt")} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600">Back</button>
                   <button type="button" onClick={() => void handleGenerateWeeklyPlan()} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600">Regenerate</button>
-                  <button type="button" onClick={() => setWeeklyStep("week")} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">Choose Week</button>
-                </>
-              ) : null}
-              {weeklyStep === "week" ? (
-                <>
-                  <button type="button" onClick={() => setWeeklyStep("preview")} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600">Back to Preview</button>
-                  <button type="button" onClick={() => void handleApplyGeneratedWeek()} disabled={weeklyLoading} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">{replaceWeekConfirm ? "Replace Week" : "Apply to Selected Week"}</button>
+                  <button type="button" onClick={() => void handleApplyGeneratedPlan()} disabled={weeklyLoading} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">
+                    {replaceWeekConfirm
+                      ? `Replace ${planScope === "month" ? "Month" : "Week"}`
+                      : `Apply to ${planScope === "month" ? "Month" : "Week"}`}
+                  </button>
                 </>
               ) : null}
             </div>
