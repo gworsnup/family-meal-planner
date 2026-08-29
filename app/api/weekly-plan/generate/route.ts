@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { generateMealPlan, type MealPlanSlot } from "@/lib/weeklyPlanGenerator";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -103,11 +104,19 @@ export async function POST(request: Request) {
           ? "You’ll get better suggestions once you have more recipes saved."
           : null,
     });
-  } catch {
+  } catch (error) {
+    const timedOut = error instanceof Error && error.name === "AbortError";
+    console.error("[Meal Plan API] generation failed", {
+      slug,
+      scope,
+      targetStartISO,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json(
       {
-        error:
-          "Sorry, FamilyTable couldn’t generate a plan this time. Try simplifying your prompt or adding more recipes.",
+        error: timedOut
+          ? "FamilyTable couldn’t generate this plan within a minute. Please try again—the same prompt is fine."
+          : "FamilyTable couldn’t generate this plan. Please try again—the same prompt is fine.",
       },
       { status: 500 },
     );
