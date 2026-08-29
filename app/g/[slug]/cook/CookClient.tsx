@@ -245,7 +245,7 @@ export default function CookClient({
     if (cached) return cached;
     const fetchStart = performance.now();
     console.info("[perf] ui:fetchRecipe:start", { recipeId, at: Date.now() });
-    const response = await fetch(`/api/recipes/${recipeId}`, { method: "GET", cache: "force-cache" });
+    const response = await fetch(`/api/recipes/${recipeId}`, { method: "GET", cache: "no-store" });
     const data = await response.json();
     console.info("[perf] ui:fetchRecipe:end", { recipeId, elapsedMs: Math.round(performance.now()-fetchStart), ok: response.ok });
     if (!response.ok || !data?.recipe) throw new Error("Failed to load recipe");
@@ -1071,11 +1071,19 @@ export default function CookClient({
 
       {overlayRecipe && (
         <RecipeOverlay
+          key={`${overlayRecipe.id}:${overlayRecipe.updatedAt}`}
           slug={slug}
           recipe={overlayRecipe}
           onClose={() => setOverlayRecipe(null)}
           onOpenCookingView={() => openCookingView(overlayRecipe.id)}
-          onSaved={() => router.refresh()}
+          onSaved={(updatedRecipe) => {
+            recipeCacheRef.current.set(updatedRecipe.id, updatedRecipe);
+            setOverlayRecipe(updatedRecipe);
+            setCookingOverlayRecipe((currentRecipe) =>
+              currentRecipe?.id === updatedRecipe.id ? updatedRecipe : currentRecipe,
+            );
+            router.refresh();
+          }}
           onDeleted={() => {
             setOverlayRecipe(null);
             router.refresh();
