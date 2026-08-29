@@ -8,6 +8,7 @@ import {
   persistTiktokImageToBlob,
 } from "@/lib/images/persistTiktokImageToBlob";
 import { PlaywrightBlockedError } from "@/lib/importers/playwrightFetcher";
+import { autoTagRecipe } from "@/lib/autoTagRecipe";
 import { scrapeUrl } from "./scrapeUrl";
 
 const BLOCKED_TITLE_REGEX = /(access denied|forbidden)/i;
@@ -120,19 +121,25 @@ export async function runRecipeImport(importId: string) {
         });
       }
 
-      await tx.recipeImport.update({
-        where: { id: importId },
-        data: {
-          status,
-          error: statusError,
-          importMethod: scraped.importMethod ?? "fetch",
-          raw: scraped.raw ?? {},
-          recipeId: recipe.id,
-        },
-      });
-
       return recipe;
     });
+
+    try {
+      await autoTagRecipe({
+        recipeId: createdRecipe.id,
+        workspaceId: record.workspaceId,
+        title: cleanedTitle,
+        description: cleanedDescription,
+        ingredients: cleanedIngredients,
+        prepTimeMinutes: scraped.prepTimeMinutes ?? null,
+        cookTimeMinutes: scraped.cookTimeMinutes ?? null,
+      });
+    } catch (error) {
+      console.warn("[RecipeImport] Auto-tagging failed", {
+        recipeId: createdRecipe.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
 
     let finalPhotoUrl = cleanedPhotoUrl;
     let imageSourceUrl: string | null = null;
@@ -219,6 +226,17 @@ export async function runRecipeImport(importId: string) {
         },
       });
     }
+
+    await prisma.recipeImport.update({
+      where: { id: importId },
+      data: {
+        status,
+        error: statusError,
+        importMethod: scraped.importMethod ?? "fetch",
+        raw: scraped.raw ?? {},
+        recipeId: createdRecipe.id,
+      },
+    });
   } catch (error) {
     if (error instanceof PlaywrightBlockedError) {
       console.warn("[Scrape] playwright blocked", {

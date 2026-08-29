@@ -51,6 +51,7 @@ type SortDirection = "asc" | "desc";
 type CookClientProps = {
   slug: string;
   workspaceName: string;
+  recipeCount: number;
   recipes: RecipeItem[];
   view: ViewMode;
   q: string;
@@ -163,6 +164,7 @@ function getDefaultDir(sort: SortField) {
 export default function CookClient({
   slug,
   workspaceName,
+  recipeCount,
   recipes,
   view,
   q,
@@ -633,7 +635,7 @@ export default function CookClient({
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-slate-900">Recipes</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">Recipes ({recipeCount})</h1>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
               {workspaceName}
             </span>

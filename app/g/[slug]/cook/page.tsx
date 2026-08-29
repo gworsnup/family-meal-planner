@@ -302,6 +302,7 @@ export default async function CookPage({
         <CookClient
           slug={slug}
           workspaceName={workspace.name}
+          recipeCount={sourceRecipes.length}
           recipes={listRecipes}
           view={view}
           q={q}
