@@ -1,14 +1,13 @@
 import { z } from "zod";
 
-const planDaySchema = z.object({
-  dayIndex: z.number().int().positive(),
+const modelSelectionSchema = z.object({
   recipeId: z.string().min(1),
-  reason: z.string().trim().max(200).optional().default(""),
+  reason: z.string().trim(),
 });
 
-const responseSchema = z.object({
-  days: z.array(planDaySchema),
-  summary: z.string().trim().max(240).optional().default(""),
+const modelResponseSchema = z.object({
+  selections: z.array(modelSelectionSchema),
+  summary: z.string().trim(),
 });
 
 export type MealPlanRecipeContext = {
@@ -30,8 +29,16 @@ export type MealPlanSlot = {
 };
 
 type ResponsesPayload = {
+  id?: unknown;
+  status?: unknown;
   output_text?: unknown;
   output?: Array<{ content?: Array<{ text?: unknown }> }>;
+  incomplete_details?: { reason?: unknown } | null;
+  usage?: {
+    input_tokens?: unknown;
+    output_tokens?: unknown;
+    output_tokens_details?: { reasoning_tokens?: unknown } | null;
+  } | null;
 };
 
 function extractText(value: unknown): string {
@@ -40,41 +47,42 @@ function extractText(value: unknown): string {
   return (
     payload?.output
       ?.flatMap((item) => item.content ?? [])
-      ?.map((chunk) => (typeof chunk.text === "string" ? chunk.text : ""))
-      ?.join("\n")
-      ?.trim() || ""
+      .map((chunk) => (typeof chunk.text === "string" ? chunk.text : ""))
+      .join("\n")
+      .trim() || ""
   );
 }
 
-function parseJsonResponse(text: string) {
-  const cleaned = text
-    .trim()
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  if (!cleaned) throw new Error("OpenAI response was empty");
-  return JSON.parse(cleaned);
+function responseDiagnostics(value: unknown) {
+  const payload = value as ResponsesPayload | null;
+  return {
+    responseId: typeof payload?.id === "string" ? payload.id : null,
+    status: typeof payload?.status === "string" ? payload.status : null,
+    incompleteReason:
+      typeof payload?.incomplete_details?.reason === "string"
+        ? payload.incomplete_details.reason
+        : null,
+    inputTokens:
+      typeof payload?.usage?.input_tokens === "number" ? payload.usage.input_tokens : null,
+    outputTokens:
+      typeof payload?.usage?.output_tokens === "number" ? payload.usage.output_tokens : null,
+    reasoningTokens:
+      typeof payload?.usage?.output_tokens_details?.reasoning_tokens === "number"
+        ? payload.usage.output_tokens_details.reasoning_tokens
+        : null,
+  };
 }
 
-function validatePlan(
-  data: unknown,
-  slots: MealPlanSlot[],
-  validIds: Set<string>,
-  allowDuplicates: boolean,
-) {
-  const parsed = responseSchema.safeParse(data);
-  if (!parsed.success || parsed.data.days.length !== slots.length) throw new Error("Invalid plan shape");
-  const ordered = [...parsed.data.days].sort((a, b) => a.dayIndex - b.dayIndex);
-  const seen = new Set<string>();
-  for (let index = 0; index < ordered.length; index += 1) {
-    const day = ordered[index];
-    if (day.dayIndex !== index + 1) throw new Error("Plan days are incomplete");
-    if (!validIds.has(day.recipeId)) throw new Error("Plan contains unknown recipe IDs");
-    if (!allowDuplicates && seen.has(day.recipeId)) throw new Error("Plan contains duplicate recipe IDs");
-    seen.add(day.recipeId);
-  }
-  return { ...parsed.data, days: ordered };
+function compactRecipe(recipe: MealPlanRecipeContext) {
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    tags: recipe.tags,
+    ingredients: recipe.ingredients.slice(0, 8),
+    ...(recipe.prepTimeMinutes === null ? {} : { prepMinutes: recipe.prepTimeMinutes }),
+    ...(recipe.cookTimeMinutes === null ? {} : { cookMinutes: recipe.cookTimeMinutes }),
+    ...(recipe.description ? { description: recipe.description.slice(0, 240) } : {}),
+  };
 }
 
 export async function generateMealPlan({
@@ -97,72 +105,125 @@ export async function generateMealPlan({
   console.log("[Meal Plan Generator] start", {
     slug: workspaceSlug,
     scope,
+    model,
     recipeCount: recipes.length,
     dayCount: slots.length,
     promptLength: prompt.length,
   });
 
-  const systemPrompt = `You are generating a ${scope === "month" ? "monthly" : "weekly"} meal plan for a family.
-You may only choose recipes from the provided recipe library.
-Return exactly ${slots.length} entries, one for every supplied calendar slot, numbered 1 through ${slots.length}.
-Each entry must contain dayIndex, recipeId, and a short reason.
-Do not invent recipes or IDs.
-Honour the user's prompt as the primary planning instruction.
-Create meaningful variety across the whole period: rotate cuisines, proteins, ingredients and food styles.
-Use recipe tags, titles, descriptions and ingredients to infer suitability.
-Treat weekend-specific requests as applying to slots marked isWeekend. If the user requests Family Favourite meals on weekends, select recipes carrying that tag for those slots wherever the library permits.
-Midweek meals should generally be simpler or quicker, while weekends can be heartier or more involved, unless the prompt says otherwise.
-Avoid repeating recipes unless the library has fewer recipes than slots or the user asks for repeats or leftovers.
-Return strict JSON only as {"days":[{"dayIndex":1,"recipeId":"...","reason":"..."}],"summary":"..."}.
-No markdown.`;
+  const systemPrompt = `Create a ${scope === "month" ? "monthly" : "weekly"} family meal plan using only the supplied recipe library.
+Return one selection for every calendar slot, in the exact order supplied.
+Honour the user's instructions as the primary planning rules.
+Use tags, titles, descriptions and ingredients to infer cuisine and suitability.
+For a month, balance each individual week as far as the library permits, not just the month as a whole.
+Avoid the same recipe in adjacent weeks. Repeating a recipe later in a month is allowed when it helps satisfy the prompt.
+Use Family Favourite-tagged recipes for weekend requests wherever possible.
+Prefer quick or simple meals midweek and more involved meals on weekends unless instructed otherwise.
+Do not invent recipes or recipe IDs.`;
 
-  const attempt = async (extraInstruction?: string) => {
+  const recipeIds = recipes.map((recipe) => recipe.id);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55_000);
+
+  try {
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model,
-        max_output_tokens: scope === "month" ? 7000 : 2200,
+        reasoning: { effort: "low" },
+        max_output_tokens: scope === "month" ? 4800 : 1800,
+        text: {
+          verbosity: "low",
+          format: {
+            type: "json_schema",
+            name: "family_meal_plan",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                selections: {
+                  type: "array",
+                  minItems: slots.length,
+                  maxItems: slots.length,
+                  items: {
+                    type: "object",
+                    properties: {
+                      recipeId: { type: "string", enum: recipeIds },
+                      reason: { type: "string" },
+                    },
+                    required: ["recipeId", "reason"],
+                    additionalProperties: false,
+                  },
+                },
+                summary: { type: "string" },
+              },
+              required: ["selections", "summary"],
+              additionalProperties: false,
+            },
+          },
+        },
         input: [
           { role: "system", content: systemPrompt },
           {
             role: "user",
-            content: `${extraInstruction ? `${extraInstruction}\n\n` : ""}User prompt:\n${prompt}\n\nCalendar slots JSON:\n${JSON.stringify(slots)}\n\nRecipe library JSON:\n${JSON.stringify(recipes)}`,
+            content: `User instructions:\n${prompt}\n\nCalendar slots:\n${JSON.stringify(slots)}\n\nRecipe library:\n${JSON.stringify(recipes.map(compactRecipe))}`,
           },
         ],
       }),
     });
+
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(`OpenAI error ${response.status}: ${body.slice(0, 180)}`);
+      throw new Error(`OpenAI error ${response.status}: ${body.slice(0, 300)}`);
     }
-    return parseJsonResponse(extractText(await response.json()));
-  };
 
-  const validIds = new Set(recipes.map((recipe) => recipe.id));
-  const allowDuplicates = recipes.length < slots.length || /same recipe|repeat|leftover|duplicates?/i.test(prompt);
+    const payload: unknown = await response.json();
+    const diagnostics = responseDiagnostics(payload);
+    const text = extractText(payload);
+    if (!text) {
+      throw new Error(`OpenAI response had no output text (${JSON.stringify(diagnostics)})`);
+    }
 
-  try {
-    const plan = validatePlan(await attempt(), slots, validIds, allowDuplicates);
-    console.log("[Meal Plan Generator] validation success", {
+    const parsedJson: unknown = JSON.parse(text);
+    const parsed = modelResponseSchema.safeParse(parsedJson);
+    if (!parsed.success || parsed.data.selections.length !== slots.length) {
+      throw new Error(`OpenAI returned an invalid structured plan (${JSON.stringify(diagnostics)})`);
+    }
+
+    const validIds = new Set(recipeIds);
+    if (parsed.data.selections.some((selection) => !validIds.has(selection.recipeId))) {
+      throw new Error(`OpenAI returned an unknown recipe ID (${JSON.stringify(diagnostics)})`);
+    }
+
+    console.log("[Meal Plan Generator] success", {
       slug: workspaceSlug,
       scope,
       durationMs: Date.now() - started,
+      ...diagnostics,
     });
-    return plan;
+
+    return {
+      days: parsed.data.selections.map((selection, index) => ({
+        dayIndex: index + 1,
+        recipeId: selection.recipeId,
+        reason: selection.reason.slice(0, 160),
+      })),
+      summary: parsed.data.summary.slice(0, 240),
+    };
   } catch (error) {
-    console.log("[Meal Plan Generator] validation failed", {
+    console.error("[Meal Plan Generator] failed", {
       slug: workspaceSlug,
       scope,
       durationMs: Date.now() - started,
       error: error instanceof Error ? error.message : String(error),
     });
-    const retry = await attempt(
-      `Your last answer was invalid. Return exactly ${slots.length} entries numbered 1 through ${slots.length}, using only valid recipeId values from the library.`,
-    );
-    return validatePlan(retry, slots, validIds, allowDuplicates);
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
 }
