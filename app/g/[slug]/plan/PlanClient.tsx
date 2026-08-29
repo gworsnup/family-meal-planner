@@ -827,7 +827,7 @@ export default function PlanClient({
     if (cached) return cached;
     console.info("[perf] ui:planFetchRecipe:start", { recipeId, at: Date.now() });
     const start = performance.now();
-    const response = await fetch(`/api/recipes/${recipeId}`, { method: "GET", cache: "force-cache" });
+    const response = await fetch(`/api/recipes/${recipeId}`, { method: "GET", cache: "no-store" });
     const data = await response.json();
     console.info("[perf] ui:planFetchRecipe:end", { recipeId, elapsedMs: Math.round(performance.now()-start), ok: response.ok });
     if (!response.ok || !data?.recipe) throw new Error("Failed to fetch recipe");
@@ -2302,6 +2302,7 @@ export default function PlanClient({
 
       {overlayRecipe && (
         <RecipeOverlay
+          key={`${overlayRecipe.id}:${overlayRecipe.updatedAt}`}
           slug={slug}
           recipe={overlayRecipe}
           onClose={() => setOverlayRecipe(null)}
@@ -2309,7 +2310,14 @@ export default function PlanClient({
             setOverlayRecipe(null);
             void openCookingOverlay(overlayRecipe.id);
           }}
-          onSaved={() => router.refresh()}
+          onSaved={(updatedRecipe) => {
+            recipeCacheRef.current.set(updatedRecipe.id, updatedRecipe);
+            setOverlayRecipe(updatedRecipe);
+            setCookingOverlayRecipe((currentRecipe) =>
+              currentRecipe?.id === updatedRecipe.id ? updatedRecipe : currentRecipe,
+            );
+            router.refresh();
+          }}
           onDeleted={() => {
             setOverlayRecipe(null);
             router.refresh();

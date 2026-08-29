@@ -32,5 +32,8 @@ export async function GET(
     }
   }
 
-  return NextResponse.json({ recipe });
+  return NextResponse.json(
+    { recipe },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
 }

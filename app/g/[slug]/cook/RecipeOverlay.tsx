@@ -19,7 +19,7 @@ type RecipeOverlayProps = {
   recipe: RecipeDetail;
   onClose: () => void;
   onDeleted: () => void;
-  onSaved: () => void;
+  onSaved: (recipe: RecipeDetail) => void;
   onOpenCookingView: () => void;
 };
 
@@ -97,14 +97,6 @@ export default function RecipeOverlay({
   const [tagMessage, setTagMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    setFormState(initialForm);
-    setIsEditing(false);
-    setShowPhotoInput(false);
-    setRecipeTags(recipe.tags);
-    setIsTagPopoverOpen(false);
-  }, [initialForm]);
-
-  useEffect(() => {
     let isMounted = true;
     startTagTransition(async () => {
       try {
@@ -140,15 +132,20 @@ export default function RecipeOverlay({
 
   const handleSave = () => {
     startTransition(async () => {
-      await updateRecipe(slug, recipe.id, {
-        ...formState,
-        rating: Number.isNaN(formState.rating) ? 0 : formState.rating,
-        prepTimeMinutes: formState.prepTimeMinutes ?? null,
-        cookTimeMinutes: formState.cookTimeMinutes ?? null,
-        totalTimeMinutes: formState.totalTimeMinutes ?? null,
-      });
-      setIsEditing(false);
-      onSaved();
+      try {
+        const updatedRecipe = await updateRecipe(slug, recipe.id, {
+          ...formState,
+          rating: Number.isNaN(formState.rating) ? 0 : formState.rating,
+          prepTimeMinutes: formState.prepTimeMinutes ?? null,
+          cookTimeMinutes: formState.cookTimeMinutes ?? null,
+          totalTimeMinutes: formState.totalTimeMinutes ?? null,
+        });
+        setIsEditing(false);
+        onSaved(updatedRecipe);
+      } catch (error) {
+        console.error(error);
+        showTagMessage("Couldn't save recipe. Please try again.");
+      }
     });
   };
 
@@ -295,7 +292,7 @@ export default function RecipeOverlay({
                   disabled={isPending}
                   className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-800"
                 >
-                  Save
+                  {isPending ? "Saving…" : "Save"}
                 </button>
                 <button
                   type="button"

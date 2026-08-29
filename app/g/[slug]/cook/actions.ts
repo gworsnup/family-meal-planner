@@ -3,8 +3,9 @@
 import { prisma } from "@/lib/db";
 import { requireWorkspaceUser } from "@/lib/auth";
 import { normalizeTagName } from "@/lib/normalizeTagName";
+import { fetchRecipeDetailWithTiming } from "@/lib/recipeDetail";
 import { revalidatePath } from "next/cache";
-import { UpdateRecipeInput } from "./types";
+import type { RecipeDetail, UpdateRecipeInput } from "./types";
 
 const MAX_RATING = 5;
 const MIN_RATING = 0;
@@ -74,7 +75,7 @@ export async function updateRecipe(
   slug: string,
   recipeId: string,
   data: UpdateRecipeInput,
-) {
+): Promise<RecipeDetail> {
   const user = await requireWorkspaceUser(slug);
 
   if (!data.title.trim()) {
@@ -149,6 +150,16 @@ export async function updateRecipe(
       });
     }
   });
+
+  revalidatePath(`/g/${slug}/cook`);
+  revalidatePath(`/g/${slug}/plan`);
+
+  const recipe = await fetchRecipeDetailWithTiming(recipeId, user.workspace.id);
+  if (!recipe) {
+    throw new Error("Recipe not found after update");
+  }
+
+  return recipe;
 }
 
 export async function getWorkspaceTags(slug: string): Promise<TagSummary[]> {
