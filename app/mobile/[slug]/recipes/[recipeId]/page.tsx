@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { getWorkspaceUser } from "@/lib/auth";
 import { fetchRecipeDetailWithTiming } from "@/lib/recipeDetail";
 
 export default async function MobileRecipePage({
@@ -10,8 +10,9 @@ export default async function MobileRecipePage({
   params: Promise<{ slug: string; recipeId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [{ slug, recipeId }, query, user] = await Promise.all([params, searchParams, getCurrentUser()]);
-  if (!user?.workspace || user.workspace.slug !== slug) notFound();
+  const [{ slug, recipeId }, query] = await Promise.all([params, searchParams]);
+  const user = await getWorkspaceUser(slug);
+  if (!user) notFound();
   const recipe = await fetchRecipeDetailWithTiming(recipeId, user.workspace.id);
   if (!recipe) notFound();
   const saved = query.saved === "1";

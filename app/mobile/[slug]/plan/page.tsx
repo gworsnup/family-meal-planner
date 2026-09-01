@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { getWorkspaceUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { addDays, formatDateISO, getTodayUTC, parseDateISO, startOfWeek } from "@/lib/planDates";
 import { buildWeekShareMessage } from "@/lib/planShare";
@@ -29,8 +29,9 @@ export default async function MobilePlanPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [{ slug }, query, user] = await Promise.all([params, searchParams, getCurrentUser()]);
-  if (!user?.workspace || user.workspace.slug !== slug) notFound();
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const user = await getWorkspaceUser(slug);
+  if (!user) notFound();
 
   const requested = parseDateISO(first(query.week) ?? "");
   const weekStart = startOfWeek(requested ?? getTodayUTC());

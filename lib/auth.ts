@@ -127,12 +127,31 @@ export async function requireAdmin() {
   return user;
 }
 
-export async function requireWorkspaceUser(slug: string): Promise<WorkspaceUser> {
+export async function getWorkspaceUser(slug: string): Promise<WorkspaceUser | null> {
   const user = await getCurrentUser();
-  if (!user?.workspace || user.workspace.slug !== slug) {
+  if (!user) return null;
+
+  if (user.workspace?.slug === slug) {
+    return user as WorkspaceUser;
+  }
+
+  if (!user.isAdmin) return null;
+
+  const workspace = await prisma.workspace.findUnique({
+    where: { slug },
+    select: { id: true, slug: true, name: true },
+  });
+  if (!workspace) return null;
+
+  return { ...user, workspace };
+}
+
+export async function requireWorkspaceUser(slug: string): Promise<WorkspaceUser> {
+  const user = await getWorkspaceUser(slug);
+  if (!user) {
     throw new Error("Unauthorized");
   }
-  return user as WorkspaceUser;
+  return user;
 }
 
 export function isSafeRedirect(value?: string | null) {

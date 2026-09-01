@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { getWorkspaceUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { headers } from "next/headers";
 import ShortcutSetupClient from "../../_components/ShortcutSetupClient";
 
 export default async function ShortcutSetupPage({ params }: { params: Promise<{ slug: string }> }) {
-  const [{ slug }, user, headerList] = await Promise.all([params, getCurrentUser(), headers()]);
-  if (!user?.workspace || user.workspace.slug !== slug) notFound();
+  const [{ slug }, headerList] = await Promise.all([params, headers()]);
+  const user = await getWorkspaceUser(slug);
+  if (!user) notFound();
 
   const tokens = await prisma.shortcutImportToken.findMany({
     where: { workspaceId: user.workspace.id, revokedAt: null },

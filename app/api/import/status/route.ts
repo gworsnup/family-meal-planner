@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   }
 
   const user = await getCurrentUser();
-  if (!user?.workspace?.id) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Import not found" }, { status: 404 });
   }
 
-  if (record.workspaceId !== user.workspace.id) {
+  if (!user.isAdmin && record.workspaceId !== user.workspace?.id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
