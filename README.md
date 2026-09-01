@@ -38,3 +38,15 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Vercel Blob (TikTok thumbnails)
 
 TikTok recipe imports persist thumbnails to Vercel Blob to avoid expiring CDN URLs. Ensure `BLOB_READ_WRITE_TOKEN` is available in your environment (Vercel injects this automatically when the Blob integration is enabled). For local development, use `vercel env pull` or add the token to `.env.local`.
+
+## Mobile PWA
+
+The authenticated mobile experience starts at `/mobile`. On iPhone, open that URL in Safari, tap Share, then choose **Add to Home Screen**. The installed app opens the current week's plan and also provides recipe import/review, the recipe library, cooking mode, alternate weeks, WhatsApp sharing, and a view-focused shopping checklist.
+
+The manifest includes a standards-based Web Share Target at `/share`. iOS Safari does not currently register PWAs as Share Sheet destinations, so FamilyTable provides a token-authenticated iOS Shortcut integration:
+
+1. In the installed PWA, open **Import → Set up Shortcut**.
+2. Generate a revocable token and follow the on-screen steps to create the **Save Recipe** Shortcut.
+3. In Instagram or TikTok, choose **Share → Save Recipe**.
+
+The Shortcut sends the URL to `POST /api/shortcut/import`, which queues the existing `runRecipeImport` pipeline for the token's workspace. Browsers that support Web Share Target can send a shared URL directly to the import screen. The manual paste flow remains available as a fallback.

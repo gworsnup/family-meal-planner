@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
+import PwaRegistration from "@/app/_components/PwaRegistration";
 
 const PRODUCT_NAME = "FamilyTable";
 const TAGLINE = "Plan meals. Save recipes. Shop smarter.";
@@ -36,7 +37,11 @@ export const metadata: Metadata = {
   description: SHORT_DESCRIPTION,
   applicationName: PRODUCT_NAME,
   manifest: "/site.webmanifest",
-  themeColor: "#ffffff",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: PRODUCT_NAME,
+  },
   robots: {
     index: !isPreviewEnv,
     follow: !isPreviewEnv,
@@ -54,7 +59,7 @@ export const metadata: Metadata = {
     description: SHORT_DESCRIPTION,
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: "/icons/icon-192.png",
     shortcut: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
@@ -62,13 +67,13 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
     other: [
       {
-        url: "/android-chrome-192x192.png",
+        url: "/icons/icon-192.png",
         sizes: "192x192",
         type: "image/png",
         rel: "icon",
       },
       {
-        url: "/android-chrome-512x512.png",
+        url: "/icons/icon-512.png",
         sizes: "512x512",
         type: "image/png",
         rel: "icon",
@@ -83,6 +88,13 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -92,6 +104,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${openSans.variable} ${openSans.className} antialiased`}>
         {children}
+        <PwaRegistration />
       </body>
     </html>
   );

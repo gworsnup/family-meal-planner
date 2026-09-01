@@ -2,20 +2,35 @@
   "name": "FamilyTable",
   "short_name": "FamilyTable",
   "description": "FamilyTable helps households save recipes from TikTok, Instagram, and any site, plan meals on a calendar, and automatically build a weekly shopping list. One shared workspace, simple access, built for busy weeknights.",
-  "start_url": "/",
+  "id": "/mobile",
+  "start_url": "/mobile",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "/android-chrome-192x192.png",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/android-chrome-512x512.png",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

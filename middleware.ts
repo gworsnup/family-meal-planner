@@ -6,14 +6,15 @@ export function middleware(request: NextRequest) {
   const isAdminRoute = pathname.startsWith("/admin");
   const isOnboardingRoute = pathname.startsWith("/onboarding");
   const isWorkspaceRoute = pathname.startsWith("/g/");
+  const isMobileRoute = pathname.startsWith("/mobile");
 
-  if (isAdminRoute || isWorkspaceRoute || isOnboardingRoute) {
+  if (isAdminRoute || isWorkspaceRoute || isOnboardingRoute || isMobileRoute) {
     const session = request.cookies.get("session")?.value;
     if (!session) {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       url.searchParams.delete("message");
-      if (isWorkspaceRoute || isOnboardingRoute) {
+      if (isWorkspaceRoute || isOnboardingRoute || isMobileRoute) {
         url.searchParams.set("next", `${pathname}${search}`);
       }
       return NextResponse.redirect(url);
@@ -24,5 +25,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/g/:path*", "/onboarding/:path*"],
+  matcher: ["/admin/:path*", "/g/:path*", "/mobile/:path*", "/onboarding/:path*"],
 };

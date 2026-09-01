@@ -24,7 +24,7 @@ export default function LoginForm({ next, message }: LoginFormProps) {
       {next ? <input type="hidden" name="next" value={next} /> : null}
 
       <a
-        href="/auth/google"
+        href={next ? `/auth/google?next=${encodeURIComponent(next)}` : "/auth/google"}
         className="flex w-full items-center justify-center rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
       >
         <span className="mr-2 inline-flex h-4 w-4 items-center justify-center">

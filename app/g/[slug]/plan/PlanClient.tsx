@@ -49,6 +49,7 @@ import type { RecipeDetail } from "../cook/types";
 import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
 import { ModeSegmentedControl } from "./ModeSegmentedControl";
 import { buildWhatsAppShareUrl, openInNewTab } from "@/lib/whatsapp";
+import { buildWeekShareMessage } from "@/lib/planShare";
 
 type RecipeItem = {
   id: string;
@@ -1193,9 +1194,7 @@ export default function PlanClient({
 
   const shareWeekMessage = useMemo(() => {
     if (!shareWeekStartISO) return "";
-    if (shareWeekLines.length === 0) return "";
-    const header = "Here are this week’s dinners 🍽️";
-    return [header, "", ...shareWeekLines].join("\n").trim();
+    return buildWeekShareMessage(shareWeekLines);
   }, [shareWeekLines, shareWeekStartISO]);
 
   const isShareWeekMode = selectionIntent === "whatsapp" && shareScope === "week";

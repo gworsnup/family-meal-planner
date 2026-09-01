@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import {
   createSession,
+  isSafeRedirect,
   normalizeEmail,
   sessionCookieOptions,
 } from "@/lib/auth";
@@ -41,6 +42,7 @@ function redirectWithError(request: NextRequest, message: string) {
   const response = NextResponse.redirect(url);
   response.cookies.delete("google_oauth_state");
   response.cookies.delete("google_oauth_code_verifier");
+  response.cookies.delete("google_oauth_next");
   return response;
 }
 
@@ -70,6 +72,7 @@ export async function GET(request: NextRequest) {
   const state = request.nextUrl.searchParams.get("state");
   const storedState = request.cookies.get("google_oauth_state")?.value;
   const codeVerifier = request.cookies.get("google_oauth_code_verifier")?.value;
+  const requestedNext = request.cookies.get("google_oauth_next")?.value;
 
   if (!code || !state || !storedState || state !== storedState || !codeVerifier) {
     return redirectWithError(request, "Google sign-in failed. Try again.");
@@ -192,7 +195,9 @@ export async function GET(request: NextRequest) {
 
   const { token, expiresAt } = await createSession(user.id);
 
-  const redirectPath = user.workspace
+  const redirectPath = requestedNext && isSafeRedirect(requestedNext)
+    ? requestedNext
+    : user.workspace
     ? `/g/${user.workspace.slug}/cook`
     : user.hasCreatedWorkspace
       ? "/onboarding/locked"
@@ -202,5 +207,6 @@ export async function GET(request: NextRequest) {
   response.cookies.set("session", token, sessionCookieOptions(expiresAt));
   response.cookies.delete("google_oauth_state");
   response.cookies.delete("google_oauth_code_verifier");
+  response.cookies.delete("google_oauth_next");
   return response;
 }

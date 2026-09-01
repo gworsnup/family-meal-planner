@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { isSafeRedirect } from "@/lib/auth";
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 
@@ -80,6 +81,12 @@ export async function GET(request: NextRequest) {
 
   response.cookies.set("google_oauth_state", state, cookieOptions);
   response.cookies.set("google_oauth_code_verifier", codeVerifier, cookieOptions);
+  const next = request.nextUrl.searchParams.get("next");
+  if (next && isSafeRedirect(next)) {
+    response.cookies.set("google_oauth_next", next, cookieOptions);
+  } else {
+    response.cookies.delete("google_oauth_next");
+  }
 
   return response;
 }

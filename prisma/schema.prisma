@@ -22,7 +22,22 @@ model Workspace {
   shoppingListWeeks ShoppingListWeek[]
   shoppingListSmarts ShoppingListSmart[]
   smartListJobs SmartListJob[]
+  shortcutImportTokens ShortcutImportToken[]
   users         User[]
+}
+
+model ShortcutImportToken {
+  id          String    @id @default(cuid())
+  workspaceId String
+  tokenHash   String    @unique
+  label       String
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, revokedAt])
 }
 
 model User {

@@ -14,9 +14,12 @@ export const metadata: Metadata = {
 export default async function Home({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const user = await getCurrentUser();
+  const [user, resolvedSearchParams] = await Promise.all([
+    getCurrentUser(),
+    searchParams,
+  ]);
 
   if (user) {
     if (user.isAdmin) {
@@ -32,11 +35,17 @@ export default async function Home({
   }
 
   const next =
-    typeof searchParams.next === "string" ? searchParams.next : undefined;
+    typeof resolvedSearchParams.next === "string"
+      ? resolvedSearchParams.next
+      : undefined;
   const message =
-    typeof searchParams.message === "string" ? searchParams.message : undefined;
+    typeof resolvedSearchParams.message === "string"
+      ? resolvedSearchParams.message
+      : undefined;
   const error =
-    typeof searchParams.error === "string" ? searchParams.error : undefined;
+    typeof resolvedSearchParams.error === "string"
+      ? resolvedSearchParams.error
+      : undefined;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-white px-4">
