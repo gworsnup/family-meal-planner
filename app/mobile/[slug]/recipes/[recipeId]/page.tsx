@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getWorkspaceUser } from "@/lib/auth";
 import { fetchRecipeDetailWithTiming } from "@/lib/recipeDetail";
+import MobileDeleteRecipeButton from "../../../_components/MobileDeleteRecipeButton";
 
 export default async function MobileRecipePage({
   params,
@@ -57,6 +58,8 @@ export default async function MobileRecipePage({
       </section>
 
       {recipe.sourceUrl ? <a href={recipe.sourceUrl} target="_blank" rel="noreferrer" className="block truncate text-center text-sm font-semibold text-slate-500 underline">View original recipe</a> : null}
+
+      <MobileDeleteRecipeButton slug={slug} recipeId={recipe.id} recipeTitle={recipe.title} />
     </article>
   );
 }
