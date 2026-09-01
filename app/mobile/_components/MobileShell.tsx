@@ -46,8 +46,8 @@ export default function MobileShell({ slug, workspaceName, children }: MobileShe
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-[#f7f7f5] text-slate-900">
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur">
+    <div className="min-h-screen bg-[#fcfcfc] text-slate-900">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <Link href={`/mobile/${slug}/plan`} aria-label="FamilyTable home">
             <Image
@@ -56,7 +56,7 @@ export default function MobileShell({ slug, workspaceName, children }: MobileShe
               width={150}
               height={34}
               priority
-              className="h-8 w-auto"
+              className="h-10 w-auto"
             />
           </Link>
           <details className="relative">
@@ -67,12 +67,12 @@ export default function MobileShell({ slug, workspaceName, children }: MobileShe
             <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
               <Link
                 href={`/g/${slug}/cook`}
-                className="block rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
               >
                 Desktop app
               </Link>
               <form action={logoutAction}>
-                <button className="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100">
+                <button className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100">
                   Log out
                 </button>
               </form>
@@ -85,7 +85,7 @@ export default function MobileShell({ slug, workspaceName, children }: MobileShe
         {children}
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur" aria-label="Mobile navigation">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]" aria-label="Mobile navigation">
         <div className="mx-auto grid max-w-2xl grid-cols-4">
           {navItems.map((item) => {
             const href = `/mobile/${slug}/${item.path}`;

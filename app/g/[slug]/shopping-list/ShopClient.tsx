@@ -11,6 +11,7 @@ import {
 import type { SmartListData } from "@/lib/smartListTypes";
 import WhatsAppShareButton from "@/app/_components/WhatsAppShareButton";
 import { buildWhatsAppShareUrl, openInNewTab } from "@/lib/whatsapp";
+import { getSmartCategoryEmoji } from "@/lib/smartListPresentation";
 
 const SMART_LIST_READY_HIGHLIGHT_CLASS = "bg-slate-200";
 const INGREDIENT_ACTIVE_CARD_CLASS =
@@ -95,25 +96,6 @@ function CategorySection({
       </ul>
     </section>
   );
-}
-
-const SMART_CATEGORY_EMOJI: Record<string, string> = {
-  "fresh produce (fruit, veg, fresh herbs)": "🥕🥦🍎",
-  "meat & seafood": "🥩🐟🍤",
-  "dairy, eggs, cheese & fridge": "🥛🥚🧀",
-  "dry herbs & spices": "🌿🧂🌶️",
-  "condiments & sauces": "🍅🫙🥫",
-  "pasta & grains": "🍝🌾🍚",
-  "oils & vinegars": "🫒🍶🍾",
-  "flours, bakery & sugars": "🍞🌾🍬",
-  "pantry (biscuits, tins, other)": "🥫🍪📦",
-  frozen: "🧊",
-  other: "📦🔧✨",
-};
-
-function getSmartCategoryEmoji(label: string) {
-  const key = label.trim().toLowerCase();
-  return SMART_CATEGORY_EMOJI[key] ?? "🍽️";
 }
 
 function normalizeShareUrl(value: string | null | undefined) {

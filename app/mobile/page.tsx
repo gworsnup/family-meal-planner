@@ -12,10 +12,10 @@ export default async function MobileHome() {
       select: { slug: true, name: true },
     });
     return (
-      <main className="min-h-screen bg-[#f7f7f5] px-4 py-10 text-slate-900">
+      <main className="min-h-screen bg-[#fcfcfc] px-4 py-10 text-slate-900">
         <div className="mx-auto max-w-lg">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Administrator</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">Choose a workspace</h1>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Administrator</p>
+          <h1 className="mt-2 text-2xl font-semibold text-slate-900">Choose a workspace</h1>
           <p className="mt-2 text-sm text-slate-600">Select the household you want to open in the mobile app.</p>
           <div className="mt-6 space-y-3">
             {workspaces.map((workspace) => (

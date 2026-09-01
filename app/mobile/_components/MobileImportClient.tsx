@@ -114,14 +114,14 @@ export default function MobileImportClient({
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Add a recipe</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">Import from a link</h1>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Add a recipe</p>
+        <h1 className="mt-2 text-2xl font-semibold text-slate-900">Import from a link</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
           Copy the link from Instagram or TikTok, then paste it here. FamilyTable uses the same importer as the desktop app.
         </p>
       </div>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
         <label htmlFor="mobile-recipe-url" className="text-sm font-semibold text-slate-800">
           Recipe link
         </label>
@@ -139,7 +139,7 @@ export default function MobileImportClient({
           autoCapitalize="none"
           autoCorrect="off"
           placeholder="https://www.instagram.com/reel/…"
-          className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 disabled:opacity-60"
+          className="mt-2 w-full resize-none rounded-lg border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 disabled:opacity-60"
         />
 
         <div className="mt-3 grid grid-cols-2 gap-3">
@@ -147,7 +147,7 @@ export default function MobileImportClient({
             type="button"
             onClick={() => void pasteFromClipboard()}
             disabled={active}
-            className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 disabled:opacity-50"
+            className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50"
           >
             Paste link
           </button>
@@ -155,24 +155,24 @@ export default function MobileImportClient({
             type="button"
             onClick={beginImport}
             disabled={active}
-            className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+            className="rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
           >
             {active ? "Importing…" : "Import to library"}
           </button>
         </div>
 
         {statusText ? (
-          <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm leading-5 ${status === "failed" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>
+          <div className={`mt-4 rounded-lg border px-4 py-3 text-sm leading-5 ${status === "failed" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-slate-200 bg-[#fcfcfc] text-slate-700"}`}>
             <div className="flex items-center gap-3">
-              {active ? <span className="h-4 w-4 flex-none animate-spin rounded-full border-2 border-emerald-800/20 border-t-emerald-800" /> : null}
+              {active ? <span className="h-4 w-4 flex-none animate-spin rounded-full border-2 border-slate-400 border-t-slate-800" /> : null}
               <span>{statusText}</span>
             </div>
           </div>
         ) : null}
       </section>
 
-      <section className="rounded-3xl bg-amber-50 p-5 text-sm leading-6 text-amber-950">
-        <div className="flex items-center justify-between gap-3"><p className="font-bold">On iPhone</p><Link href={`/mobile/${slug}/shortcut`} className="rounded-full bg-amber-900 px-3 py-1.5 text-xs font-bold text-white">Set up Shortcut</Link></div>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 text-sm leading-6 text-slate-700">
+        <div className="flex items-center justify-between gap-3"><p className="font-semibold text-slate-900">On iPhone</p><Link href={`/mobile/${slug}/shortcut`} className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white">Set up Shortcut</Link></div>
         <ol className="mt-2 list-decimal space-y-1 pl-5">
           <li>Tap Share in Instagram or TikTok.</li>
           <li>Choose Copy link.</li>

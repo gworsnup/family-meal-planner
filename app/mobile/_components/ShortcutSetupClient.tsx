@@ -45,10 +45,10 @@ export default function ShortcutSetupClient({ slug, endpoint, tokens }: { slug: 
 
   return (
     <div className="space-y-5">
-      <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="text-lg font-bold">1. Create a private token</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">This lets only your Shortcut add recipes to this workspace. You can revoke it at any time.</p>
-        <button type="button" onClick={create} disabled={pending} className="mt-4 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white disabled:opacity-50">
+        <button type="button" onClick={create} disabled={pending} className="mt-4 w-full rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">
           {pending ? "Working…" : "Create Shortcut token"}
         </button>
 
@@ -62,7 +62,7 @@ export default function ShortcutSetupClient({ slug, endpoint, tokens }: { slug: 
         {error ? <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
       </section>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="text-lg font-bold">2. Build “Save Recipe” in Shortcuts</h2>
         <ol className="mt-3 list-decimal space-y-3 pl-5 text-sm leading-6 text-slate-700">
           <li>Create a new Shortcut named <strong>Save Recipe</strong>.</li>
@@ -80,7 +80,7 @@ export default function ShortcutSetupClient({ slug, endpoint, tokens }: { slug: 
       </section>
 
       {tokens.length ? (
-        <section className="rounded-3xl border border-slate-200 bg-white p-5">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5">
           <h2 className="text-lg font-bold">Active tokens</h2>
           <div className="mt-3 space-y-3">{tokens.map((token) => (
             <div key={token.id} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 p-3">
