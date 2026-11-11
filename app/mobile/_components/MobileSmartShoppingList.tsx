@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { SmartListData } from "@/lib/smartListTypes";
 import { getSmartCategoryEmoji } from "@/lib/smartListPresentation";
+import { buildSmartListShareText, buildWhatsAppShareUrl } from "@/lib/smartListShare";
 
 type AggregatedCategory = {
   key: string;
@@ -46,6 +47,12 @@ export default function MobileSmartShoppingList({
   const smartListReady = Boolean(smartList && smartList.version === weekVersion);
   const smartListOutdated = Boolean(smartList && smartList.version < weekVersion);
   const generating = enqueueing || job?.status === "QUEUED" || job?.status === "RUNNING";
+  const shareHref = useMemo(() => {
+    if (!smartList) return null;
+    return buildWhatsAppShareUrl(
+      buildSmartListShareText({ weekStart, categories: smartList.categories }),
+    );
+  }, [smartList, weekStart]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -150,6 +157,11 @@ export default function MobileSmartShoppingList({
         {smartListOutdated ? <p className="mt-3 text-xs font-semibold text-amber-700">Your Smart List is out of date. Generate it again to include plan changes.</p> : null}
         {generating ? <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200"><div className="h-full w-1/2 animate-pulse rounded-full bg-slate-700" /></div> : null}
         {error ? <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</p> : null}
+        {viewMode === "smart" && shareHref ? (
+          <a href={shareHref} target="_blank" rel="noreferrer" className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white">
+            Share Smart List on WhatsApp
+          </a>
+        ) : null}
       </section>
 
       {visibleCategories.map((category) => (

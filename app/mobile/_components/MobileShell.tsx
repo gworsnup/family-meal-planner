@@ -36,6 +36,14 @@ const navItems = [
     icon: <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 18v3h16v-3" />,
   },
   {
+    key: "lists",
+    label: "Lists",
+    path: "lists",
+    icon: (
+      <path d="m4 6 1.5 1.5L8 5M11 6h9M4 12l1.5 1.5L8 11M11 12h9M4 18l1.5 1.5L8 17M11 18h9" />
+    ),
+  },
+  {
     key: "shopping-list",
     label: "Shop",
     path: "shopping-list",
@@ -89,7 +97,7 @@ export default function MobileShell({ slug, workspaceName, children }: MobileShe
       </PullToRefresh>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]" aria-label="Mobile navigation">
-        <div className="mx-auto grid max-w-2xl grid-cols-4">
+        <div className="mx-auto grid max-w-2xl grid-cols-5">
           {navItems.map((item) => {
             const href = `/mobile/${slug}/${item.path}`;
             const active = pathname === href || pathname.startsWith(`${href}/`);
