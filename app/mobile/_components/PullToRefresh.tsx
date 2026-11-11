@@ -20,10 +20,12 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
     };
 
     const handleTouchStart = (event: TouchEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
       if (
         refreshingRef.current ||
         event.touches.length !== 1 ||
-        window.scrollY > 0
+        window.scrollY > 0 ||
+        target?.closest("[data-disable-pull-to-refresh]")
       ) {
         startY.current = null;
         setDragging(false);
